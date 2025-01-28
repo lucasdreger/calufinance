@@ -23,7 +23,15 @@ const Auth = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao fazer login",
+          description: "Credenciais inválidas. Use 'lucas' ou 'camila' como usuário.",
+        });
+        return;
+      }
 
       if (password === "abcd1234") {
         setIsFirstLogin(true);
@@ -31,6 +39,7 @@ const Auth = () => {
         navigate("/");
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",
