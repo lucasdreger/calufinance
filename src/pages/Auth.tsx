@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Auth = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isFirstLogin, setIsFirstLogin] = useState(false);
@@ -18,8 +18,11 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const email = `${username.toLowerCase()}@example.com`;
+      console.log("Attempting login with:", { email, password });
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: `${email.toLowerCase()}@example.com`,
+        email,
         password,
       });
 
@@ -91,8 +94,8 @@ const Auth = () => {
                   id="username"
                   type="text"
                   placeholder="lucas ou camila"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                 />
               </div>
