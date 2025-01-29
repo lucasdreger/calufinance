@@ -47,21 +47,19 @@ export const TaskManager = () => {
       .lte('date', endOfMonth)
       .maybeSingle();
 
-    // Fetch Lucas's income for the current month
-    const { data: lucasIncome, error: incomeError } = await supabase
+    // Fetch Lucas's income for the current month - get the latest record
+    const { data: lucasIncome } = await supabase
       .from('income')
       .select('amount')
       .eq('source', 'Primary Job')
       .gte('date', startOfMonth)
-      .lte('date', endOfMonth);
-
-    if (incomeError) {
-      console.error('Error fetching income:', incomeError);
-      return;
-    }
+      .lte('date', endOfMonth)
+      .order('date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     const creditCardTotal = creditCardExpenses?.amount || 0;
-    const lucasTotal = lucasIncome?.reduce((sum, income) => sum + Number(income.amount), 0) || 0;
+    const lucasTotal = lucasIncome?.amount || 0;
     const remainingAmount = lucasTotal - creditCardTotal;
     const transferAmount = remainingAmount < 1000 ? Math.max(0, 1000 - remainingAmount) : 0;
 
@@ -74,7 +72,7 @@ export const TaskManager = () => {
       date: currentDate.toISOString(),
       startOfMonth,
       endOfMonth,
-      incomeRecords: lucasIncome
+      incomeRecord: lucasIncome
     });
 
     if (creditCardTotal === 0) {
