@@ -21,7 +21,7 @@ type SortField = 'description' | 'category' | 'amount' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTableProps) => {
-  const [sortField, setSortField] = useState<SortField>('description');
+  const [sortField, setSortField] = useState<SortField>('category');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const handleSort = (field: SortField) => {
@@ -38,18 +38,22 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
     
     switch (sortField) {
       case 'description':
-        return direction * a.description.localeCompare(b.description);
+        return direction * a.description.toLowerCase().localeCompare(b.description.toLowerCase());
       case 'category':
         const categoryA = a.expenses_categories.name.toLowerCase();
         const categoryB = b.expenses_categories.name.toLowerCase();
-        const descriptionA = a.description.toLowerCase();
-        const descriptionB = b.description.toLowerCase();
         
         // First compare categories
-        if (categoryA !== categoryB) {
-          return direction * categoryA.localeCompare(categoryB);
+        const categoryComparison = categoryA.localeCompare(categoryB);
+        
+        // If categories are different, return the category comparison
+        if (categoryComparison !== 0) {
+          return direction * categoryComparison;
         }
+        
         // If categories are the same, compare descriptions
+        const descriptionA = a.description.toLowerCase();
+        const descriptionB = b.description.toLowerCase();
         return direction * descriptionA.localeCompare(descriptionB);
       case 'amount':
         return direction * (a.estimated_amount - b.estimated_amount);
