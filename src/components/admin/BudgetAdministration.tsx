@@ -24,6 +24,7 @@ import {
 export const BudgetAdministration = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [budgetPlans, setBudgetPlans] = useState<any[]>([]);
+  const [newCategory, setNewCategory] = useState('');
   const [newPlan, setNewPlan] = useState({
     description: '',
     category_id: '',
@@ -75,6 +76,51 @@ export const BudgetAdministration = () => {
     fetchCategories();
     fetchBudgetPlans();
   }, []);
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) {
+      toast({
+        title: "Missing Category Name",
+        description: "Please enter a category name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add categories",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('expenses_categories')
+      .insert({
+        name: newCategory.trim(),
+        user_id: user.id,
+      });
+
+    if (error) {
+      toast({
+        title: "Error saving category",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setNewCategory('');
+    fetchCategories();
+    
+    toast({
+      title: "Category Added",
+      description: "Your category has been saved.",
+    });
+  };
 
   const handleAddPlan = async () => {
     if (!newPlan.description || !newPlan.category_id || !newPlan.estimated_amount) {
@@ -137,56 +183,87 @@ export const BudgetAdministration = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-4">
-            <Input
-              placeholder="Description"
-              value={newPlan.description}
-              onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
-            />
-            <Select
-              value={newPlan.category_id}
-              onValueChange={(value) => setNewPlan(prev => ({ ...prev, category_id: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
+          {/* Category Management Section */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium">Categories</h3>
+            <div className="flex gap-2">
+              <Input
+                placeholder="New Category Name"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+              />
+              <Button onClick={handleAddCategory}>Add Category</Button>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Category Name</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
+                  <TableRow key={category.id}>
+                    <TableCell>{category.name}</TableCell>
+                  </TableRow>
                 ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="number"
-              placeholder="Estimated Amount"
-              value={newPlan.estimated_amount}
-              onChange={(e) => setNewPlan(prev => ({ ...prev, estimated_amount: e.target.value }))}
-            />
-            <Button onClick={handleAddPlan}>Add Budget Plan</Button>
+              </TableBody>
+            </Table>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Estimated Amount</TableHead>
-                <TableHead>Type</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {budgetPlans.map((plan) => (
-                <TableRow key={plan.id}>
-                  <TableCell>{plan.description}</TableCell>
-                  <TableCell>{plan.expenses_categories.name}</TableCell>
-                  <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
-                  <TableCell>{plan.is_fixed ? 'Fixed' : 'Variable'}</TableCell>
+          {/* Budget Plans Section */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium">Budget Plans</h3>
+            <div className="grid gap-4 md:grid-cols-4">
+              <Input
+                placeholder="Description"
+                value={newPlan.description}
+                onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
+              />
+              <Select
+                value={newPlan.category_id}
+                onValueChange={(value) => setNewPlan(prev => ({ ...prev, category_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                placeholder="Estimated Amount"
+                value={newPlan.estimated_amount}
+                onChange={(e) => setNewPlan(prev => ({ ...prev, estimated_amount: e.target.value }))}
+              />
+              <Button onClick={handleAddPlan}>Add Budget Plan</Button>
+            </div>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Estimated Amount</TableHead>
+                  <TableHead>Type</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {budgetPlans.map((plan) => (
+                  <TableRow key={plan.id}>
+                    <TableCell>{plan.description}</TableCell>
+                    <TableCell>{plan.expenses_categories.name}</TableCell>
+                    <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
+                    <TableCell>{plan.is_fixed ? 'Fixed' : 'Variable'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </CardContent>
     </Card>
