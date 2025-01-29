@@ -49,7 +49,6 @@ export const MonthlySpending = () => {
     fetchCategories();
     fetchExpenses();
 
-    // Subscribe to realtime changes
     const categoriesChannel = supabase
       .channel('categories_changes')
       .on('postgres_changes', 
@@ -79,14 +78,25 @@ export const MonthlySpending = () => {
   const handleExpenseSubmit = async (categoryId: string) => {
     if (!newExpense[categoryId]) return;
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add expenses",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from('expenses')
-      .insert([{
+      .insert({
         amount: parseFloat(newExpense[categoryId]),
         category_id: categoryId,
         date: new Date().toISOString().split('T')[0],
-        is_fixed: categories.find(c => c.id === categoryId)?.is_fixed || false
-      }]);
+        is_fixed: categories.find(c => c.id === categoryId)?.is_fixed || false,
+        user_id: user.id
+      });
 
     if (error) {
       toast({

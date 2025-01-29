@@ -9,7 +9,6 @@ export const FinanceOverview = () => {
   const { toast } = useToast();
 
   const fetchData = async () => {
-    // Get the last 6 months
     const endDate = new Date();
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 5);
@@ -61,7 +60,6 @@ export const FinanceOverview = () => {
       }
     });
 
-    // Convert to array and sort by date
     const chartData = Object.entries(monthlyData)
       .map(([month, values]) => ({
         month: new Date(month + "-01").toLocaleString('default', { month: 'short' }),
@@ -101,6 +99,10 @@ export const FinanceOverview = () => {
     };
   }, []);
 
+  const formatTooltipValue = (value: number) => {
+    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -113,7 +115,7 @@ export const FinanceOverview = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => `$${parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+              <Tooltip formatter={formatTooltipValue} />
               <Line type="monotone" dataKey="income" stroke="#4a5568" strokeWidth={2} />
               <Line type="monotone" dataKey="expenses" stroke="#ecc94b" strokeWidth={2} />
             </LineChart>

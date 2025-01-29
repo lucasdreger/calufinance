@@ -35,7 +35,6 @@ export const IncomeSection = () => {
   useEffect(() => {
     fetchIncomes();
 
-    // Subscribe to realtime changes
     const channel = supabase
       .channel('income_changes')
       .on('postgres_changes', 
@@ -54,13 +53,24 @@ export const IncomeSection = () => {
   const handleSubmit = async (source: string) => {
     if (!newIncome.amount || !source) return;
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add income",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from('income')
-      .insert([{
+      .insert({
         amount: parseFloat(newIncome.amount),
         source,
-        date: newIncome.date
-      }]);
+        date: newIncome.date,
+        user_id: user.id
+      });
 
     if (error) {
       toast({
