@@ -91,12 +91,12 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
     <div className="space-y-4">
       {expenses.some(expense => 
         expense.amount === 0 && 
-        expense.expenses_categories?.name === "American Express bill"
+        expense.expenses_categories?.name === "Credit Card"
       ) && (
         <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
-            The American Express bill amount is set to 0. Please update it if you have received the bill.
+            The Credit Card bill amount is set to 0. Please update it if you have received the bill.
           </AlertDescription>
         </Alert>
       )}
