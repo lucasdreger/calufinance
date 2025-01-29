@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BudgetOverview } from "@/components/dashboard/BudgetOverview";
 import { MonthlyView } from "@/components/dashboard/MonthlyView";
+import { ExpensesSection } from "@/components/dashboard/sections/ExpensesSection";
 import { BudgetAdministration } from "@/components/admin/BudgetAdministration";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
