@@ -7,7 +7,12 @@ import { FixedExpensesTable } from "./FixedExpensesTable";
 import { ExpenseForm } from "./ExpenseForm";
 import { ExpensesTable } from "./ExpensesTable";
 
-export const ExpensesSection = () => {
+interface ExpensesSectionProps {
+  selectedYear: number;
+  selectedMonth: number;
+}
+
+export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSectionProps) => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const { toast } = useToast();
@@ -15,6 +20,10 @@ export const ExpensesSection = () => {
   const fetchExpenses = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Calculate start and end dates for the selected month
+    const startDate = new Date(selectedYear, selectedMonth, 1);
+    const endDate = new Date(selectedYear, selectedMonth + 1, 0); // Last day of the month
 
     const { data, error } = await supabase
       .from('expenses')
@@ -25,6 +34,8 @@ export const ExpensesSection = () => {
         )
       `)
       .eq('user_id', user.id)
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0])
       .order('date', { ascending: false });
     
     if (error) {
@@ -91,7 +102,7 @@ export const ExpensesSection = () => {
       supabase.removeChannel(expensesChannel);
       supabase.removeChannel(categoriesChannel);
     };
-  }, []);
+  }, [selectedYear, selectedMonth]); // Re-fetch when month or year changes
 
   const handleLoadDefaults = () => {
     toast({
