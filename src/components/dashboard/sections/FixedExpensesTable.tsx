@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 export const FixedExpensesTable = () => {
   const [budgetPlans, setBudgetPlans] = useState<any[]>([]);
+  const [statusMap, setStatusMap] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -34,15 +35,71 @@ export const FixedExpensesTable = () => {
       }
 
       setBudgetPlans(data || []);
+
+      // Fetch status for current month
+      const currentDate = new Date();
+      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      
+      const { data: statusData, error: statusError } = await supabase
+        .from('fixed_expenses_status')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', firstDayOfMonth.toISOString())
+        .lt('date', new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1).toISOString());
+
+      if (statusError) {
+        toast({
+          title: "Error fetching status",
+          description: statusError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const newStatusMap: Record<string, boolean> = {};
+      statusData?.forEach((status) => {
+        newStatusMap[status.budget_plan_id] = status.is_paid;
+      });
+      setStatusMap(newStatusMap);
     };
 
     fetchBudgetPlans();
   }, [toast]);
 
-  const handleStatusChange = async (id: string, checked: boolean) => {
-    // Here you would update the status in your database
-    // This is a placeholder for future implementation
-    console.log(`Status changed for ${id}: ${checked}`);
+  const handleStatusChange = async (planId: string, checked: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const currentDate = new Date();
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+    const { error } = await supabase
+      .from('fixed_expenses_status')
+      .upsert({
+        budget_plan_id: planId,
+        user_id: user.id,
+        date: firstDayOfMonth.toISOString(),
+        is_paid: checked
+      });
+
+    if (error) {
+      toast({
+        title: "Error updating status",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStatusMap(prev => ({
+      ...prev,
+      [planId]: checked
+    }));
+
+    toast({
+      title: checked ? "Marked as paid" : "Marked as unpaid",
+      description: `Successfully updated payment status`,
+    });
   };
 
   return (
@@ -64,6 +121,7 @@ export const FixedExpensesTable = () => {
             <TableCell>
               {plan.requires_status && (
                 <Checkbox
+                  checked={statusMap[plan.id] || false}
                   onCheckedChange={(checked) => handleStatusChange(plan.id, checked as boolean)}
                 />
               )}

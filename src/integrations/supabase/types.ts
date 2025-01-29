@@ -115,6 +115,41 @@ export type Database = {
         }
         Relationships: []
       }
+      fixed_expenses_status: {
+        Row: {
+          budget_plan_id: string | null
+          created_at: string
+          date: string
+          id: string
+          is_paid: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          budget_plan_id?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          is_paid?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          budget_plan_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          is_paid?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_expenses_status_budget_plan_id_fkey"
+            columns: ["budget_plan_id"]
+            isOneToOne: false
+            referencedRelation: "budget_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       income: {
         Row: {
           amount: number
