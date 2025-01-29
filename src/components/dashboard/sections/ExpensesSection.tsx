@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,12 +24,48 @@ import {
 
 export const ExpensesSection = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [newExpense, setNewExpense] = useState({
     description: '',
     category: '',
     amount: '',
   });
   const { toast } = useToast();
+
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from('expenses_categories')
+      .select('*');
+    
+    if (error) {
+      toast({
+        title: "Error fetching categories",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setCategories(data || []);
+  };
+
+  useEffect(() => {
+    fetchCategories();
+
+    const channel = supabase
+      .channel('expenses_categories_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'expenses_categories' },
+        () => {
+          fetchCategories();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleLoadDefaults = () => {
     toast({
@@ -38,7 +74,11 @@ export const ExpensesSection = () => {
     });
   };
 
-  const handleAddExpense = async () => {
+  const handleAddExpense = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+
     if (!newExpense.description || !newExpense.category || !newExpense.amount) {
       toast({
         title: "Missing Fields",
@@ -124,7 +164,7 @@ export const ExpensesSection = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            <form onSubmit={handleAddExpense} className="grid gap-4 md:grid-cols-3">
               <Input
                 placeholder="Description"
                 value={newExpense.description}
@@ -138,9 +178,11 @@ export const ExpensesSection = () => {
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="groceries">Groceries</SelectItem>
-                  <SelectItem value="entertainment">Entertainment</SelectItem>
-                  <SelectItem value="transportation">Transportation</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <div className="flex gap-2">
@@ -150,9 +192,9 @@ export const ExpensesSection = () => {
                   value={newExpense.amount}
                   onChange={(e) => setNewExpense(prev => ({ ...prev, amount: e.target.value }))}
                 />
-                <Button onClick={handleAddExpense}>Add</Button>
+                <Button type="submit">Add</Button>
               </div>
-            </div>
+            </form>
 
             <Table>
               <TableHeader>
