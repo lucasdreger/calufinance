@@ -1,13 +1,18 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
+import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
+
+interface IncomeState {
+  lucas: number;
+  camila: number;
+  other: number;
+}
 
 export const DefaultIncomeManagement = () => {
-  const [defaultIncome, setDefaultIncome] = useState({
+  const [defaultIncome, setDefaultIncome] = useState<IncomeState>({
     lucas: 0,
     camila: 0,
     other: 0,
@@ -107,8 +112,7 @@ export const DefaultIncomeManagement = () => {
     }
   };
 
-  const handleIncomeChange = (field: keyof typeof defaultIncome) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseCurrencyInput(e.target.value);
+  const handleIncomeChange = (field: keyof IncomeState, value: number) => {
     setDefaultIncome(prev => ({ ...prev, [field]: value }));
   };
 
@@ -118,35 +122,10 @@ export const DefaultIncomeManagement = () => {
         <CardTitle>Default Monthly Income</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <label className="text-sm font-medium">Lucas's Default Income</label>
-            <Input
-              value={formatCurrencyInput(defaultIncome.lucas)}
-              onChange={handleIncomeChange('lucas')}
-              placeholder="Enter default income"
-              type="text"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Camila's Default Income</label>
-            <Input
-              value={formatCurrencyInput(defaultIncome.camila)}
-              onChange={handleIncomeChange('camila')}
-              placeholder="Enter default income"
-              type="text"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Other Default Income</label>
-            <Input
-              value={formatCurrencyInput(defaultIncome.other)}
-              onChange={handleIncomeChange('other')}
-              placeholder="Enter other income"
-              type="text"
-            />
-          </div>
-        </div>
+        <IncomeInputGroup
+          income={defaultIncome}
+          onIncomeChange={handleIncomeChange}
+        />
         <div className="flex justify-end">
           <Button onClick={handleSaveDefaults}>Save Defaults</Button>
         </div>

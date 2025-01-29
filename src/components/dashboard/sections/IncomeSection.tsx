@@ -1,23 +1,15 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
+import { formatCurrency } from "@/utils/formatters";
 import { supabase } from "@/integrations/supabase/client";
+import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
 
 interface IncomeState {
   lucas: number;
   camila: number;
   other: number;
-}
-
-interface IncomeData {
-  amount: number;
-  source: string;
-  date: string;
-  user_id: string;
-  is_default: boolean;
 }
 
 export const IncomeSection = () => {
@@ -48,10 +40,9 @@ export const IncomeSection = () => {
     }
 
     if (data && data.length > 0) {
-      const typedData = data as IncomeData[];
-      const lucasIncome = typedData.find(inc => inc.source === "Primary Job")?.amount || 0;
-      const camilaIncome = typedData.find(inc => inc.source === "Wife Job 1")?.amount || 0;
-      const otherIncome = typedData.find(inc => inc.source === "Other")?.amount || 0;
+      const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
+      const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
+      const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
 
       setIncome({
         lucas: lucasIncome,
@@ -92,10 +83,9 @@ export const IncomeSection = () => {
     }
 
     if (data && data.length > 0) {
-      const typedData = data as IncomeData[];
-      const lucasIncome = typedData.find(inc => inc.source === "Primary Job")?.amount || 0;
-      const camilaIncome = typedData.find(inc => inc.source === "Wife Job 1")?.amount || 0;
-      const otherIncome = typedData.find(inc => inc.source === "Other")?.amount || 0;
+      const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
+      const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
+      const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
 
       const date = new Date().toISOString().split('T')[0];
       const promises = [
@@ -124,11 +114,7 @@ export const IncomeSection = () => {
 
       try {
         await Promise.all(promises);
-        setIncome({
-          lucas: lucasIncome,
-          camila: camilaIncome,
-          other: otherIncome,
-        });
+        await fetchIncome();
         toast({
           title: "Income Defaults Loaded",
           description: "Your default monthly income has been loaded.",
@@ -148,8 +134,7 @@ export const IncomeSection = () => {
     }
   };
 
-  const handleIncomeChange = (field: keyof IncomeState) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseCurrencyInput(e.target.value);
+  const handleIncomeChange = (field: keyof IncomeState, value: number) => {
     setIncome(prev => ({ ...prev, [field]: value }));
   };
 
@@ -160,35 +145,10 @@ export const IncomeSection = () => {
         <Button onClick={handleLoadDefaults}>Load Defaults</Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <label className="text-sm font-medium">Lucas's Income</label>
-            <Input
-              value={formatCurrencyInput(income.lucas)}
-              onChange={handleIncomeChange('lucas')}
-              placeholder="Enter income"
-              type="text"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Camila's Income</label>
-            <Input
-              value={formatCurrencyInput(income.camila)}
-              onChange={handleIncomeChange('camila')}
-              placeholder="Enter income"
-              type="text"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Other Income</label>
-            <Input
-              value={formatCurrencyInput(income.other)}
-              onChange={handleIncomeChange('other')}
-              placeholder="Enter other income"
-              type="text"
-            />
-          </div>
-        </div>
+        <IncomeInputGroup
+          income={income}
+          onIncomeChange={handleIncomeChange}
+        />
         <div className="text-right">
           <span className="text-lg font-bold">
             Total Income: {formatCurrency(totalIncome)}
