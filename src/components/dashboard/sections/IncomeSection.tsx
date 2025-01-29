@@ -6,12 +6,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
 import { supabase } from "@/integrations/supabase/client";
 
-const defaultIncome = {
-  lucas: 3867,
-  camila: 2511,
-  other: 220,
-};
-
 export const IncomeSection = () => {
   const [income, setIncome] = useState({ lucas: 0, camila: 0, other: 0 });
   const { toast } = useToast();
@@ -26,6 +20,7 @@ export const IncomeSection = () => {
       .from('income')
       .select('*')
       .eq('user_id', user.id)
+      .eq('is_default', false)
       .order('date', { ascending: false })
       .limit(3);
 
@@ -66,40 +61,73 @@ export const IncomeSection = () => {
       return;
     }
 
-    const date = new Date().toISOString().split('T')[0];
-    const promises = [
-      supabase.from('income').upsert({
-        amount: defaultIncome.lucas,
-        source: "Primary Job",
-        date,
-        user_id: user.id
-      }),
-      supabase.from('income').upsert({
-        amount: defaultIncome.camila,
-        source: "Wife Job 1",
-        date,
-        user_id: user.id
-      }),
-      supabase.from('income').upsert({
-        amount: defaultIncome.other,
-        source: "Other",
-        date,
-        user_id: user.id
-      })
-    ];
+    const { data, error } = await supabase
+      .from('income')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_default', true);
 
-    try {
-      await Promise.all(promises);
-      setIncome(defaultIncome);
+    if (error) {
       toast({
-        title: "Income Defaults Loaded",
-        description: "Your default monthly income has been loaded and saved.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error saving defaults",
-        description: "There was an error saving your default income.",
+        title: "Error loading defaults",
+        description: error.message,
         variant: "destructive",
+      });
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
+      const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
+      const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
+
+      const date = new Date().toISOString().split('T')[0];
+      const promises = [
+        supabase.from('income').upsert({
+          amount: lucasIncome,
+          source: "Primary Job",
+          date,
+          user_id: user.id,
+          is_default: false
+        }),
+        supabase.from('income').upsert({
+          amount: camilaIncome,
+          source: "Wife Job 1",
+          date,
+          user_id: user.id,
+          is_default: false
+        }),
+        supabase.from('income').upsert({
+          amount: otherIncome,
+          source: "Other",
+          date,
+          user_id: user.id,
+          is_default: false
+        })
+      ];
+
+      try {
+        await Promise.all(promises);
+        setIncome({
+          lucas: lucasIncome,
+          camila: camilaIncome,
+          other: otherIncome,
+        });
+        toast({
+          title: "Income Defaults Loaded",
+          description: "Your default monthly income has been loaded.",
+        });
+      } catch (error: any) {
+        toast({
+          title: "Error saving income",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "No defaults found",
+        description: "Please set up default values in the Administration page first.",
       });
     }
   };
@@ -110,7 +138,6 @@ export const IncomeSection = () => {
   };
 
   const handleIncomeChange = (field: keyof typeof income) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Allow only numbers and decimal point while typing
     const value = e.target.value.replace(/[^\d.]/g, '');
     setIncome(prev => ({ ...prev, [field]: parseCurrencyInput(value) }));
   };
