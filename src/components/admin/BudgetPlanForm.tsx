@@ -17,7 +17,6 @@ interface BudgetPlanFormProps {
     description: string;
     category_id: string;
     estimated_amount: string;
-    is_fixed: boolean;
     requires_status: boolean;
   }) => void;
   initialValues?: {
@@ -25,7 +24,6 @@ interface BudgetPlanFormProps {
     description: string;
     category_id: string;
     estimated_amount: number;
-    is_fixed: boolean;
     requires_status: boolean;
   };
   onCancel?: () => void;
@@ -36,8 +34,7 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
     description: '',
     category_id: '',
     estimated_amount: '',
-    is_fixed: true,
-    requires_status: true
+    requires_status: false
   });
 
   useEffect(() => {
@@ -46,7 +43,6 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
         description: initialValues.description,
         category_id: initialValues.category_id,
         estimated_amount: formatCurrencyInput(initialValues.estimated_amount),
-        is_fixed: true,
         requires_status: initialValues.requires_status
       });
     }
@@ -76,8 +72,7 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
         description: '',
         category_id: '',
         estimated_amount: '',
-        is_fixed: true,
-        requires_status: true
+        requires_status: false
       });
     }
   };

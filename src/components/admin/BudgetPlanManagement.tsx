@@ -81,7 +81,6 @@ export const BudgetPlanManagement = () => {
           description: newPlan.description,
           category_id: newPlan.category_id,
           estimated_amount: parseFloat(newPlan.estimated_amount),
-          is_fixed: newPlan.is_fixed,
           requires_status: newPlan.requires_status,
         })
         .eq('id', editingPlan.id);
@@ -107,9 +106,9 @@ export const BudgetPlanManagement = () => {
           description: newPlan.description,
           category_id: newPlan.category_id,
           estimated_amount: parseFloat(newPlan.estimated_amount),
-          is_fixed: newPlan.is_fixed,
           requires_status: newPlan.requires_status,
           user_id: user.id,
+          is_fixed: true, // Always set to true since all budget plans are fixed
         });
 
       if (error) {
