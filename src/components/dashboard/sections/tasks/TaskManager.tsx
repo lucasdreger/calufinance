@@ -22,9 +22,14 @@ export const TaskManager = () => {
   const { toast } = useToast();
 
   const updateTasks = async () => {
-    const currentDate = new Date();
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
-    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
+    // Get the selected month from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedMonth = parseInt(urlParams.get('month') || new Date().getMonth().toString());
+    const selectedYear = parseInt(urlParams.get('year') || new Date().getFullYear().toString());
+
+    // Calculate start and end of selected month
+    const startOfMonth = new Date(selectedYear, selectedMonth, 1).toISOString();
+    const endOfMonth = new Date(selectedYear, selectedMonth + 1, 0).toISOString();
 
     // Get Credit Card category
     const { data: categories } = await supabase
@@ -38,7 +43,7 @@ export const TaskManager = () => {
       return;
     }
 
-    // Fetch Credit Card expenses for the current month only
+    // Fetch Credit Card expenses for the selected month only
     const { data: creditCardExpenses } = await supabase
       .from('expenses')
       .select('amount')
@@ -58,7 +63,7 @@ export const TaskManager = () => {
       return;
     }
 
-    // Fetch Lucas's income for the current month - get the latest record
+    // Fetch Lucas's income for the selected month
     const { data: lucasIncome } = await supabase
       .from('income')
       .select('amount')
@@ -79,10 +84,12 @@ export const TaskManager = () => {
       remainingAmount,
       shouldShowTransfer: remainingAmount < 1000,
       transferAmount,
-      date: currentDate.toISOString(),
+      date: new Date().toISOString(),
       startOfMonth,
       endOfMonth,
-      incomeRecord: lucasIncome
+      incomeRecord: lucasIncome,
+      selectedMonth,
+      selectedYear
     });
 
     if (remainingAmount < 1000) {
@@ -119,6 +126,13 @@ export const TaskManager = () => {
   useEffect(() => {
     updateTasks();
 
+    // Listen for URL changes
+    const handleUrlChange = () => {
+      updateTasks();
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+
     const expensesChannel = supabase
       .channel('expenses_changes')
       .on('postgres_changes', 
@@ -140,6 +154,7 @@ export const TaskManager = () => {
       .subscribe();
 
     return () => {
+      window.removeEventListener('popstate', handleUrlChange);
       supabase.removeChannel(expensesChannel);
       supabase.removeChannel(incomeChannel);
     };
