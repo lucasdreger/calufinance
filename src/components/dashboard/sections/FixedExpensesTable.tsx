@@ -23,7 +23,8 @@ export const FixedExpensesTable = () => {
             name
           )
         `)
-        .eq('is_fixed', true);
+        .eq('user_id', user.id)  // Add this line to filter by user_id
+        .eq('is_fixed', true);   // Add this line to filter fixed expenses only
 
       if (error) {
         toast({
