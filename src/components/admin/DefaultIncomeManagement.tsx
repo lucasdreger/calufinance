@@ -107,14 +107,9 @@ export const DefaultIncomeManagement = () => {
     }
   };
 
-  const handleIncomeBlur = (field: keyof typeof defaultIncome) => (e: React.FocusEvent<HTMLInputElement>) => {
-    const numericValue = parseCurrencyInput(e.target.value);
-    setDefaultIncome(prev => ({ ...prev, [field]: numericValue }));
-  };
-
   const handleIncomeChange = (field: keyof typeof defaultIncome) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d.]/g, '');
-    setDefaultIncome(prev => ({ ...prev, [field]: parseCurrencyInput(value) }));
+    const value = parseCurrencyInput(e.target.value);
+    setDefaultIncome(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -129,8 +124,8 @@ export const DefaultIncomeManagement = () => {
             <Input
               value={formatCurrencyInput(defaultIncome.lucas)}
               onChange={handleIncomeChange('lucas')}
-              onBlur={handleIncomeBlur('lucas')}
               placeholder="Enter default income"
+              type="text"
             />
           </div>
           <div>
@@ -138,8 +133,8 @@ export const DefaultIncomeManagement = () => {
             <Input
               value={formatCurrencyInput(defaultIncome.camila)}
               onChange={handleIncomeChange('camila')}
-              onBlur={handleIncomeBlur('camila')}
               placeholder="Enter default income"
+              type="text"
             />
           </div>
           <div>
@@ -147,8 +142,8 @@ export const DefaultIncomeManagement = () => {
             <Input
               value={formatCurrencyInput(defaultIncome.other)}
               onChange={handleIncomeChange('other')}
-              onBlur={handleIncomeBlur('other')}
               placeholder="Enter other income"
+              type="text"
             />
           </div>
         </div>
