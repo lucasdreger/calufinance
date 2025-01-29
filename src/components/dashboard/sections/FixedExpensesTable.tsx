@@ -24,8 +24,8 @@ export const FixedExpensesTable = () => {
           )
         `)
         .eq('user_id', user.id)
-        .order('expenses_categories(name)', { ascending: true })  // First order by category name
-        .order('description', { ascending: true });  // Then by description
+        .order('expenses_categories(name)', { ascending: true })
+        .order('description', { ascending: true });
 
       if (error) {
         toast({
@@ -104,6 +104,8 @@ export const FixedExpensesTable = () => {
     });
   };
 
+  let currentCategory = '';
+
   return (
     <Table>
       <TableHeader>
@@ -115,21 +117,41 @@ export const FixedExpensesTable = () => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {budgetPlans.map((plan) => (
-          <TableRow key={plan.id}>
-            <TableCell>{plan.description}</TableCell>
-            <TableCell>{plan.expenses_categories.name}</TableCell>
-            <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
-            <TableCell>
-              {plan.requires_status && (
-                <Checkbox
-                  checked={statusMap[plan.id] || false}
-                  onCheckedChange={(checked) => handleStatusChange(plan.id, checked as boolean)}
-                />
-              )}
-            </TableCell>
-          </TableRow>
-        ))}
+        {budgetPlans.map((plan, index) => {
+          const isNewCategory = currentCategory !== plan.expenses_categories.name;
+          currentCategory = plan.expenses_categories.name;
+          
+          return (
+            <TableRow 
+              key={plan.id}
+              className={`
+                ${isNewCategory ? 'border-t-2 border-gray-200' : ''}
+                ${index % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'}
+                hover:bg-gray-100 transition-colors
+                ${isNewCategory ? 'mt-2' : ''}
+              `}
+            >
+              <TableCell className="pl-4">
+                {isNewCategory && (
+                  <div className="font-medium text-sm text-gray-500 -mt-2 mb-2">
+                    {plan.expenses_categories.name}
+                  </div>
+                )}
+                {plan.description}
+              </TableCell>
+              <TableCell>{plan.expenses_categories.name}</TableCell>
+              <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
+              <TableCell>
+                {plan.requires_status && (
+                  <Checkbox
+                    checked={statusMap[plan.id] || false}
+                    onCheckedChange={(checked) => handleStatusChange(plan.id, checked as boolean)}
+                  />
+                )}
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );
