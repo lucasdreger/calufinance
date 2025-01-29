@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
 
 interface ExpenseFormProps {
   categories: any[];
@@ -17,6 +18,20 @@ export const ExpenseForm = ({ categories, onExpenseAdded }: ExpenseFormProps) =>
     amount: '',
   });
   const { toast } = useToast();
+
+  const handleAmountBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const numericValue = parseCurrencyInput(e.target.value);
+    setNewExpense(prev => ({
+      ...prev,
+      amount: formatCurrencyInput(numericValue)
+    }));
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Allow only numbers and decimal point while typing
+    const value = e.target.value.replace(/[^\d.]/g, '');
+    setNewExpense(prev => ({ ...prev, amount: value }));
+  };
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +58,7 @@ export const ExpenseForm = ({ categories, onExpenseAdded }: ExpenseFormProps) =>
     const { error } = await supabase
       .from('expenses')
       .insert({
-        amount: parseFloat(newExpense.amount),
+        amount: parseCurrencyInput(newExpense.amount),
         description: newExpense.description,
         category_id: newExpense.category,
         date: new Date().toISOString().split('T')[0],
@@ -97,10 +112,10 @@ export const ExpenseForm = ({ categories, onExpenseAdded }: ExpenseFormProps) =>
       </Select>
       <div className="flex gap-2">
         <Input
-          type="number"
           placeholder="Amount"
           value={newExpense.amount}
-          onChange={(e) => setNewExpense(prev => ({ ...prev, amount: e.target.value }))}
+          onChange={handleAmountChange}
+          onBlur={handleAmountBlur}
         />
         <Button type="submit">Add</Button>
       </div>

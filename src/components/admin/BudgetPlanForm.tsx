@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
 
 interface BudgetPlanFormProps {
   categories: any[];
@@ -44,12 +45,26 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
       setNewPlan({
         description: initialValues.description,
         category_id: initialValues.category_id,
-        estimated_amount: initialValues.estimated_amount.toString(),
+        estimated_amount: formatCurrencyInput(initialValues.estimated_amount),
         is_fixed: initialValues.is_fixed,
         requires_status: initialValues.requires_status
       });
     }
   }, [initialValues]);
+
+  const handleAmountBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const numericValue = parseCurrencyInput(e.target.value);
+    setNewPlan(prev => ({
+      ...prev,
+      estimated_amount: formatCurrencyInput(numericValue)
+    }));
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Allow only numbers and decimal point while typing
+    const value = e.target.value.replace(/[^\d.]/g, '');
+    setNewPlan(prev => ({ ...prev, estimated_amount: value }));
+  };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) {
@@ -90,10 +105,10 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
         </SelectContent>
       </Select>
       <Input
-        type="number"
         placeholder="Estimated Amount"
         value={newPlan.estimated_amount}
-        onChange={(e) => setNewPlan(prev => ({ ...prev, estimated_amount: e.target.value }))}
+        onChange={handleAmountChange}
+        onBlur={handleAmountBlur}
       />
       <div className="flex items-center space-x-2">
         <Checkbox

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
 import { supabase } from "@/integrations/supabase/client";
 
 const defaultIncome = {
@@ -66,7 +66,6 @@ export const IncomeSection = () => {
       return;
     }
 
-    // Insert or update default values
     const date = new Date().toISOString().split('T')[0];
     const promises = [
       supabase.from('income').upsert({
@@ -105,6 +104,17 @@ export const IncomeSection = () => {
     }
   };
 
+  const handleIncomeBlur = (field: keyof typeof income) => (e: React.FocusEvent<HTMLInputElement>) => {
+    const numericValue = parseCurrencyInput(e.target.value);
+    setIncome(prev => ({ ...prev, [field]: numericValue }));
+  };
+
+  const handleIncomeChange = (field: keyof typeof income) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Allow only numbers and decimal point while typing
+    const value = e.target.value.replace(/[^\d.]/g, '');
+    setIncome(prev => ({ ...prev, [field]: parseCurrencyInput(value) }));
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -116,27 +126,27 @@ export const IncomeSection = () => {
           <div>
             <label className="text-sm font-medium">Lucas's Income</label>
             <Input
-              type="number"
-              value={income.lucas || ''}
-              onChange={(e) => setIncome(prev => ({ ...prev, lucas: parseFloat(e.target.value) || 0 }))}
+              value={formatCurrencyInput(income.lucas)}
+              onChange={handleIncomeChange('lucas')}
+              onBlur={handleIncomeBlur('lucas')}
               placeholder="Enter income"
             />
           </div>
           <div>
             <label className="text-sm font-medium">Camila's Income</label>
             <Input
-              type="number"
-              value={income.camila || ''}
-              onChange={(e) => setIncome(prev => ({ ...prev, camila: parseFloat(e.target.value) || 0 }))}
+              value={formatCurrencyInput(income.camila)}
+              onChange={handleIncomeChange('camila')}
+              onBlur={handleIncomeBlur('camila')}
               placeholder="Enter income"
             />
           </div>
           <div>
             <label className="text-sm font-medium">Other Income</label>
             <Input
-              type="number"
-              value={income.other || ''}
-              onChange={(e) => setIncome(prev => ({ ...prev, other: parseFloat(e.target.value) || 0 }))}
+              value={formatCurrencyInput(income.other)}
+              onChange={handleIncomeChange('other')}
+              onBlur={handleIncomeBlur('other')}
               placeholder="Enter other income"
             />
           </div>
