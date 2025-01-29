@@ -31,47 +31,37 @@ export const TasksSection = () => {
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
 
     // First, get the Credit Card category ID
-    const { data: categories, error: categoryError } = await supabase
+    const { data: categories } = await supabase
       .from('expenses_categories')
       .select('id')
       .eq('user_id', user.id)
       .eq('name', 'Credit Card')
-      .single();
+      .maybeSingle();
 
-    if (categoryError) {
-      console.error('Error fetching Credit Card category:', categoryError);
+    if (!categories) {
+      console.error('Credit Card category not found');
       return;
     }
 
     // Then fetch Credit Card expenses using the category ID
-    const { data: creditCardExpenses, error: creditCardError } = await supabase
+    const { data: creditCardExpenses } = await supabase
       .from('expenses')
       .select('amount')
       .eq('user_id', user.id)
       .eq('category_id', categories.id)
       .gte('date', startOfMonth)
       .lte('date', endOfMonth)
-      .single();
-
-    if (creditCardError && creditCardError.code !== 'PGRST116') {
-      console.error('Error fetching Credit Card expenses:', creditCardError);
-      return;
-    }
+      .maybeSingle();
 
     // Fetch Lucas's income
-    const { data: lucasIncome, error: incomeError } = await supabase
+    const { data: lucasIncome } = await supabase
       .from('income')
       .select('amount')
       .eq('user_id', user.id)
       .eq('source', 'Primary Job')
       .gte('date', startOfMonth)
       .lte('date', endOfMonth)
-      .single();
-
-    if (incomeError && incomeError.code !== 'PGRST116') {
-      console.error('Error fetching income:', incomeError);
-      return;
-    }
+      .maybeSingle();
 
     const creditCardTotal = creditCardExpenses?.amount || 0;
     const lucasTotal = lucasIncome?.amount || 0;
@@ -88,6 +78,11 @@ export const TasksSection = () => {
         variant: "default",
         className: "bg-yellow-50 border-yellow-200 text-yellow-800",
       });
+      
+      // Remove transfer task if it exists
+      setTasks(currentTasks => 
+        currentTasks.filter(task => task.id !== 'credit-card-transfer')
+      );
     } else if (remainingAmount < 1000) {
       const transferAmount = 1000 - remainingAmount;
       const newTask = {
@@ -112,6 +107,11 @@ export const TasksSection = () => {
         variant: "default",
         className: "bg-yellow-50 border-yellow-200 text-yellow-800",
       });
+    } else {
+      // Remove transfer task if it exists and remaining amount is sufficient
+      setTasks(currentTasks => 
+        currentTasks.filter(task => task.id !== 'credit-card-transfer')
+      );
     }
   };
 
