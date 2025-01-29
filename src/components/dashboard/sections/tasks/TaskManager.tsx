@@ -47,8 +47,6 @@ export const TaskManager = () => {
       .lte('date', endOfMonth)
       .maybeSingle();
 
-    const creditCardTotal = creditCardExpenses?.amount || 0;
-
     // Fetch Lucas's income for the current month
     const { data: lucasIncome } = await supabase
       .from('income')
@@ -58,10 +56,19 @@ export const TaskManager = () => {
       .lte('date', endOfMonth)
       .maybeSingle();
 
+    const creditCardTotal = creditCardExpenses?.amount || 0;
     const lucasTotal = lucasIncome?.amount || 0;
 
     // Calculate remaining amount after credit card bill
     const remainingAmount = lucasTotal - creditCardTotal;
+
+    console.log('Debug values:', {
+      lucasTotal,
+      creditCardTotal,
+      remainingAmount,
+      shouldShowTransfer: remainingAmount < 1000,
+      transferAmount: remainingAmount < 1000 ? 1000 - remainingAmount : 0
+    });
 
     if (creditCardTotal === 0) {
       toast({
