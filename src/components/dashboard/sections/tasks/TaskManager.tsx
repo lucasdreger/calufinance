@@ -59,7 +59,7 @@ export const TaskManager = () => {
     const creditCardTotal = creditCardExpenses?.amount || 0;
     const lucasTotal = lucasIncome?.amount || 0;
     const remainingAmount = lucasTotal - creditCardTotal;
-    const transferAmount = remainingAmount < 1000 ? 1000 - remainingAmount : 0;
+    const transferAmount = remainingAmount < 1000 ? (1000 - remainingAmount) : 0;
 
     console.log('Debug values:', {
       lucasTotal,
