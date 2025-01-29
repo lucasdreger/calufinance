@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency, parseCurrencyInput } from "@/utils/formatters";
-import { AlertCircle, Pencil, Save, Trash2, X } from "lucide-react";
+import { parseCurrencyInput } from "@/utils/formatters";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ExpenseRow } from "./expenses/ExpenseRow";
 
 interface ExpensesTableProps {
   expenses: any[];
@@ -17,15 +16,6 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const { toast } = useToast();
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Auto-focus and select input when editing starts
-  useEffect(() => {
-    if (editingId && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [editingId]);
 
   const handleEdit = (expense: any) => {
     setEditingId(expense.id);
@@ -78,7 +68,6 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
 
     setEditingId(null);
     setEditValue("");
-    // Trigger immediate update
     onExpenseUpdated();
     
     toast({
@@ -87,15 +76,12 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
     });
   };
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d.]/g, '');
-    setEditValue(value);
+  const handleAmountChange = (value: string) => {
+    const numericValue = value.replace(/[^\d.]/g, '');
+    setEditValue(numericValue);
   };
 
   const handleAmountBlur = async (expenseId: string) => {
-    const numericValue = parseCurrencyInput(editValue);
-    setEditValue(formatCurrency(numericValue).replace(/[^0-9.]/g, ''));
-    // Immediately save the value when focus is lost
     await handleSave(expenseId);
   };
 
@@ -107,13 +93,13 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
     }
   };
 
-  // Calculate Lucas's salary for the current month
+  // Calculate Lucas's salary
   const lucasSalary = expenses.find(expense => 
     expense.description?.toLowerCase().includes('lucas') && 
     expense.description?.toLowerCase().includes('salary')
   )?.amount || 0;
 
-  // Calculate the transfer amount (30% of Lucas's salary)
+  // Calculate transfer amount (30% of Lucas's salary)
   const transferAmount = lucasSalary * 0.3;
 
   return (
@@ -154,66 +140,19 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
         </TableHeader>
         <TableBody>
           {expenses.map((expense) => (
-            <TableRow key={expense.id}>
-              <TableCell>{expense.description}</TableCell>
-              <TableCell>{expense.expenses_categories?.name}</TableCell>
-              <TableCell>
-                {editingId === expense.id ? (
-                  <Input
-                    ref={inputRef}
-                    value={editValue}
-                    onChange={handleAmountChange}
-                    onBlur={() => handleAmountBlur(expense.id)}
-                    onKeyDown={(e) => handleKeyPress(e, expense.id)}
-                    className="max-w-[150px]"
-                  />
-                ) : (
-                  formatCurrency(expense.amount)
-                )}
-              </TableCell>
-              <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
-              <TableCell>
-                {editingId === expense.id ? (
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleSave(expense.id)}
-                      className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-500"
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleCancel}
-                      className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(expense)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(expense.id)}
-                      className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-500"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </TableCell>
-            </TableRow>
+            <ExpenseRow
+              key={expense.id}
+              expense={expense}
+              editingId={editingId}
+              editValue={editValue}
+              onEdit={handleEdit}
+              onSave={handleSave}
+              onDelete={handleDelete}
+              onCancel={handleCancel}
+              onEditValueChange={handleAmountChange}
+              onAmountBlur={handleAmountBlur}
+              onKeyPress={handleKeyPress}
+            />
           ))}
         </TableBody>
       </Table>
