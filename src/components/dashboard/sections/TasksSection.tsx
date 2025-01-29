@@ -74,6 +74,7 @@ export const TasksSection = () => {
   useEffect(() => {
     updateTasks();
 
+    // Subscribe to real-time changes
     const expensesChannel = supabase
       .channel('expenses_changes')
       .on('postgres_changes', 

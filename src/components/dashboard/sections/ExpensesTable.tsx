@@ -68,6 +68,8 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
 
     setEditingId(null);
     setEditValue("");
+    
+    // Trigger immediate update
     onExpenseUpdated();
     
     toast({
