@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { X } from "lucide-react";
 
 export const BudgetAdministration = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -122,6 +123,56 @@ export const BudgetAdministration = () => {
     });
   };
 
+  const handleDeleteCategory = async (id: string) => {
+    const { error } = await supabase
+      .from('expenses_categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: "Error deleting category",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    fetchCategories();
+    toast({
+      title: "Category Deleted",
+      description: "Category has been removed.",
+    });
+  };
+
+  const handleDeleteBudgetPlan = async (id: string) => {
+    const { error } = await supabase
+      .from('budget_plans')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: "Error deleting budget plan",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    fetchBudgetPlans();
+    toast({
+      title: "Budget Plan Deleted",
+      description: "Budget plan has been removed.",
+    });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAddCategory();
+    }
+  };
+
   const handleAddPlan = async () => {
     if (!newPlan.description || !newPlan.category_id || !newPlan.estimated_amount) {
       toast({
@@ -191,6 +242,7 @@ export const BudgetAdministration = () => {
                 placeholder="New Category Name"
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
               <Button onClick={handleAddCategory}>Add Category</Button>
             </div>
@@ -198,12 +250,23 @@ export const BudgetAdministration = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Category Name</TableHead>
+                  <TableHead className="w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {categories.map((category) => (
                   <TableRow key={category.id}>
                     <TableCell>{category.name}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -250,6 +313,7 @@ export const BudgetAdministration = () => {
                   <TableHead>Category</TableHead>
                   <TableHead>Estimated Amount</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead className="w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -259,6 +323,16 @@ export const BudgetAdministration = () => {
                     <TableCell>{plan.expenses_categories.name}</TableCell>
                     <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
                     <TableCell>{plan.is_fixed ? 'Fixed' : 'Variable'}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteBudgetPlan(plan.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
