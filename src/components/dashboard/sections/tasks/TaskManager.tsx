@@ -72,15 +72,14 @@ export const TaskManager = () => {
         currentTasks.filter(task => task.id !== 'credit-card-transfer')
       );
     } else {
-      // Calculate transfer amount based on Lucas's income if credit card bill is less than 1000
-      let transferAmount = creditCardTotal * 0.3; // Default 30% of credit card bill
+      // Calculate Lucas's remaining amount after credit card bill
+      const remainingAmount = lucasTotal - creditCardTotal;
       
-      if (creditCardTotal < 1000 && lucasTotal > 0) {
-        const remainingAmount = lucasTotal - creditCardTotal;
-        transferAmount = remainingAmount < 1000 ? 1000 - remainingAmount : 0;
-      }
+      // Only add transfer task if remaining amount is less than 1000
+      if (remainingAmount < 1000) {
+        // Calculate exact transfer amount needed
+        const transferAmount = 1000 - remainingAmount;
 
-      if (transferAmount > 0) {
         const newTask = {
           id: 'credit-card-transfer',
           name: `Camila to transfer ${formatCurrency(transferAmount)} for Credit Card bill`,
@@ -103,6 +102,11 @@ export const TaskManager = () => {
           variant: "default",
           className: "bg-yellow-50 border-yellow-200 text-yellow-800",
         });
+      } else {
+        // Remove transfer task if remaining amount is 1000 or more
+        setTasks(currentTasks => 
+          currentTasks.filter(task => task.id !== 'credit-card-transfer')
+        );
       }
     }
   };
