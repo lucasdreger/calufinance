@@ -40,7 +40,13 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
       case 'description':
         return direction * a.description.localeCompare(b.description);
       case 'category':
-        return direction * a.expenses_categories.name.localeCompare(b.expenses_categories.name);
+        // First sort by category name
+        const categoryComparison = direction * a.expenses_categories.name.localeCompare(b.expenses_categories.name);
+        // If categories are the same, sort by description
+        if (categoryComparison === 0) {
+          return direction * a.description.localeCompare(b.description);
+        }
+        return categoryComparison;
       case 'amount':
         return direction * (a.estimated_amount - b.estimated_amount);
       case 'status':
