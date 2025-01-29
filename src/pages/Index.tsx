@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BudgetOverview } from "@/components/dashboard/BudgetOverview";
 import { MonthlyView } from "@/components/dashboard/MonthlyView";
+import { BudgetAdministration } from "@/components/admin/BudgetAdministration";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { LogOut } from "lucide-react";
@@ -16,6 +17,10 @@ const Index = () => {
     await supabase.auth.signOut();
   };
 
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
   // This would be fetched from your database
   const mockData = {
     totalBudget: 50000,
@@ -25,6 +30,11 @@ const Index = () => {
       { month: 'Mar', planned: 5000, actual: 4900 },
     ]
   };
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -42,6 +52,7 @@ const Index = () => {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="monthly">Monthly Details</TabsTrigger>
+          <TabsTrigger value="admin">Administration</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -52,7 +63,39 @@ const Index = () => {
         </TabsContent>
 
         <TabsContent value="monthly">
-          <MonthlyView />
+          <div className="space-y-6">
+            <div className="flex gap-4 items-center">
+              <select
+                className="p-2 border rounded"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              >
+                {[currentYear - 1, currentYear, currentYear + 1].map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            
+            <Tabs defaultValue={currentMonth.toString()} className="space-y-6">
+              <TabsList>
+                {months.map((month, index) => (
+                  <TabsTrigger key={month} value={index.toString()}>
+                    {month}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {months.map((month, index) => (
+                <TabsContent key={month} value={index.toString()}>
+                  <MonthlyView />
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="admin">
+          <BudgetAdministration />
         </TabsContent>
       </Tabs>
     </div>
