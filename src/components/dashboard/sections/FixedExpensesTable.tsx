@@ -104,55 +104,56 @@ export const FixedExpensesTable = () => {
     });
   };
 
-  let currentCategory = '';
+  // Group plans by category
+  const groupedPlans = budgetPlans.reduce((acc, plan) => {
+    const category = plan.expenses_categories.name;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(plan);
+    return acc;
+  }, {} as Record<string, typeof budgetPlans>);
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Description</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Amount</TableHead>
-          <TableHead>Status</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {budgetPlans.map((plan, index) => {
-          const isNewCategory = currentCategory !== plan.expenses_categories.name;
-          currentCategory = plan.expenses_categories.name;
-          
-          return (
-            <TableRow 
-              key={plan.id}
-              className={`
-                ${isNewCategory ? 'border-t-2 border-gray-200' : ''}
-                ${index % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'}
-                hover:bg-gray-100 transition-colors
-                ${isNewCategory ? 'mt-2' : ''}
-              `}
-            >
-              <TableCell className="pl-4">
-                {isNewCategory && (
-                  <div className="font-medium text-sm text-gray-500 -mt-2 mb-2">
-                    {plan.expenses_categories.name}
-                  </div>
-                )}
-                {plan.description}
-              </TableCell>
-              <TableCell>{plan.expenses_categories.name}</TableCell>
-              <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
-              <TableCell>
-                {plan.requires_status && (
-                  <Checkbox
-                    checked={statusMap[plan.id] || false}
-                    onCheckedChange={(checked) => handleStatusChange(plan.id, checked as boolean)}
-                  />
-                )}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+    <div className="space-y-6">
+      {Object.entries(groupedPlans).map(([category, plans]) => (
+        <div key={category} className="bg-white rounded-lg shadow-sm border">
+          <div className="bg-gray-50 p-4 border-b">
+            <h3 className="font-semibold text-gray-700">{category}</h3>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {plans.map((plan, index) => (
+                <TableRow 
+                  key={plan.id}
+                  className={`
+                    ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
+                    hover:bg-gray-100 transition-colors
+                  `}
+                >
+                  <TableCell>{plan.description}</TableCell>
+                  <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
+                  <TableCell>
+                    {plan.requires_status && (
+                      <Checkbox
+                        checked={statusMap[plan.id] || false}
+                        onCheckedChange={(checked) => handleStatusChange(plan.id, checked as boolean)}
+                      />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ))}
+    </div>
   );
 };
