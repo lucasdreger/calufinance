@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/utils/formatters";
+import { supabase } from "@/integrations/supabase/client";
 
 const defaultIncome = {
   lucas: 3867,
@@ -17,12 +18,91 @@ export const IncomeSection = () => {
 
   const totalIncome = income.lucas + income.camila + income.other;
 
-  const handleLoadDefaults = () => {
-    setIncome(defaultIncome);
-    toast({
-      title: "Income Defaults Loaded",
-      description: "Your default monthly income has been loaded.",
-    });
+  const fetchIncome = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('income')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: false })
+      .limit(3);
+
+    if (error) {
+      toast({
+        title: "Error fetching income",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
+      const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
+      const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
+
+      setIncome({
+        lucas: lucasIncome,
+        camila: camilaIncome,
+        other: otherIncome,
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchIncome();
+  }, []);
+
+  const handleLoadDefaults = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to load defaults",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Insert or update default values
+    const date = new Date().toISOString().split('T')[0];
+    const promises = [
+      supabase.from('income').upsert({
+        amount: defaultIncome.lucas,
+        source: "Primary Job",
+        date,
+        user_id: user.id
+      }),
+      supabase.from('income').upsert({
+        amount: defaultIncome.camila,
+        source: "Wife Job 1",
+        date,
+        user_id: user.id
+      }),
+      supabase.from('income').upsert({
+        amount: defaultIncome.other,
+        source: "Other",
+        date,
+        user_id: user.id
+      })
+    ];
+
+    try {
+      await Promise.all(promises);
+      setIncome(defaultIncome);
+      toast({
+        title: "Income Defaults Loaded",
+        description: "Your default monthly income has been loaded and saved.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving defaults",
+        description: "There was an error saving your default income.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
