@@ -24,7 +24,6 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
           <TableHead>Description</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Estimated Amount</TableHead>
-          <TableHead>Type</TableHead>
           <TableHead>Status Required</TableHead>
           <TableHead className="w-[100px]">Actions</TableHead>
         </TableRow>
@@ -35,7 +34,6 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
             <TableCell>{plan.description}</TableCell>
             <TableCell>{plan.expenses_categories.name}</TableCell>
             <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
-            <TableCell>{plan.is_fixed ? 'Fixed' : 'Variable'}</TableCell>
             <TableCell>
               {plan.requires_status ? (
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
