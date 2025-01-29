@@ -72,13 +72,9 @@ export const TaskManager = () => {
         currentTasks.filter(task => task.id !== 'credit-card-transfer')
       );
     } else {
-      // Calculate transfer amount based on Lucas's income if credit card bill is less than 1000
-      let transferAmount = creditCardTotal * 0.3; // Default 30% of credit card bill
-      
-      if (creditCardTotal < 1000 && lucasTotal > 0) {
-        const remainingAmount = lucasTotal - creditCardTotal;
-        transferAmount = remainingAmount < 1000 ? 1000 - remainingAmount : 0;
-      }
+      // Calculate transfer amount to ensure Lucas keeps $1000 after paying the credit card
+      const remainingAmount = lucasTotal - creditCardTotal;
+      const transferAmount = remainingAmount > 1000 ? creditCardTotal : Math.max(0, lucasTotal - 1000);
 
       if (transferAmount > 0) {
         const newTask = {
