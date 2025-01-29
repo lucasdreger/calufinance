@@ -1,130 +1,140 @@
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface BudgetPlanFormProps {
-  categories: any[];
-  onSubmit: (plan: {
-    description: string;
-    category_id: string;
-    estimated_amount: string;
-    requires_status: boolean;
-  }) => void;
-  initialValues?: {
-    id?: string;
-    description: string;
-    category_id: string;
-    estimated_amount: number;
-    requires_status: boolean;
-  };
-  onCancel?: () => void;
+  onSubmit: (data: any) => void;
+  initialData?: any;
+  mode?: 'create' | 'edit';
 }
 
-export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }: BudgetPlanFormProps) => {
-  const [newPlan, setNewPlan] = useState({
-    description: '',
-    category_id: '',
-    estimated_amount: '',
-    requires_status: false
+export const BudgetPlanForm = ({ onSubmit, initialData, mode = 'create' }: BudgetPlanFormProps) => {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
+    category_id: initialData?.category_id || '',
+    description: initialData?.description || '',
+    estimated_amount: initialData?.estimated_amount || '',
+    is_fixed: initialData?.is_fixed || false,
+    requires_status: initialData?.requires_status || false,
   });
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (initialValues) {
-      setNewPlan({
-        description: initialValues.description,
-        category_id: initialValues.category_id,
-        estimated_amount: formatCurrencyInput(initialValues.estimated_amount),
-        requires_status: initialValues.requires_status
-      });
-    }
-  }, [initialValues]);
+    const fetchCategories = async () => {
+      const { data: categoriesData, error } = await supabase
+        .from('expenses_categories')
+        .select('*');
 
-  const handleAmountBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const numericValue = parseCurrencyInput(e.target.value);
-    setNewPlan(prev => ({
+      if (error) {
+        toast({
+          title: "Error fetching categories",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Sort categories alphabetically by name
+      const sortedCategories = categoriesData.sort((a, b) => 
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      );
+      
+      setCategories(sortedCategories);
+    };
+
+    fetchCategories();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
       ...prev,
-      estimated_amount: formatCurrencyInput(numericValue)
+      [field]: value
     }));
   };
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Allow only numbers and decimal point while typing
-    const value = e.target.value.replace(/[^\d.]/g, '');
-    setNewPlan(prev => ({ ...prev, estimated_amount: value }));
-  };
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-    onSubmit(newPlan);
-    if (!initialValues) {
-      setNewPlan({
-        description: '',
-        category_id: '',
-        estimated_amount: '',
-        requires_status: false
-      });
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-4">
-      <Input
-        placeholder="Description"
-        value={newPlan.description}
-        onChange={(e) => setNewPlan(prev => ({ ...prev, description: e.target.value }))}
-      />
-      <Select
-        value={newPlan.category_id}
-        onValueChange={(value) => setNewPlan(prev => ({ ...prev, category_id: value }))}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Category" />
-        </SelectTrigger>
-        <SelectContent>
-          {categories.map((category) => (
-            <SelectItem key={category.id} value={category.id}>
-              {category.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Input
-        placeholder="Estimated Amount"
-        value={newPlan.estimated_amount}
-        onChange={handleAmountChange}
-        onBlur={handleAmountBlur}
-      />
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="requires_status"
-          checked={newPlan.requires_status}
-          onCheckedChange={(checked) => 
-            setNewPlan(prev => ({ ...prev, requires_status: checked as boolean }))
-          }
-        />
-        <label htmlFor="requires_status" className="text-sm">Requires Status</label>
-      </div>
-      <div className="md:col-span-4 flex justify-end gap-2">
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select
+            value={formData.category_id}
+            onValueChange={(value) => handleInputChange('category_id', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Input
+            id="description"
+            value={formData.description}
+            onChange={(e) => handleInputChange('description', e.target.value)}
+            placeholder="Enter description"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="estimated_amount">Estimated Amount</Label>
+          <Input
+            id="estimated_amount"
+            type="number"
+            value={formData.estimated_amount}
+            onChange={(e) => handleInputChange('estimated_amount', e.target.value)}
+            placeholder="Enter amount"
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="is_fixed"
+            checked={formData.is_fixed}
+            onCheckedChange={(checked) => handleInputChange('is_fixed', checked)}
+          />
+          <Label htmlFor="is_fixed">Fixed Expense</Label>
+        </div>
+
+        {formData.is_fixed && (
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="requires_status"
+              checked={formData.requires_status}
+              onCheckedChange={(checked) => handleInputChange('requires_status', checked)}
+            />
+            <Label htmlFor="requires_status">Requires Status Tracking</Label>
+          </div>
         )}
-        <Button type="submit">
-          {initialValues ? 'Update' : 'Add'} Budget Plan
-        </Button>
       </div>
+
+      <Button type="submit" className="w-full">
+        {mode === 'create' ? 'Create Budget Plan' : 'Update Budget Plan'}
+      </Button>
     </form>
   );
 };
