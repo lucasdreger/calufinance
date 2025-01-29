@@ -15,46 +15,21 @@ import { useToast } from "@/components/ui/use-toast";
 
 interface BudgetPlanFormProps {
   onSubmit: (data: any) => void;
-  initialData?: any;
+  initialValues?: any;
   mode?: 'create' | 'edit';
+  onCancel?: () => void;
+  categories: any[];
 }
 
-export const BudgetPlanForm = ({ onSubmit, initialData, mode = 'create' }: BudgetPlanFormProps) => {
-  const [categories, setCategories] = useState<any[]>([]);
+export const BudgetPlanForm = ({ onSubmit, initialValues, mode = 'create', onCancel, categories }: BudgetPlanFormProps) => {
   const [formData, setFormData] = useState({
-    category_id: initialData?.category_id || '',
-    description: initialData?.description || '',
-    estimated_amount: initialData?.estimated_amount || '',
-    is_fixed: initialData?.is_fixed || false,
-    requires_status: initialData?.requires_status || false,
+    category_id: initialValues?.category_id || '',
+    description: initialValues?.description || '',
+    estimated_amount: initialValues?.estimated_amount || '',
+    is_fixed: initialValues?.is_fixed || false,
+    requires_status: initialValues?.requires_status || false,
   });
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      const { data: categoriesData, error } = await supabase
-        .from('expenses_categories')
-        .select('*');
-
-      if (error) {
-        toast({
-          title: "Error fetching categories",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Sort categories alphabetically by name
-      const sortedCategories = categoriesData.sort((a, b) => 
-        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-      );
-      
-      setCategories(sortedCategories);
-    };
-
-    fetchCategories();
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +42,11 @@ export const BudgetPlanForm = ({ onSubmit, initialData, mode = 'create' }: Budge
       [field]: value
     }));
   };
+
+  // Sort categories alphabetically
+  const sortedCategories = [...categories].sort((a, b) => 
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -81,7 +61,7 @@ export const BudgetPlanForm = ({ onSubmit, initialData, mode = 'create' }: Budge
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((category) => (
+              {sortedCategories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   {category.name}
                 </SelectItem>
@@ -132,9 +112,16 @@ export const BudgetPlanForm = ({ onSubmit, initialData, mode = 'create' }: Budge
         )}
       </div>
 
-      <Button type="submit" className="w-full">
-        {mode === 'create' ? 'Create Budget Plan' : 'Update Budget Plan'}
-      </Button>
+      <div className="flex gap-2">
+        <Button type="submit" className="flex-1">
+          {mode === 'create' ? 'Create Budget Plan' : 'Update Budget Plan'}
+        </Button>
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   );
 };
