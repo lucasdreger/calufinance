@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { formatCurrency } from "@/utils/formatters";
 
 export const IncomeSection = () => {
   const [incomes, setIncomes] = useState<any[]>([]);
@@ -159,7 +160,7 @@ export const IncomeSection = () => {
           <div className="flex justify-between items-center">
             <span className="font-medium">Total Monthly Income:</span>
             <span className="text-xl font-bold text-[#4a5568]">
-              ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(totalIncome)}
             </span>
           </div>
         </div>

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { FinanceLineChart } from "./charts/FinanceLineChart";
 
 export const FinanceOverview = () => {
   const [data, setData] = useState<any[]>([]);
@@ -36,7 +36,6 @@ export const FinanceOverview = () => {
 
     const monthlyData: Record<string, { income: number; expenses: number }> = {};
 
-    // Initialize the last 6 months
     for (let i = 0; i < 6; i++) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
@@ -44,7 +43,6 @@ export const FinanceOverview = () => {
       monthlyData[monthKey] = { income: 0, expenses: 0 };
     }
 
-    // Aggregate expenses
     expenses?.forEach((expense: any) => {
       const monthKey = expense.date.substring(0, 7);
       if (monthlyData[monthKey]) {
@@ -52,7 +50,6 @@ export const FinanceOverview = () => {
       }
     });
 
-    // Aggregate income
     incomes?.forEach((income: any) => {
       const monthKey = income.date.substring(0, 7);
       if (monthlyData[monthKey]) {
@@ -99,28 +96,13 @@ export const FinanceOverview = () => {
     };
   }, []);
 
-  const formatTooltipValue = (value: number) => {
-    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
   return (
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="text-[#1a365d]">Financial Overview</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={formatTooltipValue} />
-              <Line type="monotone" dataKey="income" stroke="#4a5568" strokeWidth={2} />
-              <Line type="monotone" dataKey="expenses" stroke="#ecc94b" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <FinanceLineChart data={data} />
       </CardContent>
     </Card>
   );

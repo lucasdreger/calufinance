@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, TooltipProps } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { ExpensePieChart } from "./charts/ExpensePieChart";
 
 export const ExpenseCategories = () => {
   const [data, setData] = useState<any[]>([]);
@@ -61,37 +61,13 @@ export const ExpenseCategories = () => {
     };
   }, []);
 
-  const formatTooltipValue = (value: number) => {
-    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
   return (
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="text-[#1a365d]">Expense Categories</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                label
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={formatTooltipValue} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <ExpensePieChart data={data} />
       </CardContent>
     </Card>
   );

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { formatCurrency } from "@/utils/formatters";
 
 export const MonthlySpending = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -137,7 +138,7 @@ export const MonthlySpending = () => {
                     </span>
                   </div>
                   <span className="text-sm font-semibold">
-                    Total: ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    Total: {formatCurrency(totalAmount)}
                   </span>
                 </label>
                 <div className="flex gap-2 mt-1">
