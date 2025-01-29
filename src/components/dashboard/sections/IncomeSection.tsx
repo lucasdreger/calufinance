@@ -18,44 +18,6 @@ export const IncomeSection = () => {
 
   const totalIncome = income.lucas + income.camila + income.other;
 
-  const fetchIncome = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('income')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_default', false)
-      .order('date', { ascending: false })
-      .limit(3);
-
-    if (error) {
-      toast({
-        title: "Error fetching income",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (data && data.length > 0) {
-      const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
-      const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
-      const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
-
-      setIncome({
-        lucas: lucasIncome,
-        camila: camilaIncome,
-        other: otherIncome,
-      });
-    }
-  };
-
-  useEffect(() => {
-    fetchIncome();
-  }, []);
-
   const handleLoadDefaults = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -95,26 +57,30 @@ export const IncomeSection = () => {
           date,
           user_id: user.id,
           is_default: false
-        }),
+        }, { onConflict: 'user_id,source,is_default' }),
         supabase.from('income').upsert({
           amount: camilaIncome,
           source: "Wife Job 1",
           date,
           user_id: user.id,
           is_default: false
-        }),
+        }, { onConflict: 'user_id,source,is_default' }),
         supabase.from('income').upsert({
           amount: otherIncome,
           source: "Other",
           date,
           user_id: user.id,
           is_default: false
-        })
+        }, { onConflict: 'user_id,source,is_default' })
       ];
 
       try {
         await Promise.all(promises);
-        await fetchIncome();
+        setIncome({
+          lucas: lucasIncome,
+          camila: camilaIncome,
+          other: otherIncome
+        });
         toast({
           title: "Income Defaults Loaded",
           description: "Your default monthly income has been loaded.",
