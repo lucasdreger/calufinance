@@ -36,7 +36,7 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
     description: '',
     category_id: '',
     estimated_amount: '',
-    is_fixed: true, // Always set to true since all budget plans are fixed
+    is_fixed: true,
     requires_status: true
   });
 
@@ -46,7 +46,7 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
         description: initialValues.description,
         category_id: initialValues.category_id,
         estimated_amount: formatCurrencyInput(initialValues.estimated_amount),
-        is_fixed: true, // Always set to true
+        is_fixed: true,
         requires_status: initialValues.requires_status
       });
     }
