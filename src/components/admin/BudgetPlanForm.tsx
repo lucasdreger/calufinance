@@ -27,7 +27,10 @@ export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) =>
     is_fixed: false
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     onSubmit(newPlan);
     setNewPlan({
       description: '',
@@ -38,7 +41,7 @@ export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) =>
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-4">
+    <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-4">
       <Input
         placeholder="Description"
         value={newPlan.description}
@@ -65,7 +68,7 @@ export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) =>
         value={newPlan.estimated_amount}
         onChange={(e) => setNewPlan(prev => ({ ...prev, estimated_amount: e.target.value }))}
       />
-      <Button onClick={handleSubmit}>Add Budget Plan</Button>
-    </div>
+      <Button type="submit">Add Budget Plan</Button>
+    </form>
   );
 };
