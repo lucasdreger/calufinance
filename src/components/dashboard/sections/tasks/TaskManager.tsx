@@ -68,6 +68,7 @@ export const TaskManager = () => {
         className: "bg-yellow-50 border-yellow-200 text-yellow-800",
       });
       
+      // Remove transfer task if credit card bill is not set
       setTasks(currentTasks => 
         currentTasks.filter(task => task.id !== 'credit-card-transfer')
       );
