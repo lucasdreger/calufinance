@@ -1,35 +1,15 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { formatCurrency } from "@/utils/formatters";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FixedExpensesTable } from "./FixedExpensesTable";
+import { ExpenseForm } from "./ExpenseForm";
+import { ExpensesTable } from "./ExpensesTable";
 
 export const ExpensesSection = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [newExpense, setNewExpense] = useState({
-    description: '',
-    category: '',
-    amount: '',
-  });
   const { toast } = useToast();
 
   const fetchCategories = async () => {
@@ -74,61 +54,6 @@ export const ExpensesSection = () => {
     });
   };
 
-  const handleAddExpense = async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-
-    if (!newExpense.description || !newExpense.category || !newExpense.amount) {
-      toast({
-        title: "Missing Fields",
-        description: "Please fill in all expense fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to add expenses",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { error } = await supabase
-      .from('expenses')
-      .insert({
-        amount: parseFloat(newExpense.amount),
-        description: newExpense.description,
-        category_id: newExpense.category,
-        date: new Date().toISOString().split('T')[0],
-        user_id: user.id,
-      });
-
-    if (error) {
-      toast({
-        title: "Error saving expense",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setNewExpense({
-      description: '',
-      category: '',
-      amount: '',
-    });
-
-    toast({
-      title: "Expense Added",
-      description: "Your expense has been recorded.",
-    });
-  };
-
   return (
     <>
       <Card>
@@ -137,24 +62,7 @@ export const ExpensesSection = () => {
           <Button onClick={handleLoadDefaults}>Load Defaults</Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell>Gym</TableCell>
-                <TableCell>{formatCurrency(100)}</TableCell>
-                <TableCell>
-                  <Checkbox />
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <FixedExpensesTable />
         </CardContent>
       </Card>
 
@@ -164,56 +72,14 @@ export const ExpensesSection = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <form onSubmit={handleAddExpense} className="grid gap-4 md:grid-cols-3">
-              <Input
-                placeholder="Description"
-                value={newExpense.description}
-                onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))}
-              />
-              <Select
-                value={newExpense.category}
-                onValueChange={(value) => setNewExpense(prev => ({ ...prev, category: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="Amount"
-                  value={newExpense.amount}
-                  onChange={(e) => setNewExpense(prev => ({ ...prev, amount: e.target.value }))}
-                />
-                <Button type="submit">Add</Button>
-              </div>
-            </form>
-
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses.map((expense, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{expense.description}</TableCell>
-                    <TableCell>{expense.category}</TableCell>
-                    <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ExpenseForm 
+              categories={categories}
+              onExpenseAdded={() => {
+                // Refresh expenses list after adding new expense
+                // This would be implemented when we add the fetchExpenses functionality
+              }}
+            />
+            <ExpensesTable expenses={expenses} />
           </div>
         </CardContent>
       </Card>
