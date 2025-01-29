@@ -11,12 +11,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { X } from "lucide-react";
+import { X, ArrowUpDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const CategoryManagement = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
 
   const fetchCategories = async () => {
@@ -33,7 +34,22 @@ export const CategoryManagement = () => {
       return;
     }
     
-    setCategories(data || []);
+    // Sort categories alphabetically by default
+    const sortedData = sortCategories(data || [], sortDirection);
+    setCategories(sortedData);
+  };
+
+  const sortCategories = (data: any[], direction: 'asc' | 'desc') => {
+    return [...data].sort((a, b) => {
+      const comparison = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      return direction === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  const toggleSort = () => {
+    const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortDirection(newDirection);
+    setCategories(sortCategories(categories, newDirection));
   };
 
   useEffect(() => {
@@ -141,7 +157,15 @@ export const CategoryManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold text-gray-700">Category Name</TableHead>
+                  <TableHead 
+                    className="font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={toggleSort}
+                  >
+                    <div className="flex items-center gap-2">
+                      Category Name
+                      <ArrowUpDown className="h-4 w-4" />
+                    </div>
+                  </TableHead>
                   <TableHead className="w-[100px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
