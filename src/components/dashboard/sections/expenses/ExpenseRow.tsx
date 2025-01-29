@@ -3,7 +3,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pencil, Save, Trash2, X } from "lucide-react";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, parseCurrencyInput } from "@/utils/formatters";
 
 interface ExpenseRowProps {
   expense: any;
@@ -39,11 +39,6 @@ export const ExpenseRow = ({
     }
   }, [editingId, expense.id]);
 
-  const handleSave = async (expenseId: string) => {
-    await onSave(expenseId);
-    window.location.reload();
-  };
-
   return (
     <TableRow>
       <TableCell>{expense.description}</TableCell>
@@ -54,14 +49,8 @@ export const ExpenseRow = ({
             ref={inputRef}
             value={editValue}
             onChange={(e) => onEditValueChange(e.target.value)}
-            onBlur={() => handleSave(expense.id)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSave(expense.id);
-              } else if (e.key === 'Escape') {
-                onCancel();
-              }
-            }}
+            onBlur={() => onAmountBlur(expense.id)}
+            onKeyDown={(e) => onKeyPress(e, expense.id)}
             className="max-w-[150px]"
           />
         ) : (
@@ -75,7 +64,7 @@ export const ExpenseRow = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleSave(expense.id)}
+              onClick={() => onSave(expense.id)}
               className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-500"
             >
               <Save className="h-4 w-4" />
