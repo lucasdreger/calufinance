@@ -31,17 +31,17 @@ export const TasksSection = () => {
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
 
-      // Fetch AMEX expenses
-      const { data: amexExpenses, error: amexError } = await supabase
+      // Fetch Credit Card expenses
+      const { data: creditCardExpenses, error: creditCardError } = await supabase
         .from('expenses')
         .select('amount, expenses_categories(name)')
         .eq('user_id', user.id)
-        .eq('expenses_categories.name', 'American Express bill')
+        .eq('expenses_categories.name', 'Credit Card')
         .gte('date', startOfMonth)
         .lte('date', endOfMonth);
 
-      if (amexError) {
-        console.error('Error fetching AMEX expenses:', amexError);
+      if (creditCardError) {
+        console.error('Error fetching Credit Card expenses:', creditCardError);
         return;
       }
 
@@ -59,27 +59,27 @@ export const TasksSection = () => {
         return;
       }
 
-      const amexTotal = amexExpenses?.[0]?.amount || 0;
+      const creditCardTotal = creditCardExpenses?.[0]?.amount || 0;
       const lucasTotal = lucasIncome?.[0]?.amount || 0;
-      const remainingAmount = lucasTotal - amexTotal;
+      const remainingAmount = lucasTotal - creditCardTotal;
 
-      if (amexTotal === 0) {
+      if (creditCardTotal === 0) {
         toast({
-          title: "American Express Bill Not Set",
-          description: "Please update the American Express bill amount for this month.",
+          title: "Credit Card Bill Not Set",
+          description: "Please update the Credit Card bill amount for this month.",
           variant: "default",
           className: "bg-yellow-50 border-yellow-200 text-yellow-800",
         });
       } else if (remainingAmount < 1000) {
         const transferAmount = 1000 - remainingAmount;
         const newTask = {
-          id: 'amex-transfer',
-          name: `Camila to transfer ${formatCurrency(transferAmount)} for AMEX bill`,
+          id: 'credit-card-transfer',
+          name: `Camila to transfer ${formatCurrency(transferAmount)} for Credit Card bill`,
           completed: false,
         };
 
         setTasks(currentTasks => {
-          const existingTaskIndex = currentTasks.findIndex(task => task.id === 'amex-transfer');
+          const existingTaskIndex = currentTasks.findIndex(task => task.id === 'credit-card-transfer');
           if (existingTaskIndex >= 0) {
             const updatedTasks = [...currentTasks];
             updatedTasks[existingTaskIndex] = newTask;
@@ -89,8 +89,8 @@ export const TasksSection = () => {
         });
 
         toast({
-          title: "AMEX Transfer Required",
-          description: `Camila needs to transfer ${formatCurrency(transferAmount)} to cover the AMEX bill`,
+          title: "Credit Card Transfer Required",
+          description: `Camila needs to transfer ${formatCurrency(transferAmount)} to cover the Credit Card bill`,
           variant: "default",
           className: "bg-yellow-50 border-yellow-200 text-yellow-800",
         });
