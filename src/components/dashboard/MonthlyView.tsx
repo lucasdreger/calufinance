@@ -35,6 +35,12 @@ const defaultTasks: MonthlyTask[] = [
   { id: '4', name: 'Transfer to Travel Fund', completed: false },
 ];
 
+const defaultIncome = {
+  lucas: 3867,
+  camila: 2511,
+  other: 220,
+};
+
 export const MonthlyView = () => {
   const [income, setIncome] = useState({ lucas: 0, camila: 0, other: 0 });
   const [tasks, setTasks] = useState<MonthlyTask[]>(defaultTasks);
@@ -53,6 +59,14 @@ export const MonthlyView = () => {
     toast({
       title: "Defaults Loaded",
       description: "Your default monthly expenses have been loaded.",
+    });
+  };
+
+  const handleLoadIncomeDefaults = () => {
+    setIncome(defaultIncome);
+    toast({
+      title: "Income Defaults Loaded",
+      description: "Your default monthly income has been loaded.",
     });
   };
 
@@ -110,8 +124,9 @@ export const MonthlyView = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Monthly Income</CardTitle>
+          <Button onClick={handleLoadIncomeDefaults}>Load Defaults</Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
