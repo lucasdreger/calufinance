@@ -8,14 +8,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { X, CheckCircle2, CircleSlash } from "lucide-react";
+import { X, CheckCircle2, CircleSlash, Pencil } from "lucide-react";
 
 interface BudgetPlanTableProps {
   budgetPlans: any[];
   onDelete: (id: string) => void;
+  onEdit: (plan: any) => void;
 }
 
-export const BudgetPlanTable = ({ budgetPlans, onDelete }: BudgetPlanTableProps) => {
+export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTableProps) => {
   return (
     <Table>
       <TableHeader>
@@ -25,7 +26,7 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete }: BudgetPlanTableProps)
           <TableHead>Estimated Amount</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Status Required</TableHead>
-          <TableHead className="w-[50px]">Actions</TableHead>
+          <TableHead className="w-[100px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -42,12 +43,20 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete }: BudgetPlanTableProps)
                 <CircleSlash className="h-4 w-4 text-gray-400" />
               )}
             </TableCell>
-            <TableCell>
+            <TableCell className="space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(plan)}
+                className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-500"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onDelete(plan.id)}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-500"
               >
                 <X className="h-4 w-4" />
               </Button>

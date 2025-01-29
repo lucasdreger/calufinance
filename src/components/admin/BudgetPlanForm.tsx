@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,9 +19,18 @@ interface BudgetPlanFormProps {
     is_fixed: boolean;
     requires_status: boolean;
   }) => void;
+  initialValues?: {
+    id?: string;
+    description: string;
+    category_id: string;
+    estimated_amount: number;
+    is_fixed: boolean;
+    requires_status: boolean;
+  };
+  onCancel?: () => void;
 }
 
-export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) => {
+export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }: BudgetPlanFormProps) => {
   const [newPlan, setNewPlan] = useState({
     description: '',
     category_id: '',
@@ -30,18 +39,32 @@ export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) =>
     requires_status: true
   });
 
+  useEffect(() => {
+    if (initialValues) {
+      setNewPlan({
+        description: initialValues.description,
+        category_id: initialValues.category_id,
+        estimated_amount: initialValues.estimated_amount.toString(),
+        is_fixed: initialValues.is_fixed,
+        requires_status: initialValues.requires_status
+      });
+    }
+  }, [initialValues]);
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
     }
     onSubmit(newPlan);
-    setNewPlan({
-      description: '',
-      category_id: '',
-      estimated_amount: '',
-      is_fixed: false,
-      requires_status: true
-    });
+    if (!initialValues) {
+      setNewPlan({
+        description: '',
+        category_id: '',
+        estimated_amount: '',
+        is_fixed: false,
+        requires_status: true
+      });
+    }
   };
 
   return (
@@ -92,7 +115,16 @@ export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) =>
         />
         <label htmlFor="requires_status" className="text-sm">Requires Status</label>
       </div>
-      <Button type="submit" className="md:col-span-5">Add Budget Plan</Button>
+      <div className="md:col-span-5 flex justify-end gap-2">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <Button type="submit">
+          {initialValues ? 'Update' : 'Add'} Budget Plan
+        </Button>
+      </div>
     </form>
   );
 };
