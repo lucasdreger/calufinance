@@ -87,6 +87,23 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
     setEditValue(formatCurrency(numericValue).replace(/[^0-9.]/g, ''));
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, expenseId: string) => {
+    if (e.key === 'Enter') {
+      handleSave(expenseId);
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
+  // Calculate Lucas's salary for the current month
+  const lucasSalary = expenses.find(expense => 
+    expense.description?.toLowerCase().includes('lucas') && 
+    expense.description?.toLowerCase().includes('salary')
+  )?.amount || 0;
+
+  // Calculate the transfer amount (30% of Lucas's salary)
+  const transferAmount = lucasSalary * 0.3;
+
   return (
     <div className="space-y-4">
       {expenses.some(expense => 
@@ -97,6 +114,18 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
           <AlertCircle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
             The Credit Card bill amount is set to 0. Please update it if you have received the bill.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {transferAmount > 0 && !expenses.some(expense => 
+        expense.description?.toLowerCase().includes('transfer to camila') &&
+        Math.abs(expense.amount - transferAmount) < 0.01
+      ) && (
+        <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
+          <AlertCircle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            Remember to transfer {formatCurrency(transferAmount)} to Camila (30% of Lucas's salary).
           </AlertDescription>
         </Alert>
       )}
@@ -122,6 +151,7 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
                     value={editValue}
                     onChange={handleAmountChange}
                     onBlur={handleAmountBlur}
+                    onKeyDown={(e) => handleKeyPress(e, expense.id)}
                     className="max-w-[150px]"
                   />
                 ) : (
