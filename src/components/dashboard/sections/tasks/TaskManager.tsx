@@ -52,7 +52,7 @@ export const TaskManager = () => {
       .lte('date', endOfMonth)
       .maybeSingle();
 
-    // Only proceed with credit card task if there's an actual bill amount
+    // Only proceed with income check if there's an actual credit card bill
     const creditCardTotal = creditCardExpenses?.amount || 0;
     
     if (creditCardTotal === 0) {
