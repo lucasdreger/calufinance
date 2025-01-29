@@ -69,25 +69,31 @@ export const DefaultIncomeManagement = () => {
         date,
         user_id: user.id,
         is_default: true
-      }),
+      }, { onConflict: 'user_id,source,is_default' }),
       supabase.from('income').upsert({
         amount: defaultIncome.camila,
         source: "Wife Job 1",
         date,
         user_id: user.id,
         is_default: true
-      }),
+      }, { onConflict: 'user_id,source,is_default' }),
       supabase.from('income').upsert({
         amount: defaultIncome.other,
         source: "Other",
         date,
         user_id: user.id,
         is_default: true
-      })
+      }, { onConflict: 'user_id,source,is_default' })
     ];
 
     try {
-      await Promise.all(promises);
+      const results = await Promise.all(promises);
+      const errors = results.filter(result => result.error);
+      
+      if (errors.length > 0) {
+        throw new Error(errors[0].error.message);
+      }
+
       toast({
         title: "Default Income Saved",
         description: "Your default monthly income has been saved.",

@@ -156,6 +156,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          is_default: boolean | null
           source: string
           user_id: string
         }
@@ -164,6 +165,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          is_default?: boolean | null
           source: string
           user_id: string
         }
@@ -172,6 +174,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          is_default?: boolean | null
           source?: string
           user_id?: string
         }
