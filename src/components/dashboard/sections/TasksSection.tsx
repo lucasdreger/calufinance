@@ -31,16 +31,30 @@ export const TasksSection = () => {
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
 
-      // Fetch Credit Card expenses
+      // First, get the Credit Card category ID
+      const { data: categories, error: categoryError } = await supabase
+        .from('expenses_categories')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', 'Credit Card')
+        .single();
+
+      if (categoryError) {
+        console.error('Error fetching Credit Card category:', categoryError);
+        return;
+      }
+
+      // Then fetch Credit Card expenses using the category ID
       const { data: creditCardExpenses, error: creditCardError } = await supabase
         .from('expenses')
-        .select('amount, expenses_categories(name)')
+        .select('amount')
         .eq('user_id', user.id)
-        .eq('expenses_categories.name', 'Credit Card')
+        .eq('category_id', categories.id)
         .gte('date', startOfMonth)
-        .lte('date', endOfMonth);
+        .lte('date', endOfMonth)
+        .single();
 
-      if (creditCardError) {
+      if (creditCardError && creditCardError.code !== 'PGRST116') {
         console.error('Error fetching Credit Card expenses:', creditCardError);
         return;
       }
@@ -52,16 +66,21 @@ export const TasksSection = () => {
         .eq('user_id', user.id)
         .eq('source', 'Primary Job')
         .gte('date', startOfMonth)
-        .lte('date', endOfMonth);
+        .lte('date', endOfMonth)
+        .single();
 
-      if (incomeError) {
+      if (incomeError && incomeError.code !== 'PGRST116') {
         console.error('Error fetching income:', incomeError);
         return;
       }
 
-      const creditCardTotal = creditCardExpenses?.[0]?.amount || 0;
-      const lucasTotal = lucasIncome?.[0]?.amount || 0;
+      const creditCardTotal = creditCardExpenses?.amount || 0;
+      const lucasTotal = lucasIncome?.amount || 0;
       const remainingAmount = lucasTotal - creditCardTotal;
+
+      console.log('Credit Card Total:', creditCardTotal);
+      console.log('Lucas Total:', lucasTotal);
+      console.log('Remaining Amount:', remainingAmount);
 
       if (creditCardTotal === 0) {
         toast({
