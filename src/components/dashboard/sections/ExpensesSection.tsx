@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { FixedExpensesTable } from "./FixedExpensesTable";
 import { ExpenseForm } from "./ExpenseForm";
 import { ExpensesTable } from "./ExpensesTable";
@@ -102,7 +102,7 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
       supabase.removeChannel(expensesChannel);
       supabase.removeChannel(categoriesChannel);
     };
-  }, [selectedYear, selectedMonth]); // Re-fetch when month or year changes
+  }, [selectedYear, selectedMonth]);
 
   const handleLoadDefaults = () => {
     toast({
@@ -133,7 +133,10 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
               categories={categories}
               onExpenseAdded={fetchExpenses}
             />
-            <ExpensesTable expenses={expenses} />
+            <ExpensesTable 
+              expenses={expenses} 
+              onExpenseUpdated={fetchExpenses}
+            />
           </div>
         </CardContent>
       </Card>

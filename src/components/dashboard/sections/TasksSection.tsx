@@ -34,9 +34,9 @@ export const TasksSection = () => {
       // Fetch AMEX expenses
       const { data: amexExpenses, error: amexError } = await supabase
         .from('expenses')
-        .select('amount')
+        .select('amount, expenses_categories(name)')
         .eq('user_id', user.id)
-        .eq('description', 'AMEX')
+        .eq('expenses_categories.name', 'American Express bill')
         .gte('date', startOfMonth)
         .lte('date', endOfMonth);
 
@@ -59,11 +59,17 @@ export const TasksSection = () => {
         return;
       }
 
-      const amexTotal = amexExpenses?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
+      const amexTotal = amexExpenses?.[0]?.amount || 0;
       const lucasTotal = lucasIncome?.[0]?.amount || 0;
       const remainingAmount = lucasTotal - amexTotal;
 
-      if (remainingAmount < 1000) {
+      if (amexTotal === 0) {
+        toast({
+          title: "American Express Bill Not Set",
+          description: "Please update the American Express bill amount for this month.",
+          variant: "warning",
+        });
+      } else if (remainingAmount < 1000) {
         const transferAmount = 1000 - remainingAmount;
         const newTask = {
           id: 'amex-transfer',
