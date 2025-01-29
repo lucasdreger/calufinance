@@ -1,97 +1,154 @@
-const updateTasks = async () => {
-  const currentDate = new Date();
-  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
-  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/formatters";
+import { TaskList } from "./TaskList";
 
-  // Obter categoria "Credit Card"
-  const { data: category } = await supabase
-    .from('expenses_categories')
-    .select('id')
-    .eq('name', 'Credit Card')
-    .maybeSingle();
+interface MonthlyTask {
+  id: string;
+  name: string;
+  completed: boolean;
+}
 
-  if (!category) {
-    console.error('Credit Card category not found');
-    return;
-  }
+const defaultTasks: MonthlyTask[] = [
+  { id: '1', name: 'Pay Rent', completed: false },
+  { id: '2', name: 'Transfer to Crypto', completed: false },
+  { id: '3', name: 'Transfer to Emergency Fund', completed: false },
+  { id: '4', name: 'Transfer to Travel Fund', completed: false },
+];
 
-  // Buscar todas as despesas do cartão de crédito no mês atual e somar os valores
-  const { data: creditCardExpenses } = await supabase
-    .from('expenses')
-    .select('amount')
-    .eq('category_id', category.id)
-    .gte('date', startOfMonth)
-    .lte('date', endOfMonth);
+export const TaskManager = () => {
+  const [tasks, setTasks] = useState<MonthlyTask[]>(defaultTasks);
+  const { toast } = useToast();
 
-  const creditCardTotal = creditCardExpenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
+  const updateTasks = async () => {
+    const currentDate = new Date();
+    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
 
-  // Buscar todas as rendas de Lucas no mês atual e somar os valores
-  const { data: lucasIncome } = await supabase
-    .from('income')
-    .select('amount')
-    .eq('source', 'Primary Job')
-    .gte('date', startOfMonth)
-    .lte('date', endOfMonth);
+    // Get Credit Card category
+    const { data: categories } = await supabase
+      .from('expenses_categories')
+      .select('id')
+      .eq('name', 'Credit Card')
+      .maybeSingle();
 
-  const lucasTotal = lucasIncome?.reduce((sum, income) => sum + income.amount, 0) || 0;
+    if (!categories) {
+      console.error('Credit Card category not found');
+      return;
+    }
 
-  // Calcular a quantia restante após pagar o cartão de crédito
-  const remainingAmount = lucasTotal - creditCardTotal;
+    // Fetch Credit Card expenses for the current month
+    const { data: creditCardExpenses } = await supabase
+      .from('expenses')
+      .select('amount')
+      .eq('category_id', categories.id)
+      .gte('date', startOfMonth)
+      .lte('date', endOfMonth)
+      .maybeSingle();
 
-  // Calcular o valor da transferência para garantir que pelo menos 1000 fiquem disponíveis
-  const transferAmount = remainingAmount < 1000 ? 1000 - remainingAmount : 0;
+    // Fetch Lucas's income for the current month
+    const { data: lucasIncome } = await supabase
+      .from('income')
+      .select('amount')
+      .eq('source', 'Primary Job')
+      .gte('date', startOfMonth)
+      .lte('date', endOfMonth)
+      .maybeSingle();
 
-<<<<<<< HEAD
-  console.log('Debug values:', {
-    lucasTotal,
-    creditCardTotal,
-    remainingAmount,
-    shouldShowTransfer: remainingAmount < 1000,
-    transferAmount,
-    date: currentDate.toISOString(),
-    startOfMonth,
-    endOfMonth
-  });
-=======
     const creditCardTotal = creditCardExpenses?.amount || 0;
     const lucasTotal = lucasIncome?.amount || 0;
     const remainingAmount = lucasTotal - creditCardTotal;
-    const transferAmount = remainingAmount < 1000 ? (1000 - remainingAmount) : 0;
->>>>>>> 370c4b460f8dd87ab27d0920b368aa7cf80da2c4
+    const transferAmount = remainingAmount < 1000 ? 1000 - remainingAmount : 0;
 
-  if (creditCardTotal === 0) {
-    toast({
-      title: "Credit Card Bill Not Set",
-      description: "Please update the Credit Card bill amount for this month.",
-      variant: "default",
-      className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+    console.log('Debug values:', {
+      lucasTotal,
+      creditCardTotal,
+      remainingAmount,
+      shouldShowTransfer: remainingAmount < 1000,
+      transferAmount,
+      date: currentDate.toISOString(),
+      startOfMonth,
+      endOfMonth
     });
 
-    setTasks(currentTasks => currentTasks.filter(task => task.id !== 'credit-card-transfer'));
-  } else if (remainingAmount < 1000) {
-    const newTask = {
-      id: 'credit-card-transfer',
-      name: `Transfer ${formatCurrency(transferAmount)} to Credit Card bill`,
-      completed: false,
+    if (creditCardTotal === 0) {
+      toast({
+        title: "Credit Card Bill Not Set",
+        description: "Please update the Credit Card bill amount for this month.",
+        variant: "default",
+        className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+      });
+      
+      // Remove transfer task if credit card bill is not set
+      setTasks(currentTasks => 
+        currentTasks.filter(task => task.id !== 'credit-card-transfer')
+      );
+    } else if (remainingAmount < 1000) {
+      const newTask = {
+        id: 'credit-card-transfer',
+        name: Transfer ${formatCurrency(transferAmount)} to Credit Card bill,
+        completed: false,
+      };
+
+      setTasks(currentTasks => {
+        const existingTaskIndex = currentTasks.findIndex(task => task.id === 'credit-card-transfer');
+        if (existingTaskIndex >= 0) {
+          const updatedTasks = [...currentTasks];
+          updatedTasks[existingTaskIndex] = newTask;
+          return updatedTasks;
+        }
+        return [...currentTasks, newTask];
+      });
+
+      toast({
+        title: "Credit Card Transfer Required",
+        description: Need to transfer ${formatCurrency(transferAmount)} for this month's Credit Card bill,
+        variant: "default",
+        className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+      });
+    } else {
+      // Remove transfer task if remaining amount is 1000 or more
+      setTasks(currentTasks => 
+        currentTasks.filter(task => task.id !== 'credit-card-transfer')
+      );
+    }
+  };
+
+  useEffect(() => {
+    updateTasks();
+
+    const expensesChannel = supabase
+      .channel('expenses_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'expenses' },
+        () => {
+          updateTasks();
+        }
+      )
+      .subscribe();
+
+    const incomeChannel = supabase
+      .channel('income_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'income' },
+        () => {
+          updateTasks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(expensesChannel);
+      supabase.removeChannel(incomeChannel);
     };
+  }, []);
 
-    setTasks(currentTasks => {
-      const existingTaskIndex = currentTasks.findIndex(task => task.id === 'credit-card-transfer');
-      if (existingTaskIndex >= 0) {
-        const updatedTasks = [...currentTasks];
-        updatedTasks[existingTaskIndex] = newTask;
-        return updatedTasks;
-      }
-      return [...currentTasks, newTask];
-    });
+  const handleTaskUpdate = (taskId: string, completed: boolean) => {
+    setTasks(tasks.map(t => 
+      t.id === taskId ? { ...t, completed } : t
+    ));
+  };
 
-    toast({
-      title: "Credit Card Transfer Required",
-      description: `Need to transfer ${formatCurrency(transferAmount)} for this month's Credit Card bill`,
-      variant: "default",
-      className: "bg-yellow-50 border-yellow-200 text-yellow-800",
-    });
-  } else {
-    setTasks(currentTasks => currentTasks.filter(task => task.id !== 'credit-card-transfer'));
-  }
+  return <TaskList tasks={tasks} onTaskUpdate={handleTaskUpdate} />;
 };
