@@ -1,14 +1,66 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-
-const mockData = [
-  { name: 'Housing', value: 2000, color: '#1a365d' },
-  { name: 'Insurance', value: 500, color: '#4a5568' },
-  { name: 'Investments', value: 1000, color: '#ecc94b' },
-  { name: 'Variable', value: 1500, color: '#fc8181' },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 export const ExpenseCategories = () => {
+  const [data, setData] = useState<any[]>([]);
+  const { toast } = useToast();
+  const colors = ['#1a365d', '#4a5568', '#ecc94b', '#fc8181', '#68d391'];
+
+  const fetchData = async () => {
+    const { data: expenses, error: expensesError } = await supabase
+      .from('expenses')
+      .select(`
+        amount,
+        expenses_categories (
+          name
+        )
+      `);
+    
+    if (expensesError) {
+      toast({
+        title: "Error fetching expenses",
+        description: expensesError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const categoryTotals = expenses?.reduce((acc: Record<string, number>, expense: any) => {
+      const categoryName = expense.expenses_categories?.name || 'Uncategorized';
+      acc[categoryName] = (acc[categoryName] || 0) + parseFloat(expense.amount);
+      return acc;
+    }, {});
+
+    const chartData = Object.entries(categoryTotals || {}).map(([name, value]) => ({
+      name,
+      value,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    }));
+
+    setData(chartData);
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    const channel = supabase
+      .channel('expenses_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'expenses' },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -19,7 +71,7 @@ export const ExpenseCategories = () => {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={mockData}
+                data={data}
                 cx="50%"
                 cy="50%"
                 outerRadius={80}
@@ -27,11 +79,11 @@ export const ExpenseCategories = () => {
                 dataKey="value"
                 label
               >
-                {mockData.map((entry, index) => (
+                {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(value) => `$${parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
