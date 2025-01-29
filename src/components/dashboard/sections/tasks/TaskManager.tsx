@@ -23,11 +23,32 @@ export const TaskManager = () => {
   const { toast } = useToast();
 
   const updateTasks = async () => {
-    const result = await calculateCreditCardTransfer();
-    
-    if (!result) return;
+    const currentDate = new Date();
+    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
 
-    const { creditCardTotal, transferAmount } = result;
+    // Get Credit Card category
+    const { data: categories } = await supabase
+      .from('expenses_categories')
+      .select('id')
+      .eq('name', 'Credit Card')
+      .maybeSingle();
+
+    if (!categories) {
+      console.error('Credit Card category not found');
+      return;
+    }
+
+    // Fetch Credit Card expenses for the current month
+    const { data: creditCardExpenses } = await supabase
+      .from('expenses')
+      .select('amount')
+      .eq('category_id', categories.id)
+      .gte('date', startOfMonth)
+      .lte('date', endOfMonth)
+      .maybeSingle();
+
+    const creditCardTotal = creditCardExpenses?.amount || 0;
 
     if (creditCardTotal === 0) {
       toast({
@@ -40,33 +61,34 @@ export const TaskManager = () => {
       setTasks(currentTasks => 
         currentTasks.filter(task => task.id !== 'credit-card-transfer')
       );
-    } else if (transferAmount > 0) {
-      const newTask = {
-        id: 'credit-card-transfer',
-        name: `Camila to transfer ${formatCurrency(transferAmount)} for Credit Card bill`,
-        completed: false,
-      };
-
-      setTasks(currentTasks => {
-        const existingTaskIndex = currentTasks.findIndex(task => task.id === 'credit-card-transfer');
-        if (existingTaskIndex >= 0) {
-          const updatedTasks = [...currentTasks];
-          updatedTasks[existingTaskIndex] = newTask;
-          return updatedTasks;
-        }
-        return [...currentTasks, newTask];
-      });
-
-      toast({
-        title: "Credit Card Transfer Required",
-        description: `Camila needs to transfer ${formatCurrency(transferAmount)} to cover the Credit Card bill`,
-        variant: "default",
-        className: "bg-yellow-50 border-yellow-200 text-yellow-800",
-      });
     } else {
-      setTasks(currentTasks => 
-        currentTasks.filter(task => task.id !== 'credit-card-transfer')
-      );
+      // Calculate Camila's share (30% of the total)
+      const transferAmount = creditCardTotal * 0.3;
+
+      if (transferAmount > 0) {
+        const newTask = {
+          id: 'credit-card-transfer',
+          name: `Camila to transfer ${formatCurrency(transferAmount)} for Credit Card bill`,
+          completed: false,
+        };
+
+        setTasks(currentTasks => {
+          const existingTaskIndex = currentTasks.findIndex(task => task.id === 'credit-card-transfer');
+          if (existingTaskIndex >= 0) {
+            const updatedTasks = [...currentTasks];
+            updatedTasks[existingTaskIndex] = newTask;
+            return updatedTasks;
+          }
+          return [...currentTasks, newTask];
+        });
+
+        toast({
+          title: "Credit Card Transfer Required",
+          description: `Camila needs to transfer ${formatCurrency(transferAmount)} for this month's Credit Card bill`,
+          variant: "default",
+          className: "bg-yellow-50 border-yellow-200 text-yellow-800",
+        });
+      }
     }
   };
 

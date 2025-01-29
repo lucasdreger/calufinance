@@ -168,6 +168,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_credit_card_expenses_for_user: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: undefined
+      }
       ensure_amex_category: {
         Args: {
           user_uuid: string
