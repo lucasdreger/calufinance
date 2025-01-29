@@ -36,7 +36,7 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
     description: '',
     category_id: '',
     estimated_amount: '',
-    is_fixed: false,
+    is_fixed: true, // Always set to true since all budget plans are fixed
     requires_status: true
   });
 
@@ -46,7 +46,7 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
         description: initialValues.description,
         category_id: initialValues.category_id,
         estimated_amount: formatCurrencyInput(initialValues.estimated_amount),
-        is_fixed: initialValues.is_fixed,
+        is_fixed: true, // Always set to true
         requires_status: initialValues.requires_status
       });
     }
@@ -76,14 +76,14 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
         description: '',
         category_id: '',
         estimated_amount: '',
-        is_fixed: false,
+        is_fixed: true,
         requires_status: true
       });
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-5">
+    <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-4">
       <Input
         placeholder="Description"
         value={newPlan.description}
@@ -112,16 +112,6 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
       />
       <div className="flex items-center space-x-2">
         <Checkbox
-          id="is_fixed"
-          checked={newPlan.is_fixed}
-          onCheckedChange={(checked) => 
-            setNewPlan(prev => ({ ...prev, is_fixed: checked as boolean }))
-          }
-        />
-        <label htmlFor="is_fixed" className="text-sm">Fixed Expense</label>
-      </div>
-      <div className="flex items-center space-x-2">
-        <Checkbox
           id="requires_status"
           checked={newPlan.requires_status}
           onCheckedChange={(checked) => 
@@ -130,7 +120,7 @@ export const BudgetPlanForm = ({ categories, onSubmit, initialValues, onCancel }
         />
         <label htmlFor="requires_status" className="text-sm">Requires Status</label>
       </div>
-      <div className="md:col-span-5 flex justify-end gap-2">
+      <div className="md:col-span-4 flex justify-end gap-2">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
