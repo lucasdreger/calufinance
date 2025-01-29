@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { X } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const CategoryManagement = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -113,42 +114,67 @@ export const CategoryManagement = () => {
   };
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-lg font-medium">Categories</h3>
-      <div className="flex gap-2">
-        <Input
-          placeholder="New Category Name"
-          value={newCategory}
-          onChange={(e) => setNewCategory(e.target.value)}
-          onKeyPress={handleKeyPress}
-        />
-        <Button onClick={handleAddCategory}>Add Category</Button>
-      </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Category Name</TableHead>
-            <TableHead className="w-[50px]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {categories.map((category) => (
-            <TableRow key={category.id}>
-              <TableCell>{category.name}</TableCell>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteCategory(category.id)}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <Card className="bg-white shadow-sm">
+      <CardContent className="p-6">
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Categories</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Manage your expense categories to better organize your budget
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+            <Input
+              placeholder="New Category Name"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="flex-1"
+            />
+            <Button onClick={handleAddCategory} className="whitespace-nowrap">
+              Add Category
+            </Button>
+          </div>
+
+          <div className="rounded-lg border border-gray-100 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-semibold text-gray-700">Category Name</TableHead>
+                  <TableHead className="w-[100px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {categories.map((category) => (
+                  <TableRow key={category.id} className="hover:bg-gray-50">
+                    <TableCell className="font-medium text-gray-900">
+                      {category.name}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-500"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {categories.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center py-8 text-gray-500">
+                      No categories yet. Add your first category above.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
