@@ -23,7 +23,9 @@ export const FixedExpensesTable = () => {
             name
           )
         `)
-        .eq('user_id', user.id);  // Add this line to filter by user_id
+        .eq('user_id', user.id)
+        .order('expenses_categories(name)', { ascending: true })  // First order by category name
+        .order('description', { ascending: true });  // Then by description
 
       if (error) {
         toast({
