@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,15 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const { toast } = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus and select input when editing starts
+  useEffect(() => {
+    if (editingId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingId]);
 
   const handleEdit = (expense: any) => {
     setEditingId(expense.id);
@@ -82,9 +91,11 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
     setEditValue(value);
   };
 
-  const handleAmountBlur = () => {
+  const handleAmountBlur = async (expenseId: string) => {
     const numericValue = parseCurrencyInput(editValue);
     setEditValue(formatCurrency(numericValue).replace(/[^0-9.]/g, ''));
+    // Immediately save the value when focus is lost
+    await handleSave(expenseId);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, expenseId: string) => {
@@ -148,9 +159,10 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
               <TableCell>
                 {editingId === expense.id ? (
                   <Input
+                    ref={inputRef}
                     value={editValue}
                     onChange={handleAmountChange}
-                    onBlur={handleAmountBlur}
+                    onBlur={() => handleAmountBlur(expense.id)}
                     onKeyDown={(e) => handleKeyPress(e, expense.id)}
                     className="max-w-[150px]"
                   />
