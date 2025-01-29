@@ -61,7 +61,7 @@ export const TaskManager = () => {
     }
 
     const creditCardTotal = creditCardExpenses?.amount || 0;
-    const lucasTotal = lucasIncome?.reduce((sum, income) => sum + parseFloat(income.amount), 0) || 0;
+    const lucasTotal = lucasIncome?.reduce((sum, income) => sum + Number(income.amount), 0) || 0;
     const remainingAmount = lucasTotal - creditCardTotal;
     const transferAmount = remainingAmount < 1000 ? Math.max(0, 1000 - remainingAmount) : 0;
 
