@@ -14,27 +14,43 @@ export const CurrencyInput = ({
   className,
 }: CurrencyInputProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Remove any non-numeric characters except decimal point
-    const cleanValue = e.target.value.replace(/[^0-9.]/g, '');
+    // Get raw input value
+    let inputValue = e.target.value;
     
-    // Convert to number, handling both integers and decimals
-    let numericValue = parseFloat(cleanValue);
+    // Remove all non-numeric characters except decimal point
+    inputValue = inputValue.replace(/[^0-9.]/g, '');
     
-    // If it's not a valid number, set to 0
-    if (isNaN(numericValue)) {
-      numericValue = 0;
+    // Handle empty or invalid input
+    if (!inputValue) {
+      onChange(0);
+      return;
     }
+
+    // Ensure only one decimal point
+    const parts = inputValue.split('.');
+    if (parts.length > 2) {
+      inputValue = parts[0] + '.' + parts.slice(1).join('');
+    }
+
+    // Convert to number
+    const numericValue = parseFloat(inputValue);
     
-    onChange(numericValue);
+    // Update if it's a valid number
+    if (!isNaN(numericValue)) {
+      onChange(numericValue);
+    }
   };
 
-  // Format the value to always show 2 decimal places
-  const formattedValue = value.toFixed(2);
+  // Only format the display value, not the input value
+  const displayValue = value === 0 && document.activeElement === document.getElementById('currency-input') 
+    ? ''  // Show empty string while editing if value is 0
+    : value.toFixed(2);  // Otherwise show formatted value
 
   return (
     <Input
+      id="currency-input"
       type="text"
-      value={formattedValue}
+      value={displayValue}
       onChange={handleChange}
       placeholder={placeholder}
       className={className}
