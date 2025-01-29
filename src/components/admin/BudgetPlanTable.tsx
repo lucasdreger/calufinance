@@ -11,10 +11,20 @@ import {
 import { X, CheckCircle2, CircleSlash, Pencil, ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 
+interface BudgetPlan {
+  id: string;
+  description: string;
+  estimated_amount: number;
+  requires_status: boolean;
+  expenses_categories: {
+    name: string;
+  };
+}
+
 interface BudgetPlanTableProps {
-  budgetPlans: any[];
+  budgetPlans: BudgetPlan[];
   onDelete: (id: string) => void;
-  onEdit: (plan: any) => void;
+  onEdit: (plan: BudgetPlan) => void;
 }
 
 type SortField = 'description' | 'category' | 'amount' | 'status';
@@ -72,7 +82,7 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
     }
     acc[category].push(plan);
     return acc;
-  }, {} as Record<string, typeof sortedPlans>);
+  }, {} as Record<string, BudgetPlan[]>);
 
   return (
     <div className="space-y-6">
@@ -118,7 +128,7 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
               </TableRow>
             </TableHeader>
             <TableBody>
-              {plans.map((plan: any, index: number) => (
+              {plans.map((plan: BudgetPlan, index: number) => (
                 <TableRow 
                   key={plan.id}
                   className={`

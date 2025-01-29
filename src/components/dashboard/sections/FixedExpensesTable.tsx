@@ -5,8 +5,18 @@ import { formatCurrency } from "@/utils/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
+interface BudgetPlan {
+  id: string;
+  description: string;
+  estimated_amount: number;
+  requires_status: boolean;
+  expenses_categories: {
+    name: string;
+  };
+}
+
 export const FixedExpensesTable = () => {
-  const [budgetPlans, setBudgetPlans] = useState<any[]>([]);
+  const [budgetPlans, setBudgetPlans] = useState<BudgetPlan[]>([]);
   const [statusMap, setStatusMap] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
@@ -112,7 +122,7 @@ export const FixedExpensesTable = () => {
     }
     acc[category].push(plan);
     return acc;
-  }, {} as Record<string, typeof budgetPlans>);
+  }, {} as Record<string, BudgetPlan[]>);
 
   return (
     <div className="space-y-6">
