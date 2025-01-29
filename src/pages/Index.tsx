@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { FinanceOverview } from "@/components/finance/FinanceOverview";
 import { ExpenseCategories } from "@/components/finance/ExpenseCategories";
 import { IncomeSection } from "@/components/finance/IncomeSection";
@@ -20,7 +19,7 @@ const Index = () => {
         </h1>
         <Button variant="outline" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          Sair
+          Logout
         </Button>
       </div>
 
