@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { calculateCreditCardTransfer } from "@/utils/creditCardCalculations";
 import { formatCurrency } from "@/utils/formatters";
 import { TaskList } from "./TaskList";
 
@@ -50,6 +49,17 @@ export const TaskManager = () => {
 
     const creditCardTotal = creditCardExpenses?.amount || 0;
 
+    // Fetch Lucas's income for the current month
+    const { data: lucasIncome } = await supabase
+      .from('income')
+      .select('amount')
+      .eq('source', 'Primary Job')
+      .gte('date', startOfMonth)
+      .lte('date', endOfMonth)
+      .maybeSingle();
+
+    const lucasTotal = lucasIncome?.amount || 0;
+
     if (creditCardTotal === 0) {
       toast({
         title: "Credit Card Bill Not Set",
@@ -62,8 +72,13 @@ export const TaskManager = () => {
         currentTasks.filter(task => task.id !== 'credit-card-transfer')
       );
     } else {
-      // Calculate Camila's share (30% of the total)
-      const transferAmount = creditCardTotal * 0.3;
+      // Calculate transfer amount based on Lucas's income if credit card bill is less than 1000
+      let transferAmount = creditCardTotal * 0.3; // Default 30% of credit card bill
+      
+      if (creditCardTotal < 1000 && lucasTotal > 0) {
+        const remainingAmount = lucasTotal - creditCardTotal;
+        transferAmount = remainingAmount < 1000 ? 1000 - remainingAmount : 0;
+      }
 
       if (transferAmount > 0) {
         const newTask = {
