@@ -58,8 +58,6 @@ export const TaskManager = () => {
 
     const creditCardTotal = creditCardExpenses?.amount || 0;
     const lucasTotal = lucasIncome?.amount || 0;
-
-    // Calculate remaining amount after credit card bill
     const remainingAmount = lucasTotal - creditCardTotal;
 
     console.log('Debug values:', {
@@ -67,7 +65,10 @@ export const TaskManager = () => {
       creditCardTotal,
       remainingAmount,
       shouldShowTransfer: remainingAmount < 1000,
-      transferAmount: remainingAmount < 1000 ? 1000 - remainingAmount : 0
+      transferAmount: remainingAmount < 1000 ? 1000 - remainingAmount : 0,
+      date: currentDate.toISOString(),
+      startOfMonth,
+      endOfMonth
     });
 
     if (creditCardTotal === 0) {
@@ -88,7 +89,7 @@ export const TaskManager = () => {
 
       const newTask = {
         id: 'credit-card-transfer',
-        name: `Camila to transfer ${formatCurrency(transferAmount)} for Credit Card bill`,
+        name: `Transfer ${formatCurrency(transferAmount)} to Credit Card bill`,
         completed: false,
       };
 
@@ -104,7 +105,7 @@ export const TaskManager = () => {
 
       toast({
         title: "Credit Card Transfer Required",
-        description: `Camila needs to transfer ${formatCurrency(transferAmount)} for this month's Credit Card bill`,
+        description: `Need to transfer ${formatCurrency(transferAmount)} for this month's Credit Card bill`,
         variant: "default",
         className: "bg-yellow-50 border-yellow-200 text-yellow-800",
       });
