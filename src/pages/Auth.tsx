@@ -31,7 +31,7 @@ const Auth = () => {
         toast({
           variant: "destructive",
           title: "Erro ao fazer login",
-          description: "Credenciais inválidas. Use 'lucas' ou 'camila' como usuário.",
+          description: "Credenciais inválidas. Use 'lucas' como usuário e 'abcd1234' como senha.",
         });
         return;
       }
@@ -93,7 +93,7 @@ const Auth = () => {
                 <Input
                   id="username"
                   type="text"
-                  placeholder="lucas ou camila"
+                  placeholder="lucas"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -104,6 +104,7 @@ const Auth = () => {
                 <Input
                   id="password"
                   type="password"
+                  placeholder="abcd1234"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
