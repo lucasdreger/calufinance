@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
 
 interface CurrencyInputProps {
   value: number;
@@ -15,17 +14,31 @@ export const CurrencyInput = ({
   className,
 }: CurrencyInputProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = parseCurrencyInput(e.target.value);
-    onChange(newValue);
+    // Remove any non-numeric characters except decimal point
+    const cleanValue = e.target.value.replace(/[^0-9.]/g, '');
+    
+    // Convert to number, handling both integers and decimals
+    let numericValue = parseFloat(cleanValue);
+    
+    // If it's not a valid number, set to 0
+    if (isNaN(numericValue)) {
+      numericValue = 0;
+    }
+    
+    onChange(numericValue);
   };
+
+  // Format the value to always show 2 decimal places
+  const formattedValue = value.toFixed(2);
 
   return (
     <Input
       type="text"
-      value={formatCurrencyInput(value)}
+      value={formattedValue}
       onChange={handleChange}
       placeholder={placeholder}
       className={className}
+      inputMode="decimal"
     />
   );
 };
