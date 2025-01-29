@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Select,
   SelectContent,
@@ -16,6 +17,7 @@ interface BudgetPlanFormProps {
     category_id: string;
     estimated_amount: string;
     is_fixed: boolean;
+    requires_status: boolean;
   }) => void;
 }
 
@@ -24,7 +26,8 @@ export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) =>
     description: '',
     category_id: '',
     estimated_amount: '',
-    is_fixed: false
+    is_fixed: false,
+    requires_status: true
   });
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -36,12 +39,13 @@ export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) =>
       description: '',
       category_id: '',
       estimated_amount: '',
-      is_fixed: false
+      is_fixed: false,
+      requires_status: true
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-4">
+    <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-5">
       <Input
         placeholder="Description"
         value={newPlan.description}
@@ -68,7 +72,27 @@ export const BudgetPlanForm = ({ categories, onSubmit }: BudgetPlanFormProps) =>
         value={newPlan.estimated_amount}
         onChange={(e) => setNewPlan(prev => ({ ...prev, estimated_amount: e.target.value }))}
       />
-      <Button type="submit">Add Budget Plan</Button>
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="is_fixed"
+          checked={newPlan.is_fixed}
+          onCheckedChange={(checked) => 
+            setNewPlan(prev => ({ ...prev, is_fixed: checked as boolean }))
+          }
+        />
+        <label htmlFor="is_fixed" className="text-sm">Fixed Expense</label>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="requires_status"
+          checked={newPlan.requires_status}
+          onCheckedChange={(checked) => 
+            setNewPlan(prev => ({ ...prev, requires_status: checked as boolean }))
+          }
+        />
+        <label htmlFor="requires_status" className="text-sm">Requires Status</label>
+      </div>
+      <Button type="submit" className="md:col-span-5">Add Budget Plan</Button>
     </form>
   );
 };

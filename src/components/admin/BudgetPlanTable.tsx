@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { X } from "lucide-react";
+import { X, CheckCircle2, CircleSlash } from "lucide-react";
 
 interface BudgetPlanTableProps {
   budgetPlans: any[];
@@ -24,6 +24,7 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete }: BudgetPlanTableProps)
           <TableHead>Category</TableHead>
           <TableHead>Estimated Amount</TableHead>
           <TableHead>Type</TableHead>
+          <TableHead>Status Required</TableHead>
           <TableHead className="w-[50px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -34,6 +35,13 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete }: BudgetPlanTableProps)
             <TableCell>{plan.expenses_categories.name}</TableCell>
             <TableCell>{formatCurrency(plan.estimated_amount)}</TableCell>
             <TableCell>{plan.is_fixed ? 'Fixed' : 'Variable'}</TableCell>
+            <TableCell>
+              {plan.requires_status ? (
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              ) : (
+                <CircleSlash className="h-4 w-4 text-gray-400" />
+              )}
+            </TableCell>
             <TableCell>
               <Button
                 variant="ghost"
