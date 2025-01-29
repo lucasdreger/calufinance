@@ -52,18 +52,17 @@ export const TaskManager = () => {
       .lte('date', endOfMonth)
       .maybeSingle();
 
-    // Only proceed with income check if there's an actual credit card bill
     const creditCardTotal = creditCardExpenses?.amount || 0;
     
+    // Remove transfer task if credit card bill is not set or is 0
     if (creditCardTotal === 0) {
-      // Remove transfer task if credit card bill is not set
       setTasks(currentTasks => 
         currentTasks.filter(task => task.id !== 'credit-card-transfer')
       );
       return;
     }
 
-    // Fetch Lucas's income for the selected month
+    // Only proceed with income check if there's an actual credit card bill amount
     const { data: lucasIncome } = await supabase
       .from('income')
       .select('amount')
