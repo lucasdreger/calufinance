@@ -13,14 +13,16 @@ export const ExpensesTable = ({ expenses }: ExpensesTableProps) => {
           <TableHead>Description</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Amount</TableHead>
+          <TableHead>Date</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {expenses.map((expense, index) => (
-          <TableRow key={index}>
+        {expenses.map((expense) => (
+          <TableRow key={expense.id}>
             <TableCell>{expense.description}</TableCell>
             <TableCell>{expense.category}</TableCell>
             <TableCell>{formatCurrency(expense.amount)}</TableCell>
+            <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
           </TableRow>
         ))}
       </TableBody>

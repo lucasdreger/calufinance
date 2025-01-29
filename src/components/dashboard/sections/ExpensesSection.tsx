@@ -12,6 +12,38 @@ export const ExpensesSection = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const { toast } = useToast();
 
+  const fetchExpenses = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .select(`
+        *,
+        expenses_categories (
+          name
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('date', { ascending: false });
+    
+    if (error) {
+      toast({
+        title: "Error fetching expenses",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const formattedExpenses = data?.map(expense => ({
+      ...expense,
+      category: expense.expenses_categories?.name
+    })) || [];
+    
+    setExpenses(formattedExpenses);
+  };
+
   const fetchCategories = async () => {
     const { data, error } = await supabase
       .from('expenses_categories')
@@ -31,8 +63,21 @@ export const ExpensesSection = () => {
 
   useEffect(() => {
     fetchCategories();
+    fetchExpenses();
 
-    const channel = supabase
+    // Subscribe to changes in expenses
+    const expensesChannel = supabase
+      .channel('expenses_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'expenses' },
+        () => {
+          fetchExpenses();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to changes in categories
+    const categoriesChannel = supabase
       .channel('expenses_categories_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'expenses_categories' },
@@ -43,7 +88,8 @@ export const ExpensesSection = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(expensesChannel);
+      supabase.removeChannel(categoriesChannel);
     };
   }, []);
 
@@ -74,10 +120,7 @@ export const ExpensesSection = () => {
           <div className="space-y-4">
             <ExpenseForm 
               categories={categories}
-              onExpenseAdded={() => {
-                // Refresh expenses list after adding new expense
-                // This would be implemented when we add the fetchExpenses functionality
-              }}
+              onExpenseAdded={fetchExpenses}
             />
             <ExpensesTable expenses={expenses} />
           </div>
