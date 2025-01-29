@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/utils/formatters";
 
 interface MonthlyTask {
   id: string;
@@ -17,6 +20,76 @@ const defaultTasks: MonthlyTask[] = [
 
 export const TasksSection = () => {
   const [tasks, setTasks] = useState<MonthlyTask[]>(defaultTasks);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchAmexAndIncome = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const currentDate = new Date();
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
+
+      // Fetch AMEX expenses
+      const { data: amexExpenses, error: amexError } = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('user_id', user.id)
+        .eq('description', 'AMEX')
+        .gte('date', startOfMonth)
+        .lte('date', endOfMonth);
+
+      if (amexError) {
+        console.error('Error fetching AMEX expenses:', amexError);
+        return;
+      }
+
+      // Fetch Lucas's income
+      const { data: lucasIncome, error: incomeError } = await supabase
+        .from('income')
+        .select('amount')
+        .eq('user_id', user.id)
+        .eq('source', 'Primary Job')
+        .gte('date', startOfMonth)
+        .lte('date', endOfMonth);
+
+      if (incomeError) {
+        console.error('Error fetching income:', incomeError);
+        return;
+      }
+
+      const amexTotal = amexExpenses?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
+      const lucasTotal = lucasIncome?.[0]?.amount || 0;
+      const remainingAmount = lucasTotal - amexTotal;
+
+      if (remainingAmount < 1000) {
+        const transferAmount = 1000 - remainingAmount;
+        const newTask = {
+          id: 'amex-transfer',
+          name: `Camila to transfer ${formatCurrency(transferAmount)} for AMEX bill`,
+          completed: false,
+        };
+
+        setTasks(currentTasks => {
+          const existingTaskIndex = currentTasks.findIndex(task => task.id === 'amex-transfer');
+          if (existingTaskIndex >= 0) {
+            const updatedTasks = [...currentTasks];
+            updatedTasks[existingTaskIndex] = newTask;
+            return updatedTasks;
+          }
+          return [...currentTasks, newTask];
+        });
+
+        toast({
+          title: "AMEX Transfer Required",
+          description: `Camila needs to transfer ${formatCurrency(transferAmount)} to cover the AMEX bill`,
+        });
+      }
+    };
+
+    fetchAmexAndIncome();
+  }, []);
 
   return (
     <Card>
