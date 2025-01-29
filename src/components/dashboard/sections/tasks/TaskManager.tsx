@@ -38,7 +38,7 @@ export const TaskManager = () => {
       return;
     }
 
-    // Fetch Credit Card expenses for the current month
+    // Fetch Credit Card expenses for the current month only
     const { data: creditCardExpenses } = await supabase
       .from('expenses')
       .select('amount')
@@ -46,6 +46,17 @@ export const TaskManager = () => {
       .gte('date', startOfMonth)
       .lte('date', endOfMonth)
       .maybeSingle();
+
+    // Only proceed with credit card task if there's an actual bill amount
+    const creditCardTotal = creditCardExpenses?.amount || 0;
+    
+    if (creditCardTotal === 0) {
+      // Remove transfer task if credit card bill is not set
+      setTasks(currentTasks => 
+        currentTasks.filter(task => task.id !== 'credit-card-transfer')
+      );
+      return;
+    }
 
     // Fetch Lucas's income for the current month - get the latest record
     const { data: lucasIncome } = await supabase
@@ -58,7 +69,6 @@ export const TaskManager = () => {
       .limit(1)
       .maybeSingle();
 
-    const creditCardTotal = creditCardExpenses?.amount || 0;
     const lucasTotal = lucasIncome?.amount || 0;
     const remainingAmount = lucasTotal - creditCardTotal;
     const transferAmount = remainingAmount < 1000 ? Math.max(0, 1000 - remainingAmount) : 0;
@@ -75,19 +85,7 @@ export const TaskManager = () => {
       incomeRecord: lucasIncome
     });
 
-    if (creditCardTotal === 0) {
-      toast({
-        title: "Credit Card Bill Not Set",
-        description: "Please update the Credit Card bill amount for this month.",
-        variant: "default",
-        className: "bg-yellow-50 border-yellow-200 text-yellow-800",
-      });
-      
-      // Remove transfer task if credit card bill is not set
-      setTasks(currentTasks => 
-        currentTasks.filter(task => task.id !== 'credit-card-transfer')
-      );
-    } else if (remainingAmount < 1000) {
+    if (remainingAmount < 1000) {
       const newTask = {
         id: 'credit-card-transfer',
         name: `Transfer ${formatCurrency(transferAmount)} to Credit Card bill`,
