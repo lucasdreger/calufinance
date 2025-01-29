@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { parseCurrencyInput } from "@/utils/formatters";
+import { parseCurrencyInput, formatCurrency } from "@/utils/formatters";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExpenseRow } from "./expenses/ExpenseRow";
