@@ -59,13 +59,14 @@ export const TaskManager = () => {
     const creditCardTotal = creditCardExpenses?.amount || 0;
     const lucasTotal = lucasIncome?.amount || 0;
     const remainingAmount = lucasTotal - creditCardTotal;
+    const transferAmount = remainingAmount < 1000 ? 1000 - remainingAmount : 0;
 
     console.log('Debug values:', {
       lucasTotal,
       creditCardTotal,
       remainingAmount,
       shouldShowTransfer: remainingAmount < 1000,
-      transferAmount: remainingAmount < 1000 ? 1000 - remainingAmount : 0,
+      transferAmount,
       date: currentDate.toISOString(),
       startOfMonth,
       endOfMonth
@@ -84,9 +85,6 @@ export const TaskManager = () => {
         currentTasks.filter(task => task.id !== 'credit-card-transfer')
       );
     } else if (remainingAmount < 1000) {
-      // Calculate exact transfer amount needed
-      const transferAmount = 1000 - remainingAmount;
-
       const newTask = {
         id: 'credit-card-transfer',
         name: `Transfer ${formatCurrency(transferAmount)} to Credit Card bill`,
