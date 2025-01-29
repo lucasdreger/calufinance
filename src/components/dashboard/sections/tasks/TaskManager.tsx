@@ -94,7 +94,7 @@ export const TaskManager = () => {
     if (remainingAmount < 1000 && creditCardTotal > 0) {
       const newTask = {
         id: 'credit-card-transfer',
-        name: `Transfer ${formatCurrency(transferAmount)} to Credit Card bill`,
+        name: `Camila to Transfer ${formatCurrency(transferAmount)} for Credit Card bill`,
         completed: false,
       };
 
