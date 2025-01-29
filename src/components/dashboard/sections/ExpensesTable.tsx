@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, parseCurrencyInput } from "@/utils/formatters";
-import { AlertCircle, Pencil, Save, X } from "lucide-react";
+import { AlertCircle, Pencil, Save, Trash2, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ExpensesTableProps {
@@ -26,6 +26,28 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
   const handleCancel = () => {
     setEditingId(null);
     setEditValue("");
+  };
+
+  const handleDelete = async (expenseId: string) => {
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', expenseId);
+
+    if (error) {
+      toast({
+        title: "Error deleting expense",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onExpenseUpdated();
+    toast({
+      title: "Expense Deleted",
+      description: "The expense has been removed.",
+    });
   };
 
   const handleSave = async (expenseId: string) => {
@@ -93,7 +115,7 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
           {expenses.map((expense) => (
             <TableRow key={expense.id}>
               <TableCell>{expense.description}</TableCell>
-              <TableCell>{expense.category}</TableCell>
+              <TableCell>{expense.expenses_categories?.name}</TableCell>
               <TableCell>
                 {editingId === expense.id ? (
                   <Input
@@ -128,14 +150,24 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
                     </Button>
                   </div>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(expense)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(expense)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(expense.id)}
+                      className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </TableCell>
             </TableRow>
