@@ -6,8 +6,22 @@ import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from "@/utils/formatters";
 import { supabase } from "@/integrations/supabase/client";
 
+interface IncomeState {
+  lucas: number;
+  camila: number;
+  other: number;
+}
+
+interface IncomeData {
+  amount: number;
+  source: string;
+  date: string;
+  user_id: string;
+  is_default: boolean;
+}
+
 export const IncomeSection = () => {
-  const [income, setIncome] = useState({ lucas: 0, camila: 0, other: 0 });
+  const [income, setIncome] = useState<IncomeState>({ lucas: 0, camila: 0, other: 0 });
   const { toast } = useToast();
 
   const totalIncome = income.lucas + income.camila + income.other;
@@ -34,9 +48,10 @@ export const IncomeSection = () => {
     }
 
     if (data && data.length > 0) {
-      const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
-      const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
-      const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
+      const typedData = data as IncomeData[];
+      const lucasIncome = typedData.find(inc => inc.source === "Primary Job")?.amount || 0;
+      const camilaIncome = typedData.find(inc => inc.source === "Wife Job 1")?.amount || 0;
+      const otherIncome = typedData.find(inc => inc.source === "Other")?.amount || 0;
 
       setIncome({
         lucas: lucasIncome,
@@ -77,9 +92,10 @@ export const IncomeSection = () => {
     }
 
     if (data && data.length > 0) {
-      const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
-      const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
-      const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
+      const typedData = data as IncomeData[];
+      const lucasIncome = typedData.find(inc => inc.source === "Primary Job")?.amount || 0;
+      const camilaIncome = typedData.find(inc => inc.source === "Wife Job 1")?.amount || 0;
+      const otherIncome = typedData.find(inc => inc.source === "Other")?.amount || 0;
 
       const date = new Date().toISOString().split('T')[0];
       const promises = [
@@ -132,12 +148,12 @@ export const IncomeSection = () => {
     }
   };
 
-  const handleIncomeBlur = (field: keyof typeof income) => (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleIncomeBlur = (field: keyof IncomeState) => (e: React.FocusEvent<HTMLInputElement>) => {
     const numericValue = parseCurrencyInput(e.target.value);
     setIncome(prev => ({ ...prev, [field]: numericValue }));
   };
 
-  const handleIncomeChange = (field: keyof typeof income) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIncomeChange = (field: keyof IncomeState) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^\d.]/g, '');
     setIncome(prev => ({ ...prev, [field]: parseCurrencyInput(value) }));
   };
