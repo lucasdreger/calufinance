@@ -168,6 +168,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_amex_category: {
+        Args: {
+          user_uuid: string
+        }
+        Returns: string
+      }
       insert_default_categories: {
         Args: {
           user_uuid: string
