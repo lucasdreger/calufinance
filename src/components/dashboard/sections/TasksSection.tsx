@@ -67,7 +67,8 @@ export const TasksSection = () => {
         toast({
           title: "American Express Bill Not Set",
           description: "Please update the American Express bill amount for this month.",
-          variant: "warning",
+          variant: "default",
+          className: "bg-yellow-50 border-yellow-200 text-yellow-800",
         });
       } else if (remainingAmount < 1000) {
         const transferAmount = 1000 - remainingAmount;
@@ -90,6 +91,8 @@ export const TasksSection = () => {
         toast({
           title: "AMEX Transfer Required",
           description: `Camila needs to transfer ${formatCurrency(transferAmount)} to cover the AMEX bill`,
+          variant: "default",
+          className: "bg-yellow-50 border-yellow-200 text-yellow-800",
         });
       }
     };
