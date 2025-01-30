@@ -147,6 +147,17 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   const totalBudget = investments.reduce((sum, inv) => sum + inv.current_value, 0) +
                       reserves.reduce((sum, res) => sum + res.current_value, 0);
 
+  const investmentTypes = ['Crypto', 'Lucas Pension', 'Camila Pension', 'Fondos Depot'];
+  const reserveTypes = ['Emergency', 'Travel'];
+
+  const filteredInvestments = investments.filter(inv => 
+    investmentTypes.includes(inv.type)
+  );
+
+  const filteredReserves = reserves.filter(res => 
+    reserveTypes.includes(res.type)
+  );
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
@@ -165,7 +176,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {investments.map((investment) => (
+              {filteredInvestments.map((investment) => (
                 <div key={investment.id} className="bg-white rounded-lg p-4 shadow">
                   <div className="text-sm font-medium text-gray-700 mb-2">
                     {investment.type}
@@ -216,7 +227,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {reserves.map((reserve) => (
+              {filteredReserves.map((reserve) => (
                 <div key={reserve.id} className="bg-white rounded-lg p-4 shadow">
                   <div className="text-sm font-medium text-gray-700 mb-2">
                     {reserve.type}
