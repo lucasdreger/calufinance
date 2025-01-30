@@ -180,6 +180,36 @@ export type Database = {
         }
         Relationships: []
       }
+      investments: {
+        Row: {
+          created_at: string | null
+          current_value: number
+          id: string
+          initial_value: number
+          last_updated: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number
+          id?: string
+          initial_value?: number
+          last_updated?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number
+          id?: string
+          initial_value?: number
+          last_updated?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -201,6 +231,36 @@ export type Database = {
           id?: string
           last_name?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reserves: {
+        Row: {
+          created_at: string | null
+          current_value: number
+          id: string
+          last_updated: string | null
+          target_value: number | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number
+          id?: string
+          last_updated?: string | null
+          target_value?: number | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number
+          id?: string
+          last_updated?: string | null
+          target_value?: number | null
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
