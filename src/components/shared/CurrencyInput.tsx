@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
 interface CurrencyInputProps {
@@ -13,11 +14,13 @@ export const CurrencyInput = ({
   placeholder = "Enter amount",
   className,
 }: CurrencyInputProps) => {
+  const [isFocused, setIsFocused] = useState(false);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Get raw input value
     let inputValue = e.target.value;
     
-    // Remove all non-numeric characters except decimal point
+    // Remove all non-numeric characters
     inputValue = inputValue.replace(/[^0-9.]/g, '');
     
     // Handle empty or invalid input
@@ -41,17 +44,25 @@ export const CurrencyInput = ({
     }
   };
 
-  // Only format the display value, not the input value
-  const displayValue = value === 0 && document.activeElement === document.getElementById('currency-input') 
-    ? ''  // Show empty string while editing if value is 0
-    : value.toFixed(2);  // Otherwise show formatted value
+  const formatValue = (val: number): string => {
+    if (isFocused) {
+      // When focused, show the plain number for easier editing
+      return val.toString();
+    }
+    // When not focused, show formatted currency
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(val);
+  };
 
   return (
     <Input
-      id="currency-input"
       type="text"
-      value={displayValue}
+      value={formatValue(value)}
       onChange={handleChange}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
       placeholder={placeholder}
       className={className}
       inputMode="decimal"
