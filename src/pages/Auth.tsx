@@ -28,13 +28,22 @@ const Auth = () => {
 
       if (error) {
         console.error("Login error:", error);
+        
+        // Show a more helpful error message
+        let errorMessage = "Credenciais inválidas. Use 'lucas' como usuário e 'abcd1234' como senha.";
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Usuário ou senha incorretos. Tente novamente.";
+        }
+        
         toast({
           variant: "destructive",
           title: "Erro ao fazer login",
-          description: "Credenciais inválidas. Use 'lucas' como usuário e 'abcd1234' como senha.",
+          description: errorMessage,
         });
         return;
       }
+
+      console.log("Login successful:", data);
 
       if (password === "abcd1234") {
         setIsFirstLogin(true);
