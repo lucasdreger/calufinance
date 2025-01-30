@@ -33,27 +33,51 @@ export const InvestmentsAndReserves = () => {
   const { toast } = useToast();
 
   const fetchData = async () => {
-    const { data: investmentsData, error: investmentsError } = await supabase
-      .from('investments')
-      .select('*')
-      .order('type');
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to view your investments and reserves",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    const { data: reservesData, error: reservesError } = await supabase
-      .from('reserves')
-      .select('*')
-      .order('type');
+      const { data: investmentsData, error: investmentsError } = await supabase
+        .from('investments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('type');
 
-    if (investmentsError || reservesError) {
+      const { data: reservesData, error: reservesError } = await supabase
+        .from('reserves')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('type');
+
+      if (investmentsError || reservesError) {
+        console.error("Error fetching data:", { investmentsError, reservesError });
+        toast({
+          title: "Error fetching data",
+          description: investmentsError?.message || reservesError?.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setInvestments(investmentsData || []);
+      setReserves(reservesData || []);
+    } catch (error: any) {
+      console.error("Error in fetchData:", error);
       toast({
-        title: "Error fetching data",
-        description: investmentsError?.message || reservesError?.message,
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
-      return;
     }
-
-    setInvestments(investmentsData || []);
-    setReserves(reservesData || []);
   };
 
   useEffect(() => {
@@ -210,7 +234,7 @@ export const InvestmentsAndReserves = () => {
                   {formatCurrency(investments.reduce((sum, inv) => sum + inv.initial_value, 0))}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
-                  {formatCurrency(calculateTotalInvestments())}
+                  {formatCurrency(investments.reduce((sum, inv) => sum + inv.current_value, 0))}
                 </TableCell>
                 <TableCell colSpan={2} />
               </TableRow>
@@ -285,7 +309,7 @@ export const InvestmentsAndReserves = () => {
               <TableRow className="bg-muted font-semibold">
                 <TableCell>Total</TableCell>
                 <TableCell className="text-right tabular-nums">
-                  {formatCurrency(calculateTotalReserves())}
+                  {formatCurrency(reserves.reduce((sum, res) => sum + res.current_value, 0))}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {formatCurrency(reserves.reduce((sum, res) => sum + (res.target_value || 0), 0))}
