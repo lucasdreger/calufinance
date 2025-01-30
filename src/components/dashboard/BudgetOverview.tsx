@@ -164,10 +164,10 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
             <CardTitle>Investments</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {investments.map((investment) => (
-                <div key={investment.id} className="text-center">
-                  <div className="text-sm font-medium text-muted-foreground mb-1">
+                <div key={investment.id} className="text-center p-4 bg-muted rounded-lg">
+                  <div className="text-sm font-medium text-muted-foreground mb-2">
                     {investment.type}
                   </div>
                   <div className="flex items-center justify-center gap-2">
@@ -188,7 +188,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
                       </>
                     ) : (
                       <>
-                        <span className="text-lg font-semibold tabular-nums">
+                        <span className="text-lg font-semibold">
                           {formatCurrency(investment.current_value)}
                         </span>
                         <Button
@@ -201,7 +201,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
                       </>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-xs text-muted-foreground mt-2">
                     Last updated: {new Date(investment.last_updated).toLocaleDateString()}
                   </div>
                 </div>
@@ -217,8 +217,8 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               {reserves.map((reserve) => (
-                <div key={reserve.id} className="text-center">
-                  <div className="text-sm font-medium text-muted-foreground mb-1">
+                <div key={reserve.id} className="text-center p-4 bg-muted rounded-lg">
+                  <div className="text-sm font-medium text-muted-foreground mb-2">
                     {reserve.type}
                   </div>
                   <div className="flex items-center justify-center gap-2">
@@ -239,7 +239,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
                       </>
                     ) : (
                       <>
-                        <span className="text-lg font-semibold tabular-nums">
+                        <span className="text-lg font-semibold">
                           {formatCurrency(reserve.current_value)}
                         </span>
                         <Button
@@ -252,7 +252,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
                       </>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
+                  <div className="text-xs text-muted-foreground mt-2">
                     Last updated: {new Date(reserve.last_updated).toLocaleDateString()}
                   </div>
                 </div>
