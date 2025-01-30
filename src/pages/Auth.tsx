@@ -30,14 +30,14 @@ const Auth = () => {
         console.error("Login error:", error);
         
         // Show a more helpful error message
-        let errorMessage = "Credenciais inválidas. Use 'lucas' como usuário e 'abcd1234' como senha.";
+        let errorMessage = "Invalid credentials. Try using 'lucas2' as username and 'abcd' as password.";
         if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Usuário ou senha incorretos. Tente novamente.";
+          errorMessage = "Invalid username or password. Please try again.";
         }
         
         toast({
           variant: "destructive",
-          title: "Erro ao fazer login",
+          title: "Login Error",
           description: errorMessage,
         });
         return;
@@ -54,7 +54,7 @@ const Auth = () => {
       console.error("Login error:", error);
       toast({
         variant: "destructive",
-        title: "Erro ao fazer login",
+        title: "Login Error",
         description: error.message,
       });
     }
@@ -70,8 +70,8 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Senha alterada com sucesso",
-        description: "Por favor, faça login novamente com sua nova senha.",
+        title: "Success",
+        description: "Password changed successfully. Please login again.",
       });
 
       await supabase.auth.signOut();
@@ -80,7 +80,7 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao alterar senha",
+        title: "Error",
         description: error.message,
       });
     }
@@ -91,42 +91,42 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
-            {isFirstLogin ? "Alterar Senha" : "Login"}
+            {isFirstLogin ? "Change Password" : "Login"}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {!isFirstLogin ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Usuário</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
                   type="text"
-                  placeholder="lucas"
+                  placeholder="lucas2"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="abcd1234"
+                  placeholder="abcd"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
               <Button type="submit" className="w-full">
-                Entrar
+                Login
               </Button>
             </form>
           ) : (
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="newPassword">Nova Senha</Label>
+                <Label htmlFor="newPassword">New Password</Label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -136,7 +136,7 @@ const Auth = () => {
                 />
               </div>
               <Button type="submit" className="w-full">
-                Alterar Senha
+                Change Password
               </Button>
             </form>
           )}
