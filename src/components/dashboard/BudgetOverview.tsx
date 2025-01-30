@@ -39,36 +39,74 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   const { toast } = useToast();
 
   const fetchData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to view your data",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Fetch investments
-    const { data: investmentsData, error: investmentsError } = await supabase
-      .from('investments')
-      .select('*')
-      .eq('user_id', user.id);
+      console.log("Current user:", user.email);
 
-    if (investmentsError) {
-      console.error("Error fetching investments:", investmentsError);
-      return;
+      // Fetch investments
+      const { data: investmentsData, error: investmentsError } = await supabase
+        .from('investments')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (investmentsError) {
+        console.error("Error fetching investments:", investmentsError);
+        toast({
+          title: "Error fetching investments",
+          description: investmentsError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fetch reserves
+      const { data: reservesData, error: reservesError } = await supabase
+        .from('reserves')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (reservesError) {
+        console.error("Error fetching reserves:", reservesError);
+        toast({
+          title: "Error fetching reserves",
+          description: reservesError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Raw investments data:", investmentsData);
+      console.log("Raw reserves data:", reservesData);
+
+      if (!investmentsData?.length) {
+        console.log("No investments found for user:", user.id);
+      }
+
+      if (!reservesData?.length) {
+        console.log("No reserves found for user:", user.id);
+      }
+
+      setInvestments(investmentsData || []);
+      setReserves(reservesData || []);
+    } catch (error: any) {
+      console.error("Error in fetchData:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-
-    // Fetch reserves
-    const { data: reservesData, error: reservesError } = await supabase
-      .from('reserves')
-      .select('*')
-      .eq('user_id', user.id);
-
-    if (reservesError) {
-      console.error("Error fetching reserves:", reservesError);
-      return;
-    }
-
-    console.log("Fetched investments:", investmentsData);
-    console.log("Fetched reserves:", reservesData);
-
-    setInvestments(investmentsData || []);
-    setReserves(reservesData || []);
   };
 
   useEffect(() => {
@@ -79,7 +117,10 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
       .channel('investments_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'investments' },
-        () => fetchData()
+        (payload) => {
+          console.log('Investment change detected:', payload);
+          fetchData();
+        }
       )
       .subscribe();
 
@@ -87,7 +128,10 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
       .channel('reserves_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'reserves' },
-        () => fetchData()
+        (payload) => {
+          console.log('Reserve change detected:', payload);
+          fetchData();
+        }
       )
       .subscribe();
 
@@ -109,48 +153,59 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   };
 
   const handleSave = async (id: string, type: 'investment' | 'reserve') => {
-    const numericValue = parseFloat(editValue);
-    if (isNaN(numericValue)) {
+    try {
+      const numericValue = parseFloat(editValue);
+      if (isNaN(numericValue)) {
+        toast({
+          title: "Invalid value",
+          description: "Please enter a valid number",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to update values",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const table = type === 'investment' ? 'investments' : 'reserves';
+      const { error } = await supabase
+        .from(table)
+        .update({
+          current_value: numericValue,
+          last_updated: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setEditingInvestment(null);
+      setEditingReserve(null);
+      setEditValue("");
+      
       toast({
-        title: "Invalid value",
-        description: "Please enter a valid number",
-        variant: "destructive",
+        title: "Success",
+        description: "Value updated successfully",
       });
-      return;
-    }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const table = type === 'investment' ? 'investments' : 'reserves';
-    const { error } = await supabase
-      .from(table)
-      .update({
-        current_value: numericValue,
-        last_updated: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .eq('user_id', user.id);
-
-    if (error) {
+      await fetchData();
+    } catch (error: any) {
+      console.error("Error saving value:", error);
       toast({
-        title: "Error updating value",
+        title: "Error saving value",
         description: error.message,
         variant: "destructive",
       });
-      return;
     }
-
-    setEditingInvestment(null);
-    setEditingReserve(null);
-    setEditValue("");
-    
-    toast({
-      title: "Success",
-      description: "Value updated successfully",
-    });
-
-    fetchData();
   };
 
   const totalBudget = investments.reduce((sum, inv) => sum + inv.current_value, 0) +
@@ -159,7 +214,6 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   const investmentTypes = ['Crypto', 'Lucas Pension', 'Camila Pension', 'Fondos Depot'];
   const reserveTypes = ['Emergency', 'Travel'];
 
-  // Filter investments and reserves based on the specified types
   const filteredInvestments = investments.filter(inv => investmentTypes.includes(inv.type));
   const filteredReserves = reserves.filter(res => reserveTypes.includes(res.type));
 
@@ -300,4 +354,3 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
       </Card>
     </div>
   );
-};
