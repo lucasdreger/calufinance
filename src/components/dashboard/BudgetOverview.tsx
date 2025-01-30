@@ -159,25 +159,25 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
+        <Card className="col-span-3 md:col-span-2">
           <CardHeader>
             <CardTitle>Investments</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {investments.map((investment) => (
-                <div key={investment.id} className="text-center p-4 bg-muted rounded-lg">
-                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                <div key={investment.id} className="bg-muted rounded-lg p-4 shadow-sm">
+                  <div className="text-sm font-medium mb-3">
                     {investment.type}
                   </div>
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 min-h-[40px]">
                     {editingInvestment === investment.id ? (
                       <>
                         <Input
                           type="number"
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="w-32"
+                          className="w-24 text-right"
                         />
                         <Button
                           size="sm"
@@ -201,7 +201,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
                       </>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-2">
+                  <div className="text-xs text-muted-foreground mt-3">
                     Last updated: {new Date(investment.last_updated).toLocaleDateString()}
                   </div>
                 </div>
@@ -210,25 +210,25 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-3">
+        <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Reserves</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {reserves.map((reserve) => (
-                <div key={reserve.id} className="text-center p-4 bg-muted rounded-lg">
-                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                <div key={reserve.id} className="bg-muted rounded-lg p-4 shadow-sm">
+                  <div className="text-sm font-medium mb-3">
                     {reserve.type}
                   </div>
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 min-h-[40px]">
                     {editingReserve === reserve.id ? (
                       <>
                         <Input
                           type="number"
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="w-32"
+                          className="w-24 text-right"
                         />
                         <Button
                           size="sm"
@@ -252,7 +252,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
                       </>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-2">
+                  <div className="text-xs text-muted-foreground mt-3">
                     Last updated: {new Date(reserve.last_updated).toLocaleDateString()}
                   </div>
                 </div>
