@@ -95,10 +95,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
               {investments.map((investment) => (
                 <div key={investment.type} className="text-center">
                   <div className="text-sm font-medium text-muted-foreground mb-1">
-                    {investment.type === "Fondos Depot" ? "Fondsdepot" :
-                     investment.type === "Lucas Pension" ? "Prev. Lucas" :
-                     investment.type === "Camila Pension" ? "Prev. Camila" :
-                     investment.type}
+                    {investment.type}
                   </div>
                   <div className="text-lg font-semibold tabular-nums">
                     {formatCurrency(investment.current_value)}
@@ -118,9 +115,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
               {reserves.map((reserve) => (
                 <div key={reserve.type} className="text-center">
                   <div className="text-sm font-medium text-muted-foreground mb-1">
-                    {reserve.type === "Emergency" ? "SOS" :
-                     reserve.type === "Travel" ? "Viagens" :
-                     reserve.type}
+                    {reserve.type === "Emergency" ? "SOS" : reserve.type}
                   </div>
                   <div className="text-lg font-semibold tabular-nums">
                     {formatCurrency(reserve.current_value)}
