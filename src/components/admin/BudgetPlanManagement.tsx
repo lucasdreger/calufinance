@@ -82,6 +82,7 @@ export const BudgetPlanManagement = () => {
           category_id: newPlan.category_id,
           estimated_amount: parseFloat(newPlan.estimated_amount),
           requires_status: newPlan.requires_status,
+          is_fixed: newPlan.is_fixed,
         })
         .eq('id', editingPlan.id);
 
@@ -108,7 +109,7 @@ export const BudgetPlanManagement = () => {
           estimated_amount: parseFloat(newPlan.estimated_amount),
           requires_status: newPlan.requires_status,
           user_id: user.id,
-          is_fixed: true, // Always set to true since all budget plans are fixed
+          is_fixed: newPlan.is_fixed,
         });
 
       if (error) {
@@ -165,6 +166,7 @@ export const BudgetPlanManagement = () => {
           categories={categories}
           onSubmit={handleAddPlan}
           initialValues={editingPlan}
+          mode={editingPlan ? 'edit' : 'create'}
           onCancel={editingPlan ? () => setEditingPlan(null) : undefined}
         />
       </div>

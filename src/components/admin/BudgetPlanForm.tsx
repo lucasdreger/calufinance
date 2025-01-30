@@ -29,7 +29,18 @@ export const BudgetPlanForm = ({ onSubmit, initialValues, mode = 'create', onCan
     is_fixed: initialValues?.is_fixed || false,
     requires_status: initialValues?.requires_status || false,
   });
-  const { toast } = useToast();
+
+  useEffect(() => {
+    if (initialValues) {
+      setFormData({
+        category_id: initialValues.category_id || '',
+        description: initialValues.description || '',
+        estimated_amount: initialValues.estimated_amount || '',
+        is_fixed: initialValues.is_fixed || false,
+        requires_status: initialValues.requires_status || false,
+      });
+    }
+  }, [initialValues]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
