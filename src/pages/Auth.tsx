@@ -12,11 +12,13 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const email = `${username}@example.com`;
       console.log("Attempting login with:", { email, password });
@@ -29,7 +31,6 @@ const Auth = () => {
       if (error) {
         console.error("Login error:", error);
         
-        // Show a more helpful error message
         let errorMessage = "Invalid credentials. Try using 'lucas2' as username and 'abcd' as password.";
         if (error.message.includes("Invalid login credentials")) {
           errorMessage = "Invalid username or password. Please try again.";
@@ -57,11 +58,14 @@ const Auth = () => {
         title: "Login Error",
         description: error.message,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
@@ -83,6 +87,8 @@ const Auth = () => {
         title: "Error",
         description: error.message,
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,6 +112,7 @@ const Auth = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -117,10 +124,11 @@ const Auth = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Logging in..." : "Login"}
               </Button>
             </form>
           ) : (
@@ -133,10 +141,11 @@ const Auth = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Change Password
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Changing Password..." : "Change Password"}
               </Button>
             </form>
           )}
