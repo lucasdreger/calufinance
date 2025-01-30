@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LogOut } from "lucide-react";
 import { MonthlyDeviation } from "@/components/dashboard/reports/MonthlyDeviation";
 import { MonthlyExpensesTable } from "@/components/dashboard/reports/MonthlyExpensesTable";
+import { InvestmentsAndReserves } from "@/components/dashboard/reports/InvestmentsAndReserves";
 import {
   Tabs,
   TabsContent,
@@ -54,6 +55,7 @@ const Index = () => {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="investments">Investments & Reserves</TabsTrigger>
           <TabsTrigger value="monthly">Monthly Details</TabsTrigger>
           <TabsTrigger value="admin">Administration</TabsTrigger>
         </TabsList>
@@ -65,6 +67,10 @@ const Index = () => {
           />
           <MonthlyDeviation />
           <MonthlyExpensesTable />
+        </TabsContent>
+
+        <TabsContent value="investments">
+          <InvestmentsAndReserves />
         </TabsContent>
 
         <TabsContent value="monthly">
