@@ -163,14 +163,14 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           <CardHeader>
             <CardTitle>Investments</CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {investments.map((investment) => (
-                <div key={investment.id} className="bg-muted rounded-lg p-4 shadow-sm">
-                  <div className="text-sm font-medium mb-3">
+                <div key={investment.id} className="bg-white rounded-lg p-4 shadow">
+                  <div className="text-sm font-medium text-gray-700 mb-2">
                     {investment.type}
                   </div>
-                  <div className="flex items-center justify-center gap-2 min-h-[40px]">
+                  <div className="flex items-center justify-between gap-2">
                     {editingInvestment === investment.id ? (
                       <>
                         <Input
@@ -201,7 +201,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
                       </>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-3">
+                  <div className="text-xs text-gray-500 mt-2">
                     Last updated: {new Date(investment.last_updated).toLocaleDateString()}
                   </div>
                 </div>
@@ -214,14 +214,14 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           <CardHeader>
             <CardTitle>Reserves</CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {reserves.map((reserve) => (
-                <div key={reserve.id} className="bg-muted rounded-lg p-4 shadow-sm">
-                  <div className="text-sm font-medium mb-3">
+                <div key={reserve.id} className="bg-white rounded-lg p-4 shadow">
+                  <div className="text-sm font-medium text-gray-700 mb-2">
                     {reserve.type}
                   </div>
-                  <div className="flex items-center justify-center gap-2 min-h-[40px]">
+                  <div className="flex items-center justify-between gap-2">
                     {editingReserve === reserve.id ? (
                       <>
                         <Input
@@ -252,7 +252,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
                       </>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-3">
+                  <div className="text-xs text-gray-500 mt-2">
                     Last updated: {new Date(reserve.last_updated).toLocaleDateString()}
                   </div>
                 </div>
