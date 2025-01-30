@@ -3,15 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/utils/formatters";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Edit2, Save } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Investment {
+  id: string;
   type: string;
   current_value: number;
+  last_updated: string;
 }
 
 interface Reserve {
+  id: string;
   type: string;
   current_value: number;
+  last_updated: string;
 }
 
 interface BudgetOverviewProps {
@@ -25,20 +33,29 @@ interface BudgetOverviewProps {
 export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [reserves, setReserves] = useState<Reserve[]>([]);
+  const [editingInvestment, setEditingInvestment] = useState<string | null>(null);
+  const [editingReserve, setEditingReserve] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const { toast } = useToast();
 
   const fetchData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data: investmentsData, error: investmentsError } = await supabase
       .from('investments')
-      .select('type, current_value')
+      .select('*')
+      .eq('user_id', user.id)
       .order('type');
 
     const { data: reservesData, error: reservesError } = await supabase
       .from('reserves')
-      .select('type, current_value')
+      .select('*')
+      .eq('user_id', user.id)
       .order('type');
 
     if (investmentsError || reservesError) {
-      console.error("Error fetching data:", investmentsError || reservesError);
+      console.error("Error fetching data:", { investmentsError, reservesError });
       return;
     }
 
@@ -71,6 +88,62 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
     };
   }, []);
 
+  const handleEdit = (id: string, currentValue: number, type: 'investment' | 'reserve') => {
+    setEditValue(currentValue.toString());
+    if (type === 'investment') {
+      setEditingInvestment(id);
+      setEditingReserve(null);
+    } else {
+      setEditingReserve(id);
+      setEditingInvestment(null);
+    }
+  };
+
+  const handleSave = async (id: string, type: 'investment' | 'reserve') => {
+    const numericValue = parseFloat(editValue);
+    if (isNaN(numericValue)) {
+      toast({
+        title: "Invalid value",
+        description: "Please enter a valid number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const table = type === 'investment' ? 'investments' : 'reserves';
+    const { error } = await supabase
+      .from(table)
+      .update({
+        current_value: numericValue,
+        last_updated: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: "Error updating value",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setEditingInvestment(null);
+    setEditingReserve(null);
+    setEditValue("");
+    
+    toast({
+      title: "Success",
+      description: "Value updated successfully",
+    });
+
+    fetchData();
+  };
+
   const totalBudget = investments.reduce((sum, inv) => sum + inv.current_value, 0) +
                       reserves.reduce((sum, res) => sum + res.current_value, 0);
 
@@ -93,12 +166,43 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           <CardContent>
             <div className="grid grid-cols-4 gap-4">
               {investments.map((investment) => (
-                <div key={investment.type} className="text-center">
+                <div key={investment.id} className="text-center">
                   <div className="text-sm font-medium text-muted-foreground mb-1">
                     {investment.type}
                   </div>
-                  <div className="text-lg font-semibold tabular-nums">
-                    {formatCurrency(investment.current_value)}
+                  <div className="flex items-center justify-center gap-2">
+                    {editingInvestment === investment.id ? (
+                      <>
+                        <Input
+                          type="number"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="w-32"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleSave(investment.id, 'investment')}
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-semibold tabular-nums">
+                          {formatCurrency(investment.current_value)}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(investment.id, investment.current_value, 'investment')}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Last updated: {new Date(investment.last_updated).toLocaleDateString()}
                   </div>
                 </div>
               ))}
@@ -113,12 +217,43 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               {reserves.map((reserve) => (
-                <div key={reserve.type} className="text-center">
+                <div key={reserve.id} className="text-center">
                   <div className="text-sm font-medium text-muted-foreground mb-1">
-                    {reserve.type === "Emergency" ? "SOS" : reserve.type}
+                    {reserve.type}
                   </div>
-                  <div className="text-lg font-semibold tabular-nums">
-                    {formatCurrency(reserve.current_value)}
+                  <div className="flex items-center justify-center gap-2">
+                    {editingReserve === reserve.id ? (
+                      <>
+                        <Input
+                          type="number"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="w-32"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleSave(reserve.id, 'reserve')}
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-semibold tabular-nums">
+                          {formatCurrency(reserve.current_value)}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(reserve.id, reserve.current_value, 'reserve')}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Last updated: {new Date(reserve.last_updated).toLocaleDateString()}
                   </div>
                 </div>
               ))}
