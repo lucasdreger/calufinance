@@ -78,7 +78,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
           { type: 'Crypto', current_value: 0, user_id: user.id },
           { type: 'Lucas Pension', current_value: 0, user_id: user.id },
           { type: 'Camila Pension', current_value: 0, user_id: user.id },
-          { type: 'Fondos Depot', current_value: 0, user_id: user.id }
+          { type: 'Fondsdepot', current_value: 0, user_id: user.id }
         ];
 
         const { error: createError } = await supabase
@@ -87,30 +87,6 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
 
         if (createError) {
           console.error("Error creating default investments:", createError);
-        }
-      }
-
-      // Create default reserves if none exist
-      const { count: reservesCount, error: reservesCountError } = await supabase
-        .from('reserves')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      if (reservesCountError) {
-        console.error("Error checking reserves count:", reservesCountError);
-      } else if (reservesCount === 0) {
-        console.log("No reserves found, creating defaults...");
-        const defaultReserves = [
-          { type: 'Emergency', current_value: 0, user_id: user.id },
-          { type: 'Travel', current_value: 0, user_id: user.id }
-        ];
-
-        const { error: createError } = await supabase
-          .from('reserves')
-          .insert(defaultReserves);
-
-        if (createError) {
-          console.error("Error creating default reserves:", createError);
         }
       }
 
@@ -269,10 +245,11 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   const investmentTypes = ['Crypto', 'Lucas Pension', 'Camila Pension', 'Fondsdepot'];
   const reserveTypes = ['Emergency', 'Travel'];
 
-  const filteredInvestments = investments.filter(inv => investmentTypes.includes(inv.type));
+  // Remove the filtering since we want to show all investments
+  const filteredInvestments = investments;
   const filteredReserves = reserves.filter(res => reserveTypes.includes(res.type));
 
-  console.log("Filtered investments:", filteredInvestments);
+  console.log("All investments:", investments);
   console.log("Filtered reserves:", filteredReserves);
   console.log("Investment types to filter:", investmentTypes);
   console.log("Reserve types to filter:", reserveTypes);
