@@ -18,7 +18,7 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const email = `${username.toLowerCase()}@example.com`;
+      const email = `${username}@example.com`;
       console.log("Attempting login with:", { email, password });
       
       const { data, error } = await supabase.auth.signInWithPassword({
