@@ -42,8 +42,18 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (userError) throw userError;
+      if (userError) {
+        console.error("User authentication error:", userError);
+        toast({
+          title: "Authentication Error",
+          description: userError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (!user) {
+        console.error("No authenticated user found");
         toast({
           title: "Authentication Error",
           description: "Please log in to view your data",
@@ -52,9 +62,60 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
         return;
       }
 
-      console.log("Current user:", user.email);
+      console.log("Current user:", user.email, "User ID:", user.id);
 
-      // Fetch investments
+      // Create default investments if none exist
+      const { count: investmentsCount, error: countError } = await supabase
+        .from('investments')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (countError) {
+        console.error("Error checking investments count:", countError);
+      } else if (investmentsCount === 0) {
+        console.log("No investments found, creating defaults...");
+        const defaultInvestments = [
+          { type: 'Crypto', current_value: 0, user_id: user.id },
+          { type: 'Lucas Pension', current_value: 0, user_id: user.id },
+          { type: 'Camila Pension', current_value: 0, user_id: user.id },
+          { type: 'Fondos Depot', current_value: 0, user_id: user.id }
+        ];
+
+        const { error: createError } = await supabase
+          .from('investments')
+          .insert(defaultInvestments);
+
+        if (createError) {
+          console.error("Error creating default investments:", createError);
+        }
+      }
+
+      // Create default reserves if none exist
+      const { count: reservesCount, error: reservesCountError } = await supabase
+        .from('reserves')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (reservesCountError) {
+        console.error("Error checking reserves count:", reservesCountError);
+      } else if (reservesCount === 0) {
+        console.log("No reserves found, creating defaults...");
+        const defaultReserves = [
+          { type: 'Emergency', current_value: 0, user_id: user.id },
+          { type: 'Travel', current_value: 0, user_id: user.id }
+        ];
+
+        const { error: createError } = await supabase
+          .from('reserves')
+          .insert(defaultReserves);
+
+        if (createError) {
+          console.error("Error creating default reserves:", createError);
+        }
+      }
+
+      // Fetch investments with detailed logging
+      console.log("Fetching investments for user:", user.id);
       const { data: investmentsData, error: investmentsError } = await supabase
         .from('investments')
         .select('*')
@@ -70,7 +131,8 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
         return;
       }
 
-      // Fetch reserves
+      // Fetch reserves with detailed logging
+      console.log("Fetching reserves for user:", user.id);
       const { data: reservesData, error: reservesError } = await supabase
         .from('reserves')
         .select('*')
@@ -88,14 +150,6 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
 
       console.log("Raw investments data:", investmentsData);
       console.log("Raw reserves data:", reservesData);
-
-      if (!investmentsData?.length) {
-        console.log("No investments found for user:", user.id);
-      }
-
-      if (!reservesData?.length) {
-        console.log("No reserves found for user:", user.id);
-      }
 
       setInvestments(investmentsData || []);
       setReserves(reservesData || []);
@@ -219,6 +273,8 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
 
   console.log("Filtered investments:", filteredInvestments);
   console.log("Filtered reserves:", filteredReserves);
+  console.log("Investment types to filter:", investmentTypes);
+  console.log("Reserve types to filter:", reserveTypes);
 
   return (
     <div className="space-y-6">
