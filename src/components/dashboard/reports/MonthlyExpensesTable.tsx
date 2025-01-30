@@ -114,34 +114,47 @@ export const MonthlyExpensesTable = () => {
 
   return (
     <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-[#1a365d]">Monthly Expenses by Category</CardTitle>
+      <CardHeader className="border-b bg-muted/30">
+        <CardTitle className="text-xl font-semibold text-primary">Monthly Expenses by Category</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="overflow-x-auto p-0">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="font-bold">Category</TableHead>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-bold text-primary w-[200px] sticky left-0 bg-background">Category</TableHead>
               {months.map(month => (
-                <TableHead key={month} className="text-right">{month}</TableHead>
+                <TableHead key={month} className="text-right font-medium text-muted-foreground">
+                  {month}
+                </TableHead>
               ))}
-              <TableHead className="text-right font-bold">Total</TableHead>
-              <TableHead className="text-right font-bold">Average</TableHead>
+              <TableHead className="text-right font-bold text-primary">Total</TableHead>
+              <TableHead className="text-right font-bold text-primary">Average</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Object.entries(monthlyData).map(([category, data]) => (
-              <TableRow key={category}>
-                <TableCell className="font-medium">{category}</TableCell>
+            {Object.entries(monthlyData).map(([category, data], index) => (
+              <TableRow 
+                key={category}
+                className={`
+                  ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}
+                  hover:bg-muted/50 transition-colors
+                `}
+              >
+                <TableCell className="font-medium sticky left-0 bg-inherit border-r">
+                  {category}
+                </TableCell>
                 {months.map(month => (
-                  <TableCell key={month} className="text-right">
-                    {formatCurrency(data[month])}
+                  <TableCell 
+                    key={month} 
+                    className="text-right tabular-nums"
+                  >
+                    {data[month] > 0 ? formatCurrency(data[month]) : '—'}
                   </TableCell>
                 ))}
-                <TableCell className="text-right font-bold">
+                <TableCell className="text-right font-semibold tabular-nums">
                   {formatCurrency(data.total)}
                 </TableCell>
-                <TableCell className="text-right font-bold">
+                <TableCell className="text-right font-semibold tabular-nums">
                   {formatCurrency(data.average)}
                 </TableCell>
               </TableRow>
