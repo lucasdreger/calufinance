@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BudgetPlanForm } from "./BudgetPlanForm";
@@ -9,6 +9,7 @@ export const BudgetPlanManagement = () => {
   const [budgetPlans, setBudgetPlans] = useState<any[]>([]);
   const [editingPlan, setEditingPlan] = useState<any>(null);
   const { toast } = useToast();
+  const formRef = useRef<HTMLDivElement>(null);
 
   const fetchCategories = async () => {
     const { data, error } = await supabase
@@ -154,11 +155,13 @@ export const BudgetPlanManagement = () => {
 
   const handleEditBudgetPlan = (plan: any) => {
     setEditingPlan(plan);
+    // Smooth scroll to form
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
     <div className="space-y-6">
-      <div>
+      <div ref={formRef}>
         <h3 className="text-lg font-medium mb-4">
           {editingPlan ? 'Edit Budget Plan' : 'Add Budget Plan'}
         </h3>
