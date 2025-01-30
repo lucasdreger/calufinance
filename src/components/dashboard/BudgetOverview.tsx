@@ -42,22 +42,30 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Fetch investments
     const { data: investmentsData, error: investmentsError } = await supabase
       .from('investments')
       .select('*')
-      .eq('user_id', user.id)
-      .order('type');
+      .eq('user_id', user.id);
 
+    if (investmentsError) {
+      console.error("Error fetching investments:", investmentsError);
+      return;
+    }
+
+    // Fetch reserves
     const { data: reservesData, error: reservesError } = await supabase
       .from('reserves')
       .select('*')
-      .eq('user_id', user.id)
-      .order('type');
+      .eq('user_id', user.id);
 
-    if (investmentsError || reservesError) {
-      console.error("Error fetching data:", { investmentsError, reservesError });
+    if (reservesError) {
+      console.error("Error fetching reserves:", reservesError);
       return;
     }
+
+    console.log("Fetched investments:", investmentsData);
+    console.log("Fetched reserves:", reservesData);
 
     setInvestments(investmentsData || []);
     setReserves(reservesData || []);
@@ -66,6 +74,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   useEffect(() => {
     fetchData();
 
+    // Set up real-time subscriptions
     const investmentsChannel = supabase
       .channel('investments_changes')
       .on('postgres_changes', 
@@ -150,13 +159,12 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   const investmentTypes = ['Crypto', 'Lucas Pension', 'Camila Pension', 'Fondos Depot'];
   const reserveTypes = ['Emergency', 'Travel'];
 
-  const filteredInvestments = investments.filter(inv => 
-    investmentTypes.includes(inv.type)
-  );
+  // Filter investments and reserves based on the specified types
+  const filteredInvestments = investments.filter(inv => investmentTypes.includes(inv.type));
+  const filteredReserves = reserves.filter(res => reserveTypes.includes(res.type));
 
-  const filteredReserves = reserves.filter(res => 
-    reserveTypes.includes(res.type)
-  );
+  console.log("Filtered investments:", filteredInvestments);
+  console.log("Filtered reserves:", filteredReserves);
 
   return (
     <div className="space-y-6">
