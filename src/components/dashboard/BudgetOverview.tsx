@@ -354,3 +354,4 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
       </Card>
     </div>
   );
+};
