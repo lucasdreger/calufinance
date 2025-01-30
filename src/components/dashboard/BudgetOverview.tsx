@@ -265,7 +265,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   const totalBudget = investments.reduce((sum, inv) => sum + inv.current_value, 0) +
                       reserves.reduce((sum, res) => sum + res.current_value, 0);
 
-  const investmentTypes = ['Crypto', 'Lucas Pension', 'Camila Pension', 'Fondos Depot'];
+  const investmentTypes = ['Crypto', 'Lucas Pension', 'Camila Pension', 'Fondsdepot'];
   const reserveTypes = ['Emergency', 'Travel'];
 
   const filteredInvestments = investments.filter(inv => investmentTypes.includes(inv.type));
