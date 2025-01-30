@@ -54,6 +54,21 @@ export const CategoryManagement = () => {
 
   useEffect(() => {
     fetchCategories();
+
+    // Only subscribe to the expenses_categories channel
+    const categoriesChannel = supabase
+      .channel('categories_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'expenses_categories' },
+        () => {
+          fetchCategories();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(categoriesChannel);
+    };
   }, []);
 
   const handleAddCategory = async () => {
