@@ -21,9 +21,13 @@ export const CategoryManagement = () => {
   const { toast } = useToast();
 
   const fetchCategories = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from('expenses_categories')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id);
     
     if (error) {
       toast({
@@ -53,21 +57,31 @@ export const CategoryManagement = () => {
   };
 
   useEffect(() => {
-    fetchCategories();
+    let mounted = true;
 
-    // Only subscribe to the expenses_categories channel
-    const categoriesChannel = supabase
+    const loadCategories = async () => {
+      if (mounted) {
+        await fetchCategories();
+      }
+    };
+
+    loadCategories();
+
+    const channel = supabase
       .channel('categories_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'expenses_categories' },
         () => {
-          fetchCategories();
+          if (mounted) {
+            fetchCategories();
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(categoriesChannel);
+      mounted = false;
+      supabase.removeChannel(channel);
     };
   }, []);
 
