@@ -27,7 +27,6 @@ const Index = () => {
 
   // This would be fetched from your database
   const mockData = {
-    totalBudget: 50000,
     monthlyData: [
       { month: 'Jan', planned: 5000, actual: 4800 },
       { month: 'Feb', planned: 5000, actual: 5200 },
@@ -61,10 +60,7 @@ const Index = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <BudgetOverview 
-            totalBudget={mockData.totalBudget}
-            monthlyData={mockData.monthlyData}
-          />
+          <BudgetOverview monthlyData={mockData.monthlyData} />
           <MonthlyDeviation />
           <MonthlyExpensesTable />
         </TabsContent>
