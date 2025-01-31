@@ -28,6 +28,11 @@ export const MonthlyDeviation = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Get start and end dates for the last 12 months
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 11); // Get last 12 months
+
     // Get all budget plans (planned expenses)
     const { data: budgetPlans, error: budgetError } = await supabase
       .from('budget_plans')
@@ -47,7 +52,9 @@ export const MonthlyDeviation = () => {
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .gte('date', startDate.toISOString())
+      .lte('date', endDate.toISOString());
 
     if (expensesError) {
       toast({
@@ -58,25 +65,28 @@ export const MonthlyDeviation = () => {
       return;
     }
 
-    // Calculate monthly totals
+    // Initialize monthly totals for the last 12 months
     const monthlyTotals: Record<string, { planned: number; actual: number }> = {};
+    for (let i = 0; i < 12; i++) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = date.toISOString().slice(0, 7); // YYYY-MM
+      monthlyTotals[monthKey] = { planned: 0, actual: 0 };
+    }
 
     // Sum planned expenses
     budgetPlans?.forEach((plan) => {
-      const monthKey = new Date().toISOString().slice(0, 7); // YYYY-MM
-      if (!monthlyTotals[monthKey]) {
-        monthlyTotals[monthKey] = { planned: 0, actual: 0 };
-      }
-      monthlyTotals[monthKey].planned += Number(plan.estimated_amount);
+      Object.keys(monthlyTotals).forEach((monthKey) => {
+        monthlyTotals[monthKey].planned += Number(plan.estimated_amount);
+      });
     });
 
     // Sum actual expenses
     expenses?.forEach((expense) => {
       const monthKey = expense.date.slice(0, 7); // YYYY-MM
-      if (!monthlyTotals[monthKey]) {
-        monthlyTotals[monthKey] = { planned: 0, actual: 0 };
+      if (monthlyTotals[monthKey]) {
+        monthlyTotals[monthKey].actual += Number(expense.amount);
       }
-      monthlyTotals[monthKey].actual += Number(expense.amount);
     });
 
     // Transform data for display
@@ -95,7 +105,7 @@ export const MonthlyDeviation = () => {
           deviationPercentage,
         };
       })
-      .sort((a, b) => a.month.localeCompare(b.month));
+      .sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime());
 
     setMonthlyData(formattedData);
   };
