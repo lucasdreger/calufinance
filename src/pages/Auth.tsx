@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,34 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check for authentication error in URL
+    const handleAuthError = () => {
+      const hashParams = new URLSearchParams(window.location.hash.substr(1));
+      const error = hashParams.get("error");
+      const errorDescription = hashParams.get("error_description");
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: errorDescription || "Failed to authenticate",
+        });
+        // Clear the hash from the URL
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    };
+
+    handleAuthError();
+
+    // Check if user is already authenticated
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        navigate("/");
+      }
+    });
+  }, [navigate, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +77,10 @@ const Auth = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -61,6 +89,11 @@ const Auth = () => {
       });
 
       if (error) throw error;
+      
+      // If we have data.url, redirect to it
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -87,6 +120,7 @@ const Auth = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   disabled={loading}
+                  placeholder=""
                 />
               </div>
               <div className="space-y-2">
@@ -97,6 +131,7 @@ const Auth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
+                  placeholder=""
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
