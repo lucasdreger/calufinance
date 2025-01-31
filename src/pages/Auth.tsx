@@ -33,12 +33,26 @@ const Auth = () => {
 
     handleAuthError();
 
-    // Check if user is already authenticated
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check if user is already authenticated and redirect if they are
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         navigate("/");
       }
+    };
+    
+    checkUser();
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        navigate("/");
+      }
     });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
