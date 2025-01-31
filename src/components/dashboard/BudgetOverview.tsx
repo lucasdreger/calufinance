@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/utils/formatters";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Edit2, Save } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { TotalBudget } from "./overview/TotalBudget";
-import { InvestmentsSection } from "./overview/InvestmentsSection";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Investment {
   id: string;
@@ -142,6 +142,7 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   useEffect(() => {
     fetchData();
 
+    // Set up real-time subscriptions
     const investmentsChannel = supabase
       .channel('investments_changes')
       .on('postgres_changes', 
@@ -213,7 +214,9 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
         .eq('id', id)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       setEditingInvestment(null);
       setEditingReserve(null);
@@ -238,44 +241,151 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
   const totalBudget = investments.reduce((sum, inv) => sum + inv.current_value, 0) +
                       reserves.reduce((sum, res) => sum + res.current_value, 0);
 
+  // Update the investment types array to match exactly what's in the database
+  const investmentTypes = ['Crypto', 'Lucas Pension', 'Camila Pension', 'Fondsdepot'];
+  const reserveTypes = ['Emergency', 'Travel'];
+
+  // Remove the filtering since we want to show all investments
+  const filteredInvestments = investments;
+  const filteredReserves = reserves.filter(res => reserveTypes.includes(res.type));
+
+  console.log("All investments:", investments);
+  console.log("Filtered reserves:", filteredReserves);
+  console.log("Investment types to filter:", investmentTypes);
+  console.log("Reserve types to filter:", reserveTypes);
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <TotalBudget totalBudget={totalBudget} />
-        
-        <InvestmentsSection
-          investments={investments}
-          editingInvestment={editingInvestment}
-          editValue={editValue}
-          onEdit={(id, currentValue) => handleEdit(id, currentValue, 'investment')}
-          onSave={(id) => handleSave(id, 'investment')}
-          onEditValueChange={setEditValue}
-        />
+        <Card className="col-span-3 md:col-span-1">
+          <CardHeader>
+            <CardTitle>Total Budget</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatCurrency(totalBudget)}</div>
+          </CardContent>
+        </Card>
 
-        <TooltipProvider delayDuration={3000}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Card className="col-span-3">
-                <CardContent className="h-[300px] pt-6">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                      <Bar dataKey="planned" fill="#4a5568" name="Planned" />
-                      <Bar dataKey="actual" fill="#ecc94b" name="Actual" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Compare your planned budget against actual spending for each month</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Card className="col-span-3 md:col-span-2">
+          <CardHeader>
+            <CardTitle>Investments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {filteredInvestments.map((investment) => (
+                <div key={investment.id} className="bg-white rounded-lg p-4 shadow">
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    {investment.type}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    {editingInvestment === investment.id ? (
+                      <>
+                        <Input
+                          type="number"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="w-24 text-right"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleSave(investment.id, 'investment')}
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-semibold">
+                          {formatCurrency(investment.current_value)}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(investment.id, investment.current_value, 'investment')}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    Last updated: {new Date(investment.last_updated).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Reserves</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {filteredReserves.map((reserve) => (
+                <div key={reserve.id} className="bg-white rounded-lg p-4 shadow">
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    {reserve.type}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    {editingReserve === reserve.id ? (
+                      <>
+                        <Input
+                          type="number"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          className="w-24 text-right"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleSave(reserve.id, 'reserve')}
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg font-semibold">
+                          {formatCurrency(reserve.current_value)}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(reserve.id, reserve.current_value, 'reserve')}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    Last updated: {new Date(reserve.last_updated).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Monthly Budget vs Actual</CardTitle>
+        </CardHeader>
+        <CardContent className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Bar dataKey="planned" fill="#4a5568" name="Planned" />
+              <Bar dataKey="actual" fill="#ecc94b" name="Actual" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 };
