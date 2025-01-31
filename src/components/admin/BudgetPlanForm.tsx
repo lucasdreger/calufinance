@@ -54,10 +54,10 @@ export const BudgetPlanForm = ({ onSubmit, initialValues, mode = 'create', onCan
     }));
   };
 
-  // Sort categories alphabetically
-  const sortedCategories = [...categories].sort((a, b) => 
-    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-  );
+  // Remove duplicates by using Set with category IDs
+  const uniqueCategories = Array.from(
+    new Map(categories.map(cat => [cat.id, cat])).values()
+  ).sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -72,7 +72,7 @@ export const BudgetPlanForm = ({ onSubmit, initialValues, mode = 'create', onCan
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
-              {sortedCategories.map((category) => (
+              {uniqueCategories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   {category.name}
                 </SelectItem>
@@ -104,23 +104,12 @@ export const BudgetPlanForm = ({ onSubmit, initialValues, mode = 'create', onCan
 
         <div className="flex items-center space-x-2">
           <Switch
-            id="is_fixed"
-            checked={formData.is_fixed}
-            onCheckedChange={(checked) => handleInputChange('is_fixed', checked)}
+            id="requires_status"
+            checked={formData.requires_status}
+            onCheckedChange={(checked) => handleInputChange('requires_status', checked)}
           />
-          <Label htmlFor="is_fixed">Fixed Expense</Label>
+          <Label htmlFor="requires_status">Status Required</Label>
         </div>
-
-        {formData.is_fixed && (
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="requires_status"
-              checked={formData.requires_status}
-              onCheckedChange={(checked) => handleInputChange('requires_status', checked)}
-            />
-            <Label htmlFor="requires_status">Requires Status Tracking</Label>
-          </div>
-        )}
       </div>
 
       <div className="flex gap-2">
