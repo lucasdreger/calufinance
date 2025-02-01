@@ -31,51 +31,44 @@ export const DefaultIncomeManagement = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to view defaults",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
         return;
       }
-
+      
       const { data, error } = await supabase
-        .from('income')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_default', true);
+        .from("income")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_default", true);
 
       if (error) {
-        console.error('Error fetching default income:', error);
-        toast({
-          title: "Error fetching default income",
-          description: error.message,
-          variant: "destructive",
-        });
+        console.error("Error fetching income:", error);
         return;
       }
 
-      if (data && data.length > 0) {
-        const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
-        const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
-        const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
-
+      if (!data || data.length === 0) {
+        await createDefaultIncome(user.id);
+      } else {
         setDefaultIncome({
-          lucas: lucasIncome,
-          camila: camilaIncome,
-          other: otherIncome,
+          lucas: data.find((inc) => inc.source === "Primary Job")?.amount || 0,
+          camila: data.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
+          other: data.find((inc) => inc.source === "Other")?.amount || 0,
         });
       }
-    } catch (error: any) {
-      console.error('Error in fetchDefaultIncome:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch default income",
-        variant: "destructive",
-      });
+    } catch (error) {
+      console.error("Error fetching default income:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const createDefaultIncome = async (userId: string) => {
+    const defaultEntries = [
+      { amount: 0, source: "Primary Job", user_id: userId, is_default: true },
+      { amount: 0, source: "Wife Job 1", user_id: userId, is_default: true },
+      { amount: 0, source: "Other", user_id: userId, is_default: true },
+    ];
+    await supabase.from("income").insert(defaultEntries);
   };
 
   useEffect(() => {
@@ -87,91 +80,28 @@ export const DefaultIncomeManagement = () => {
       setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to save defaults",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
         return;
       }
 
-      const date = new Date().toISOString().split('T')[0];
+      const updates = [
+        { amount: defaultIncome.lucas, source: "Primary Job", user_id: user.id, is_default: true },
+        { amount: defaultIncome.camila, source: "Wife Job 1", user_id: user.id, is_default: true },
+        { amount: defaultIncome.other, source: "Other", user_id: user.id, is_default: true },
+      ];
 
-      // First, delete existing default records
-      const { error: deleteError } = await supabase
-        .from('income')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('is_default', true);
-
-      if (deleteError) {
-        console.error('Error deleting old defaults:', deleteError);
-        toast({
-          title: "Error deleting old defaults",
-          description: deleteError.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Then insert new default records
-      const { error: insertError } = await supabase
-        .from('income')
-        .insert([
-          {
-            amount: defaultIncome.lucas,
-            source: "Primary Job",
-            date,
-            user_id: user.id,
-            is_default: true
-          },
-          {
-            amount: defaultIncome.camila,
-            source: "Wife Job 1",
-            date,
-            user_id: user.id,
-            is_default: true
-          },
-          {
-            amount: defaultIncome.other,
-            source: "Other",
-            date,
-            user_id: user.id,
-            is_default: true
-          }
-        ]);
-
-      if (insertError) {
-        console.error('Error saving defaults:', insertError);
-        toast({
-          title: "Error saving defaults",
-          description: insertError.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Success",
-        description: "Your default monthly income has been saved.",
-      });
-
-      // Refresh the data after saving
-      await fetchDefaultIncome();
-    } catch (error: any) {
-      console.error('Error in handleSaveDefaults:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save default income",
-        variant: "destructive",
-      });
+      await supabase.from("income").upsert(updates, { onConflict: ["user_id", "source"] });
+      toast({ title: "Success", description: "Income saved successfully" });
+      fetchDefaultIncome();
+    } catch (error) {
+      console.error("Error saving income:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleIncomeChange = (field: keyof IncomeState, value: number) => {
-    setDefaultIncome(prev => ({ ...prev, [field]: value }));
+    setDefaultIncome((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -192,15 +122,9 @@ export const DefaultIncomeManagement = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <IncomeInputGroup
-          income={defaultIncome}
-          onIncomeChange={handleIncomeChange}
-        />
+        <IncomeInputGroup income={defaultIncome} onIncomeChange={handleIncomeChange} />
         <div className="flex justify-end">
-          <Button 
-            onClick={handleSaveDefaults}
-            disabled={isLoading}
-          >
+          <Button onClick={handleSaveDefaults} disabled={isLoading}>
             {isLoading ? "Saving..." : "Save Defaults"}
           </Button>
         </div>
