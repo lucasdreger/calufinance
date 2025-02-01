@@ -19,32 +19,22 @@ interface IncomeState {
 }
 
 export const DefaultIncomeManagement = () => {
-  const [defaultIncome, setDefaultIncome] = useState<IncomeState>({
-    lucas: 0,
-    camila: 0,
-    other: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const [defaultIncome, setDefaultIncome] = useState<IncomeState>({ lucas: 0, camila: 0, other: 0 });
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    fetchDefaultIncome();
+  }, []);
+
   const fetchDefaultIncome = async () => {
+    setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from("income")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("is_default", true);
+      if (!user) throw new Error("User not authenticated");
 
-      if (error) {
-        console.error("Error fetching income:", error);
-        return;
-      }
+      const { data, error } = await supabase.from("income").select("*").eq("user_id", user.id).eq("is_default", true);
+      if (error) throw error;
 
       if (!data || data.length === 0) {
         await createDefaultIncome(user.id);
@@ -56,7 +46,7 @@ export const DefaultIncomeManagement = () => {
         });
       }
     } catch (error) {
-      console.error("Error fetching default income:", error);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -69,32 +59,29 @@ export const DefaultIncomeManagement = () => {
       { amount: 0, source: "Other", user_id: userId, is_default: true },
     ];
     await supabase.from("income").insert(defaultEntries);
+    fetchDefaultIncome();
   };
 
-  useEffect(() => {
-    fetchDefaultIncome();
-  }, []);
-
   const handleSaveDefaults = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
-        return;
-      }
+      if (!user) throw new Error("User not authenticated");
 
-      const updates = [
-        { amount: defaultIncome.lucas, source: "Primary Job", user_id: user.id, is_default: true },
-        { amount: defaultIncome.camila, source: "Wife Job 1", user_id: user.id, is_default: true },
-        { amount: defaultIncome.other, source: "Other", user_id: user.id, is_default: true },
-      ];
+      const updates = Object.entries(defaultIncome).map(([key, value]) => ({
+        amount: value,
+        source: key === "lucas" ? "Primary Job" : key === "camila" ? "Wife Job 1" : "Other",
+        user_id: user.id,
+        is_default: true,
+      }));
 
-      await supabase.from("income").upsert(updates, { onConflict: ["user_id", "source"] });
+      const { error } = await supabase.from("income").upsert(updates, { onConflict: ["user_id", "source"] });
+      if (error) throw error;
+
       toast({ title: "Success", description: "Income saved successfully" });
       fetchDefaultIncome();
     } catch (error) {
-      console.error("Error saving income:", error);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
