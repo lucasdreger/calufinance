@@ -60,20 +60,6 @@ export const DefaultIncomeManagement = () => {
 
   useEffect(() => {
     fetchDefaultIncome();
-
-    const channel = supabase
-      .channel('income_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'income' },
-        () => {
-          fetchDefaultIncome();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const handleSaveDefaults = async () => {
@@ -90,56 +76,61 @@ export const DefaultIncomeManagement = () => {
     const date = new Date().toISOString().split('T')[0];
 
     // First, delete existing default records
-    await supabase
+    const { error: deleteError } = await supabase
       .from('income')
       .delete()
       .eq('user_id', user.id)
       .eq('is_default', true);
 
-    // Then insert new default records
-    const promises = [
-      supabase.from('income').insert({
-        amount: defaultIncome.lucas,
-        source: "Primary Job",
-        date,
-        user_id: user.id,
-        is_default: true
-      }),
-      supabase.from('income').insert({
-        amount: defaultIncome.camila,
-        source: "Wife Job 1",
-        date,
-        user_id: user.id,
-        is_default: true
-      }),
-      supabase.from('income').insert({
-        amount: defaultIncome.other,
-        source: "Other",
-        date,
-        user_id: user.id,
-        is_default: true
-      })
-    ];
-
-    try {
-      const results = await Promise.all(promises);
-      const errors = results.filter(result => result.error);
-      
-      if (errors.length > 0) {
-        throw new Error(errors[0].error.message);
-      }
-
+    if (deleteError) {
       toast({
-        title: "Default Income Saved",
-        description: "Your default monthly income has been saved.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error saving defaults",
-        description: error.message,
+        title: "Error deleting old defaults",
+        description: deleteError.message,
         variant: "destructive",
       });
+      return;
     }
+
+    // Then insert new default records
+    const { error: insertError } = await supabase
+      .from('income')
+      .insert([
+        {
+          amount: defaultIncome.lucas,
+          source: "Primary Job",
+          date,
+          user_id: user.id,
+          is_default: true
+        },
+        {
+          amount: defaultIncome.camila,
+          source: "Wife Job 1",
+          date,
+          user_id: user.id,
+          is_default: true
+        },
+        {
+          amount: defaultIncome.other,
+          source: "Other",
+          date,
+          user_id: user.id,
+          is_default: true
+        }
+      ]);
+
+    if (insertError) {
+      toast({
+        title: "Error saving defaults",
+        description: insertError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Default Income Saved",
+      description: "Your default monthly income has been saved.",
+    });
   };
 
   const handleIncomeChange = (field: keyof IncomeState, value: number) => {

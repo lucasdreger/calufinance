@@ -9,35 +9,63 @@ import { InvestmentsSection } from "./overview/InvestmentsSection";
 import { ReservesSection } from "./overview/ReservesSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface Investment {
-  id: string;
-  type: string;
-  current_value: number;
-  last_updated: string;
+interface MonthlyData {
+  month: string;
+  planned: number;
+  actual: number;
 }
 
-interface Reserve {
-  id: string;
-  type: string;
-  current_value: number;
-  last_updated: string;
-}
-
-interface BudgetOverviewProps {
-  monthlyData: {
-    month: string;
-    planned: number;
-    actual: number;
-  }[];
-}
-
-export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [reserves, setReserves] = useState<Reserve[]>([]);
+export const BudgetOverview = () => {
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [reserves, setReserves] = useState<any[]>([]);
   const [editingInvestment, setEditingInvestment] = useState<string | null>(null);
   const [editingReserve, setEditingReserve] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const { toast } = useToast();
+
+  const fetchMonthlyData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const currentYear = new Date().getFullYear();
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const date = new Date(currentYear, i, 1);
+      return {
+        month: date.toLocaleString('default', { month: 'short' }),
+        startDate: new Date(currentYear, i, 1),
+        endDate: new Date(currentYear, i + 1, 0)
+      };
+    });
+
+    const monthlyDataPromises = months.map(async ({ month, startDate, endDate }) => {
+      // Fetch planned expenses (from budget_plans)
+      const { data: plannedData } = await supabase
+        .from('budget_plans')
+        .select('estimated_amount')
+        .eq('user_id', user.id);
+
+      // Fetch actual expenses for the month
+      const { data: actualData } = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('user_id', user.id)
+        .gte('date', startDate.toISOString())
+        .lte('date', endDate.toISOString());
+
+      const planned = plannedData?.reduce((sum, item) => sum + Number(item.estimated_amount), 0) || 0;
+      const actual = actualData?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+
+      return {
+        month,
+        planned,
+        actual
+      };
+    });
+
+    const data = await Promise.all(monthlyDataPromises);
+    setMonthlyData(data);
+  };
 
   const fetchData = async () => {
     try {
@@ -236,13 +264,11 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
     }
   };
 
-  const totalBudget = investments.reduce((sum, inv) => sum + inv.current_value, 0) +
-                      reserves.reduce((sum, res) => sum + res.current_value, 0);
-
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <TotalBudget totalBudget={totalBudget} />
+        <TotalBudget totalBudget={investments.reduce((sum, inv) => sum + inv.current_value, 0) +
+                      reserves.reduce((sum, res) => sum + res.current_value, 0)} />
         
         <TooltipProvider>
           <Tooltip>

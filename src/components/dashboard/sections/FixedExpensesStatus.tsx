@@ -14,10 +14,15 @@ interface FixedExpensesStatusProps {
   selectedMonth: number;
 }
 
+interface StatusMap {
+  [key: string]: boolean;
+}
+
 export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpensesStatusProps) => {
   const [allTasksCompleted, setAllTasksCompleted] = useState<boolean>(false);
   const [totalTasks, setTotalTasks] = useState<number>(0);
   const [completedTasks, setCompletedTasks] = useState<number>(0);
+  const [statusMap, setStatusMap] = useState<StatusMap>({});
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -39,16 +44,21 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
 
       setTotalTasks(fixedExpenses.length);
 
-      // Get completed tasks for the month
+      // Get completed tasks for the specific month
       const { data: completedStatuses } = await supabase
         .from('fixed_expenses_status')
         .select('*')
         .eq('user_id', user.id)
         .gte('date', startDate.toISOString())
-        .lte('date', endDate.toISOString())
-        .eq('is_paid', true);
+        .lte('date', endDate.toISOString());
 
-      const completed = completedStatuses?.length || 0;
+      const newStatusMap: StatusMap = {};
+      completedStatuses?.forEach((status) => {
+        newStatusMap[status.budget_plan_id] = status.is_paid;
+      });
+
+      setStatusMap(newStatusMap);
+      const completed = completedStatuses?.filter(status => status.is_paid)?.length || 0;
       setCompletedTasks(completed);
       setAllTasksCompleted(completed === fixedExpenses.length);
     };
@@ -69,8 +79,6 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       supabase.removeChannel(channel);
     };
   }, [selectedYear, selectedMonth]);
-
-  if (totalTasks === 0) return null;
 
   return (
     <div className="space-y-4">
