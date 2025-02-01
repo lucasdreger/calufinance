@@ -24,6 +24,7 @@ export const DefaultIncomeManagement = () => {
     camila: 0,
     other: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const fetchDefaultIncome = async () => {
@@ -45,6 +46,7 @@ export const DefaultIncomeManagement = () => {
         .eq('is_default', true);
 
       if (error) {
+        console.error('Error fetching default income:', error);
         toast({
           title: "Error fetching default income",
           description: error.message,
@@ -65,11 +67,14 @@ export const DefaultIncomeManagement = () => {
         });
       }
     } catch (error: any) {
+      console.error('Error in fetchDefaultIncome:', error);
       toast({
         title: "Error",
         description: "Failed to fetch default income",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -79,6 +84,7 @@ export const DefaultIncomeManagement = () => {
 
   const handleSaveDefaults = async () => {
     try {
+      setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({
@@ -99,6 +105,7 @@ export const DefaultIncomeManagement = () => {
         .eq('is_default', true);
 
       if (deleteError) {
+        console.error('Error deleting old defaults:', deleteError);
         toast({
           title: "Error deleting old defaults",
           description: deleteError.message,
@@ -135,6 +142,7 @@ export const DefaultIncomeManagement = () => {
         ]);
 
       if (insertError) {
+        console.error('Error saving defaults:', insertError);
         toast({
           title: "Error saving defaults",
           description: insertError.message,
@@ -144,18 +152,21 @@ export const DefaultIncomeManagement = () => {
       }
 
       toast({
-        title: "Default Income Saved",
+        title: "Success",
         description: "Your default monthly income has been saved.",
       });
 
       // Refresh the data after saving
       await fetchDefaultIncome();
     } catch (error: any) {
+      console.error('Error in handleSaveDefaults:', error);
       toast({
         title: "Error",
         description: "Failed to save default income",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -186,7 +197,12 @@ export const DefaultIncomeManagement = () => {
           onIncomeChange={handleIncomeChange}
         />
         <div className="flex justify-end">
-          <Button onClick={handleSaveDefaults}>Save Defaults</Button>
+          <Button 
+            onClick={handleSaveDefaults}
+            disabled={isLoading}
+          >
+            {isLoading ? "Saving..." : "Save Defaults"}
+          </Button>
         </div>
       </CardContent>
     </Card>
