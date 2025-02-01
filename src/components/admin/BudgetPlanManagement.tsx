@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BudgetPlanForm } from "./BudgetPlanForm";
 import { BudgetPlanTable } from "./BudgetPlanTable";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,

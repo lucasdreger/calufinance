@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
-import { InfoCircle } from "lucide-react";
+import { Info } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -154,7 +154,7 @@ export const DefaultIncomeManagement = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <InfoCircle className="h-4 w-4 text-gray-500" />
+                <Info className="h-4 w-4 text-gray-500" />
               </TooltipTrigger>
               <TooltipContent>
                 <p>Set your default monthly income values here. These will be used as templates for new months.</p>

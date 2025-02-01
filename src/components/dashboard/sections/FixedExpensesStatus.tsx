@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2, InfoCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Tooltip,
@@ -79,7 +79,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <InfoCircle className="h-4 w-4 text-gray-500" />
+              <Info className="h-4 w-4 text-gray-500" />
             </TooltipTrigger>
             <TooltipContent>
               <p>Track the status of your fixed expenses for this month. Make sure to mark them as completed once paid.</p>
