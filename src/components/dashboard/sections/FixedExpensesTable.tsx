@@ -85,15 +85,49 @@ export const FixedExpensesTable = () => {
     const currentDate = new Date();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 
-    const { error } = await supabase
+    // First, check if a status already exists for this plan and month
+    const { data: existingStatus, error: checkError } = await supabase
       .from('fixed_expenses_status')
-      .upsert({
-        budget_plan_id: planId,
-        user_id: user.id,
-        date: firstDayOfMonth.toISOString(),
-        is_paid: checked,
-        completed_at: checked ? new Date().toISOString() : null
+      .select('id')
+      .eq('budget_plan_id', planId)
+      .eq('user_id', user.id)
+      .gte('date', firstDayOfMonth.toISOString())
+      .lt('date', new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1).toISOString())
+      .maybeSingle();
+
+    if (checkError) {
+      toast({
+        title: "Error checking status",
+        description: checkError.message,
+        variant: "destructive",
       });
+      return;
+    }
+
+    let error;
+    if (existingStatus) {
+      // Update existing status
+      const { error: updateError } = await supabase
+        .from('fixed_expenses_status')
+        .update({
+          is_paid: checked,
+          completed_at: checked ? new Date().toISOString() : null
+        })
+        .eq('id', existingStatus.id);
+      error = updateError;
+    } else {
+      // Insert new status
+      const { error: insertError } = await supabase
+        .from('fixed_expenses_status')
+        .insert({
+          budget_plan_id: planId,
+          user_id: user.id,
+          date: firstDayOfMonth.toISOString(),
+          is_paid: checked,
+          completed_at: checked ? new Date().toISOString() : null
+        });
+      error = insertError;
+    }
 
     if (error) {
       toast({
