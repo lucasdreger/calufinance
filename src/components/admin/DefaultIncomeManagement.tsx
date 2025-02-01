@@ -27,33 +27,48 @@ export const DefaultIncomeManagement = () => {
   const { toast } = useToast();
 
   const fetchDefaultIncome = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to view defaults",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from('income')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_default', true);
+      const { data, error } = await supabase
+        .from('income')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_default', true);
 
-    if (error) {
+      if (error) {
+        toast({
+          title: "Error fetching default income",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
+        const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
+        const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
+
+        setDefaultIncome({
+          lucas: lucasIncome,
+          camila: camilaIncome,
+          other: otherIncome,
+        });
+      }
+    } catch (error: any) {
       toast({
-        title: "Error fetching default income",
-        description: error.message,
+        title: "Error",
+        description: "Failed to fetch default income",
         variant: "destructive",
-      });
-      return;
-    }
-
-    if (data && data.length > 0) {
-      const lucasIncome = data.find(inc => inc.source === "Primary Job")?.amount || 0;
-      const camilaIncome = data.find(inc => inc.source === "Wife Job 1")?.amount || 0;
-      const otherIncome = data.find(inc => inc.source === "Other")?.amount || 0;
-
-      setDefaultIncome({
-        lucas: lucasIncome,
-        camila: camilaIncome,
-        other: otherIncome,
       });
     }
   };
@@ -63,74 +78,85 @@ export const DefaultIncomeManagement = () => {
   }, []);
 
   const handleSaveDefaults = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to save defaults",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const date = new Date().toISOString().split('T')[0];
+
+      // First, delete existing default records
+      const { error: deleteError } = await supabase
+        .from('income')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('is_default', true);
+
+      if (deleteError) {
+        toast({
+          title: "Error deleting old defaults",
+          description: deleteError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Then insert new default records
+      const { error: insertError } = await supabase
+        .from('income')
+        .insert([
+          {
+            amount: defaultIncome.lucas,
+            source: "Primary Job",
+            date,
+            user_id: user.id,
+            is_default: true
+          },
+          {
+            amount: defaultIncome.camila,
+            source: "Wife Job 1",
+            date,
+            user_id: user.id,
+            is_default: true
+          },
+          {
+            amount: defaultIncome.other,
+            source: "Other",
+            date,
+            user_id: user.id,
+            is_default: true
+          }
+        ]);
+
+      if (insertError) {
+        toast({
+          title: "Error saving defaults",
+          description: insertError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Default Income Saved",
+        description: "Your default monthly income has been saved.",
+      });
+
+      // Refresh the data after saving
+      await fetchDefaultIncome();
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "You must be logged in to save defaults",
+        description: "Failed to save default income",
         variant: "destructive",
       });
-      return;
     }
-
-    const date = new Date().toISOString().split('T')[0];
-
-    // First, delete existing default records
-    const { error: deleteError } = await supabase
-      .from('income')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('is_default', true);
-
-    if (deleteError) {
-      toast({
-        title: "Error deleting old defaults",
-        description: deleteError.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Then insert new default records
-    const { error: insertError } = await supabase
-      .from('income')
-      .insert([
-        {
-          amount: defaultIncome.lucas,
-          source: "Primary Job",
-          date,
-          user_id: user.id,
-          is_default: true
-        },
-        {
-          amount: defaultIncome.camila,
-          source: "Wife Job 1",
-          date,
-          user_id: user.id,
-          is_default: true
-        },
-        {
-          amount: defaultIncome.other,
-          source: "Other",
-          date,
-          user_id: user.id,
-          is_default: true
-        }
-      ]);
-
-    if (insertError) {
-      toast({
-        title: "Error saving defaults",
-        description: insertError.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Default Income Saved",
-      description: "Your default monthly income has been saved.",
-    });
   };
 
   const handleIncomeChange = (field: keyof IncomeState, value: number) => {
