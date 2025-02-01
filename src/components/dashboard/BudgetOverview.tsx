@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { TotalBudget } from "./overview/TotalBudget";
 import { InvestmentsSection } from "./overview/InvestmentsSection";
+import { ReservesSection } from "./overview/ReservesSection";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Investment {
@@ -243,16 +244,43 @@ export const BudgetOverview = ({ monthlyData }: BudgetOverviewProps) => {
       <div className="grid gap-4 md:grid-cols-3">
         <TotalBudget totalBudget={totalBudget} />
         
-        <InvestmentsSection
-          investments={investments}
-          editingInvestment={editingInvestment}
-          editValue={editValue}
-          onEdit={(id, currentValue) => handleEdit(id, currentValue, 'investment')}
-          onSave={(id) => handleSave(id, 'investment')}
-          onEditValueChange={setEditValue}
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <InvestmentsSection
+                investments={investments}
+                editingInvestment={editingInvestment}
+                editValue={editValue}
+                onEdit={(id, currentValue) => handleEdit(id, currentValue, 'investment')}
+                onSave={(id) => handleSave(id, 'investment')}
+                onEditValueChange={setEditValue}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Track and manage your investment portfolio across different categories</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <TooltipProvider delayDuration={3000}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <ReservesSection
+                reserves={reserves}
+                editingReserve={editingReserve}
+                editValue={editValue}
+                onEdit={(id, currentValue) => handleEdit(id, currentValue, 'reserve')}
+                onSave={(id) => handleSave(id, 'reserve')}
+                onEditValueChange={setEditValue}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Monitor your emergency and travel fund reserves</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Card className="col-span-3">

@@ -118,6 +118,7 @@ export type Database = {
       fixed_expenses_status: {
         Row: {
           budget_plan_id: string | null
+          completed_at: string | null
           created_at: string
           date: string
           id: string
@@ -126,6 +127,7 @@ export type Database = {
         }
         Insert: {
           budget_plan_id?: string | null
+          completed_at?: string | null
           created_at?: string
           date: string
           id?: string
@@ -134,6 +136,7 @@ export type Database = {
         }
         Update: {
           budget_plan_id?: string | null
+          completed_at?: string | null
           created_at?: string
           date?: string
           id?: string

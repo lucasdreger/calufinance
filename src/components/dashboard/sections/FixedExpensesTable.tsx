@@ -91,7 +91,8 @@ export const FixedExpensesTable = () => {
         budget_plan_id: planId,
         user_id: user.id,
         date: firstDayOfMonth.toISOString(),
-        is_paid: checked
+        is_paid: checked,
+        completed_at: checked ? new Date().toISOString() : null
       });
 
     if (error) {

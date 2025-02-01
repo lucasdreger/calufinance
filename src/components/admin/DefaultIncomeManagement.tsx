@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
 
@@ -53,6 +53,20 @@ export const DefaultIncomeManagement = () => {
 
   useEffect(() => {
     fetchDefaultIncome();
+
+    const channel = supabase
+      .channel('income_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'income' },
+        () => {
+          fetchDefaultIncome();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleSaveDefaults = async () => {
