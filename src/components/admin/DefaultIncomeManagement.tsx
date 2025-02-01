@@ -4,6 +4,13 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
+import { InfoCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface IncomeState {
   lucas: number;
@@ -81,28 +88,37 @@ export const DefaultIncomeManagement = () => {
     }
 
     const date = new Date().toISOString().split('T')[0];
+
+    // First, delete existing default records
+    await supabase
+      .from('income')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('is_default', true);
+
+    // Then insert new default records
     const promises = [
-      supabase.from('income').upsert({
+      supabase.from('income').insert({
         amount: defaultIncome.lucas,
         source: "Primary Job",
         date,
         user_id: user.id,
         is_default: true
-      }, { onConflict: 'user_id,source,is_default' }),
-      supabase.from('income').upsert({
+      }),
+      supabase.from('income').insert({
         amount: defaultIncome.camila,
         source: "Wife Job 1",
         date,
         user_id: user.id,
         is_default: true
-      }, { onConflict: 'user_id,source,is_default' }),
-      supabase.from('income').upsert({
+      }),
+      supabase.from('income').insert({
         amount: defaultIncome.other,
         source: "Other",
         date,
         user_id: user.id,
         is_default: true
-      }, { onConflict: 'user_id,source,is_default' })
+      })
     ];
 
     try {
@@ -133,7 +149,19 @@ export const DefaultIncomeManagement = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Default Monthly Income</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle>Default Monthly Income</CardTitle>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <InfoCircle className="h-4 w-4 text-gray-500" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Set your default monthly income values here. These will be used as templates for new months.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <IncomeInputGroup

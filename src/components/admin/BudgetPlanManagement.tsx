@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BudgetPlanForm } from "./BudgetPlanForm";
 import { BudgetPlanTable } from "./BudgetPlanTable";
+import { InfoCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const BudgetPlanManagement = () => {
   const [categories, setCategories] = useState<any[]>([]);
@@ -12,9 +19,14 @@ export const BudgetPlanManagement = () => {
   const formRef = useRef<HTMLDivElement>(null);
 
   const fetchCategories = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from('expenses_categories')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id)
+      .order('name');
     
     if (error) {
       toast({
@@ -25,7 +37,12 @@ export const BudgetPlanManagement = () => {
       return;
     }
     
-    setCategories(data || []);
+    // Remove duplicates based on category name
+    const uniqueCategories = data?.filter((category, index, self) =>
+      index === self.findIndex((c) => c.name === category.name)
+    ) || [];
+    
+    setCategories(uniqueCategories);
   };
 
   const fetchBudgetPlans = async () => {

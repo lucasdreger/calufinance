@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, InfoCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface FixedExpensesStatusProps {
   selectedYear: number;
@@ -67,9 +73,23 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   if (totalTasks === 0) return null;
 
   return (
-    <>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <h3 className="text-lg font-medium">Fixed Expenses Status</h3>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <InfoCircle className="h-4 w-4 text-gray-500" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Track the status of your fixed expenses for this month. Make sure to mark them as completed once paid.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
       {!allTasksCompleted ? (
-        <Alert variant="warning" className="bg-yellow-50 border-yellow-200 mb-6">
+        <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
             {completedTasks} out of {totalTasks} required transfers have been completed for this month. 
@@ -77,13 +97,13 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
           </AlertDescription>
         </Alert>
       ) : (
-        <Alert className="bg-green-50 border-green-200 mb-6">
+        <Alert className="bg-green-50 border-green-200">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
             All required transfers for this month have been completed!
           </AlertDescription>
         </Alert>
       )}
-    </>
+    </div>
   );
 };
