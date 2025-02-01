@@ -24,24 +24,6 @@ const Index = () => {
   const currentMonth = new Date().getMonth();
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
-  // Updated mock data to include all months
-  const mockData = {
-    monthlyData: [
-      { month: 'Jan', planned: 5000, actual: 4800 },
-      { month: 'Feb', planned: 5000, actual: 5200 },
-      { month: 'Mar', planned: 5000, actual: 4900 },
-      { month: 'Apr', planned: 5000, actual: 0 },
-      { month: 'May', planned: 5000, actual: 0 },
-      { month: 'Jun', planned: 5000, actual: 0 },
-      { month: 'Jul', planned: 5000, actual: 0 },
-      { month: 'Aug', planned: 5000, actual: 0 },
-      { month: 'Sep', planned: 5000, actual: 0 },
-      { month: 'Oct', planned: 5000, actual: 0 },
-      { month: 'Nov', planned: 5000, actual: 0 },
-      { month: 'Dec', planned: 5000, actual: 0 }
-    ]
-  };
-
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -67,7 +49,7 @@ const Index = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <BudgetOverview monthlyData={mockData.monthlyData} />
+          <BudgetOverview />
           <MonthlyDeviation />
           <MonthlyExpensesTable />
         </TabsContent>
