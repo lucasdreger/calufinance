@@ -88,7 +88,7 @@ const Index = () => {
 
               {months.map((month, index) => (
                 <TabsContent key={month} value={index.toString()}>
-                  <MonthlyView>
+                  <MonthlyView selectedYear={selectedYear} selectedMonth={index}>
                     <ExpensesSection
                       selectedYear={selectedYear}
                       selectedMonth={index}
