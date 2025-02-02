@@ -19,6 +19,44 @@ export const IncomeSection = () => {
   });
   const { toast } = useToast();
 
+  // ✅ Função para carregar a renda ao iniciar a página
+  const fetchIncomeOnLoad = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const currentDate = new Date().toISOString().split("T")[0];
+
+      // Buscar renda da tabela para o mês atual
+      const { data, error } = await supabase
+        .from("income")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", currentDate)
+        .eq("is_default", false);
+
+      if (error) throw error;
+
+      console.log("🔄 Income loaded from database:", data);
+
+      if (data && data.length > 0) {
+        setIncome({
+          lucas: data.find((inc) => inc.source === "Primary Job")?.amount || 0,
+          camila: data.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
+          other: data.find((inc) => inc.source === "Other")?.amount || 0,
+        });
+      }
+    } catch (error: any) {
+      console.error("❌ Error fetching income:", error);
+    }
+  };
+
+  // ✅ Chamando `fetchIncomeOnLoad()` assim que o componente é montado
+  useEffect(() => {
+    fetchIncomeOnLoad();
+  }, []);
+
+  // ✅ Carregar valores padrão e salvar no banco de dados
   const handleLoadDefaults = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -31,7 +69,6 @@ export const IncomeSection = () => {
         return;
       }
 
-      // Fetch default income values
       const { data: defaultIncome, error } = await supabase
         .from("income")
         .select("*")
@@ -51,17 +88,7 @@ export const IncomeSection = () => {
 
         console.log("🚀 New default income values:", newIncome);
 
-        // Delete existing income records for the current month
-        const { error: deleteError } = await supabase
-          .from("income")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("date", currentDate)
-          .eq("is_default", false);
-
-        if (deleteError) throw deleteError;
-
-        // Insert new income records for the current month
+        // ✅ Inserir os novos valores no banco
         const incomeEntries = [
           { amount: newIncome.lucas, source: "Primary Job" },
           { amount: newIncome.camila, source: "Wife Job 1" },
@@ -75,30 +102,14 @@ export const IncomeSection = () => {
 
         const { error: insertError } = await supabase
           .from("income")
-          .insert(incomeEntries);
+          .upsert(incomeEntries, { onConflict: ["user_id", "source", "date"] });
 
         if (insertError) throw insertError;
 
-        // 🚀 Fetch updated values to force synchronization
-        const { data: updatedIncome, error: fetchError } = await supabase
-          .from("income")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("date", currentDate)
-          .eq("is_default", false);
+        // ✅ Atualizar o estado local
+        setIncome(newIncome);
 
-        if (fetchError) throw fetchError;
-
-        console.log("✅ Confirmed from DB:", updatedIncome);
-
-        // ✅ Force state update to reflect latest database values
-        setIncome(() => ({
-          lucas: updatedIncome.find((inc) => inc.source === "Primary Job")?.amount || 0,
-          camila: updatedIncome.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
-          other: updatedIncome.find((inc) => inc.source === "Other")?.amount || 0,
-        }));
-
-        console.log("🎯 Updated income state:", income);
+        console.log("🎯 Updated income state:", newIncome);
 
         toast({
           title: "Income Defaults Loaded",
