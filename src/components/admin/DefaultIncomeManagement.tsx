@@ -49,7 +49,6 @@ export const DefaultIncomeManagement = () => {
 
       // Map backend data to state
       if (data && data.length > 0) {
-        const newIncome = { lucas: 0, camila: 0, other: 0 };
         data.forEach((item: any) => {
           if (item.source === "Primary Job") newIncome.lucas = Number(item.amount);
           if (item.source === "Wife Job 1") newIncome.camila = Number(item.amount);
