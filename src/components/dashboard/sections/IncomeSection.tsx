@@ -23,11 +23,20 @@ export const IncomeSection = () => {
     const fetchCurrentIncome = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          toast({
+            title: "Error",
+            description: "You must be logged in to view income",
+            variant: "destructive",
+          });
+          return;
+        }
 
         const currentDate = new Date();
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
+
+        console.log('Fetching income for date range:', { startOfMonth, endOfMonth });
 
         const { data, error } = await supabase
           .from('income')
@@ -37,7 +46,12 @@ export const IncomeSection = () => {
           .gte('date', startOfMonth)
           .lte('date', endOfMonth);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching income:', error);
+          throw error;
+        }
+
+        console.log('Fetched income data:', data);
 
         const newIncome = { lucas: 0, camila: 0, other: 0 };
         data?.forEach((item: any) => {
@@ -45,6 +59,8 @@ export const IncomeSection = () => {
           if (item.source === "Wife Job 1") newIncome.camila = item.amount;
           if (item.source === "Other") newIncome.other = item.amount;
         });
+        
+        console.log('Setting income state to:', newIncome);
         setIncome(newIncome);
       } catch (error: any) {
         console.error('Error fetching income:', error);
