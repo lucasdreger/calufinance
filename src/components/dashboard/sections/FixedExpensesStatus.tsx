@@ -61,7 +61,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       setTotalTasks(totalRequiredTasks);
       
       // Count how many of them are completed
-      const completed = fixedExpenses.filter(expense => statusLookup.get(expense.id) === true).length;
+      const completed = fixedExpenses.filter(expense => statusLookup.get(expense.id)).length;
       setCompletedTasks(completed);
       setAllTasksCompleted(completed === totalRequiredTasks);
     };
