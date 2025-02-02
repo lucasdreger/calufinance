@@ -65,6 +65,28 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     setStateVersion((prev) => prev + 1); // 🔥 Force re-render
   };
 
+  // ✅ Handle checkbox click (Step 4)
+  const handleCheckboxChange = async (budgetPlanId: number, isChecked: boolean) => {
+    try {
+      // Update the "is_paid" status in Supabase
+      const { error } = await supabase
+        .from("fixed_expenses_status")
+        .update({ is_paid: isChecked })
+        .eq("budget_plan_id", budgetPlanId);
+
+      if (error) {
+        console.error("❌ Error updating status:", error);
+      } else {
+        console.log(`✅ Updated budgetPlanId ${budgetPlanId}: is_paid = ${isChecked}`);
+        
+        // 🔥 Instant UI update: Fetch latest status after change
+        fetchStatus();
+      }
+    } catch (err) {
+      console.error("❌ Unexpected error in handleCheckboxChange:", err);
+    }
+  };
+
   useEffect(() => {
     fetchStatus();
 
@@ -116,6 +138,20 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Example: Checkbox for each fixed expense (replace with real data) */}
+      <div className="space-y-2">
+        {Object.keys(statusMap).map((id) => (
+          <div key={id} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={statusMap[Number(id)] || false}
+              onChange={(e) => handleCheckboxChange(Number(id), e.target.checked)}
+            />
+            <label>Expense {id}</label>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
