@@ -16,42 +16,50 @@ interface MonthlyData {
 }
 
 export const BudgetOverview = () => {
+  // Estado para armazenar dados mensais do gráfico
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  // Estado para armazenar investimentos
   const [investments, setInvestments] = useState<any[]>([]);
+  // Estado para armazenar reservas
   const [reserves, setReserves] = useState<any[]>([]);
+  // Estados para controle de edição
   const [editingInvestment, setEditingInvestment] = useState<string | null>(null);
   const [editingReserve, setEditingReserve] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const { toast } = useToast();
 
+  // Função para buscar dados mensais para o gráfico
   const fetchMonthlyData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const currentYear = new Date().getFullYear();
+    
+    // Cria array com todos os meses do ano
     const months = Array.from({ length: 12 }, (_, i) => {
       const date = new Date(currentYear, i, 1);
       return {
         month: date.toLocaleString('default', { month: 'short' }),
-        startDate: new Date(currentYear, i, 1),
-        endDate: new Date(currentYear, i + 1, 0)
+        startDate: new Date(currentYear, i, 1).toISOString(),
+        endDate: new Date(currentYear, i + 1, 0).toISOString()
       };
     });
 
+    // Busca dados para cada mês
     const monthlyDataPromises = months.map(async ({ month, startDate, endDate }) => {
-      // Fetch planned expenses (from budget_plans)
+      // Busca gastos planejados
       const { data: plannedData } = await supabase
         .from('budget_plans')
         .select('estimated_amount')
         .eq('user_id', user.id);
 
-      // Fetch actual expenses for the month
+      // Busca gastos reais
       const { data: actualData } = await supabase
         .from('expenses')
         .select('amount')
         .eq('user_id', user.id)
-        .gte('date', startDate.toISOString())
-        .lte('date', endDate.toISOString());
+        .gte('date', startDate)
+        .lte('date', endDate);
 
       const planned = plannedData?.reduce((sum, item) => sum + Number(item.estimated_amount), 0) || 0;
       const actual = actualData?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
@@ -64,121 +72,67 @@ export const BudgetOverview = () => {
     });
 
     const data = await Promise.all(monthlyDataPromises);
+    console.log('Monthly data fetched:', data); // Debug log
     setMonthlyData(data);
   };
 
+  // Função para buscar dados gerais (investimentos e reservas)
   const fetchData = async () => {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (userError) {
-        console.error("User authentication error:", userError);
+      if (userError || !user) {
+        console.error("Auth error:", userError);
         toast({
-          title: "Authentication Error",
-          description: userError.message,
+          title: "Erro de Autenticação",
+          description: "Por favor, faça login novamente",
           variant: "destructive",
         });
         return;
       }
 
-      if (!user) {
-        console.error("No authenticated user found");
-        toast({
-          title: "Authentication Error",
-          description: "Please log in to view your data",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log("Current user:", user.email, "User ID:", user.id);
-
-      // Create default investments if none exist
-      const { count: investmentsCount, error: countError } = await supabase
-        .from('investments')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      if (countError) {
-        console.error("Error checking investments count:", countError);
-      } else if (investmentsCount === 0) {
-        console.log("No investments found, creating defaults...");
-        const defaultInvestments = [
-          { type: 'Crypto', current_value: 0, user_id: user.id },
-          { type: 'Lucas Pension', current_value: 0, user_id: user.id },
-          { type: 'Camila Pension', current_value: 0, user_id: user.id },
-          { type: 'Fondsdepot', current_value: 0, user_id: user.id }
-        ];
-
-        const { error: createError } = await supabase
-          .from('investments')
-          .insert(defaultInvestments);
-
-        if (createError) {
-          console.error("Error creating default investments:", createError);
-        }
-      }
-
-      // Fetch investments with detailed logging
-      console.log("Fetching investments for user:", user.id);
+      // Busca investimentos
       const { data: investmentsData, error: investmentsError } = await supabase
         .from('investments')
         .select('*')
         .eq('user_id', user.id);
 
-      if (investmentsError) {
-        console.error("Error fetching investments:", investmentsError);
-        toast({
-          title: "Error fetching investments",
-          description: investmentsError.message,
-          variant: "destructive",
-        });
-        return;
-      }
+      if (investmentsError) throw investmentsError;
 
-      // Fetch reserves with detailed logging
-      console.log("Fetching reserves for user:", user.id);
+      // Busca reservas
       const { data: reservesData, error: reservesError } = await supabase
         .from('reserves')
         .select('*')
         .eq('user_id', user.id);
 
-      if (reservesError) {
-        console.error("Error fetching reserves:", reservesError);
-        toast({
-          title: "Error fetching reserves",
-          description: reservesError.message,
-          variant: "destructive",
-        });
-        return;
-      }
+      if (reservesError) throw reservesError;
 
-      console.log("Raw investments data:", investmentsData);
-      console.log("Raw reserves data:", reservesData);
+      console.log('Investments data:', investmentsData);
+      console.log('Reserves data:', reservesData);
 
       setInvestments(investmentsData || []);
       setReserves(reservesData || []);
     } catch (error: any) {
       console.error("Error in fetchData:", error);
       toast({
-        title: "Error",
+        title: "Erro",
         description: error.message,
         variant: "destructive",
       });
     }
   };
 
+  // Efeito para carregar dados iniciais
   useEffect(() => {
     fetchData();
+    fetchMonthlyData();
 
+    // Setup real-time listeners
     const investmentsChannel = supabase
       .channel('investments_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'investments' },
-        (payload) => {
-          console.log('Investment change detected:', payload);
-          fetchData();
-        }
+        () => fetchData()
       )
       .subscribe();
 
@@ -186,10 +140,7 @@ export const BudgetOverview = () => {
       .channel('reserves_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'reserves' },
-        (payload) => {
-          console.log('Reserve change detected:', payload);
-          fetchData();
-        }
+        () => fetchData()
       )
       .subscribe();
 
@@ -199,6 +150,7 @@ export const BudgetOverview = () => {
     };
   }, []);
 
+  // Funções de edição
   const handleEdit = (id: string, currentValue: number, type: 'investment' | 'reserve') => {
     setEditValue(currentValue.toString());
     if (type === 'investment') {
@@ -215,8 +167,8 @@ export const BudgetOverview = () => {
       const numericValue = parseFloat(editValue);
       if (isNaN(numericValue)) {
         toast({
-          title: "Invalid value",
-          description: "Please enter a valid number",
+          title: "Valor inválido",
+          description: "Por favor, insira um número válido",
           variant: "destructive",
         });
         return;
@@ -225,8 +177,8 @@ export const BudgetOverview = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({
-          title: "Authentication Error",
-          description: "Please log in to update values",
+          title: "Erro de Autenticação",
+          description: "Por favor, faça login novamente",
           variant: "destructive",
         });
         return;
@@ -249,15 +201,15 @@ export const BudgetOverview = () => {
       setEditValue("");
       
       toast({
-        title: "Success",
-        description: "Value updated successfully",
+        title: "Sucesso",
+        description: "Valor atualizado com sucesso",
       });
 
       await fetchData();
     } catch (error: any) {
       console.error("Error saving value:", error);
       toast({
-        title: "Error saving value",
+        title: "Erro ao salvar",
         description: error.message,
         variant: "destructive",
       });
@@ -283,7 +235,7 @@ export const BudgetOverview = () => {
               />
             </TooltipTrigger>
             <TooltipContent>
-              <p>Track and manage your investment portfolio across different categories</p>
+              <p>Acompanhe e gerencie seu portfólio de investimentos</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -301,34 +253,25 @@ export const BudgetOverview = () => {
               />
             </TooltipTrigger>
             <TooltipContent>
-              <p>Monitor your emergency and travel fund reserves</p>
+              <p>Monitore suas reservas de emergência e viagem</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Card className="col-span-3">
-                <CardContent className="h-[300px] pt-6">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
-                      <Bar dataKey="planned" fill="#4a5568" name="Planned" />
-                      <Bar dataKey="actual" fill="#ecc94b" name="Actual" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Compare your planned budget against actual spending for each month</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Card className="col-span-3">
+          <CardContent className="h-[300px] pt-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
+                <Bar dataKey="planned" fill="#4a5568" name="Planejado" />
+                <Bar dataKey="actual" fill="#ecc94b" name="Real" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
