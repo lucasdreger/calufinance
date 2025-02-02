@@ -33,42 +33,45 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       const endDate = new Date(selectedYear, selectedMonth + 1, 0);
 
       // Get all fixed expenses that require status
-      const { data: fixedExpenses } = await supabase
-        .from('budget_plans')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('requires_status', true)
-        .eq('is_fixed', true);
+      const { data: fixedExpenses, error: fixedError } = await supabase
+        .from("budget_plans")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("requires_status", true)
+        .eq("is_fixed", true);
 
-      if (!fixedExpenses) return;
-
-      setTotalTasks(fixedExpenses.length);
-
+      if (fixedError || !fixedExpenses) return;
+      
       // Get completed tasks for the specific month
-      const { data: completedStatuses } = await supabase
-        .from('fixed_expenses_status')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('date', startDate.toISOString())
-        .lte('date', endDate.toISOString());
+      const { data: completedStatuses, error: statusError } = await supabase
+        .from("fixed_expenses_status")
+        .select("budget_plan_id, is_paid")
+        .eq("user_id", user.id)
+        .gte("date", startDate.toISOString())
+        .lte("date", endDate.toISOString());
 
-      const newStatusMap: StatusMap = {};
-      completedStatuses?.forEach((status) => {
-        newStatusMap[status.budget_plan_id] = status.is_paid;
-      });
-
-      setStatusMap(newStatusMap);
-      const completed = completedStatuses?.filter(status => status.is_paid)?.length || 0;
+      if (statusError) return;
+      
+      // Create a map of completed statuses
+      const statusLookup = new Map(completedStatuses?.map(status => [status.budget_plan_id, status.is_paid]));
+      setStatusMap(Object.fromEntries(statusLookup));
+      
+      // Count total tasks correctly (only fixed expenses that require status)
+      const totalRequiredTasks = fixedExpenses.length;
+      setTotalTasks(totalRequiredTasks);
+      
+      // Count how many of them are completed
+      const completed = fixedExpenses.filter(expense => statusLookup.get(expense.id) === true).length;
       setCompletedTasks(completed);
-      setAllTasksCompleted(completed === fixedExpenses.length);
+      setAllTasksCompleted(completed === totalRequiredTasks);
     };
 
     fetchStatus();
 
     const channel = supabase
-      .channel('fixed_expenses_status_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'fixed_expenses_status' },
+      .channel("fixed_expenses_status_changes")
+      .on("postgres_changes", 
+        { event: "*", schema: "public", table: "fixed_expenses_status" },
         () => {
           fetchStatus();
         }
