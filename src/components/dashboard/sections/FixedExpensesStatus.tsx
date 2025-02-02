@@ -72,8 +72,10 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .channel("fixed_expenses_status_changes")
       .on("postgres_changes", 
         { event: "*", schema: "public", table: "fixed_expenses_status" },
-        () => {
-          fetchStatus();
+        (payload) => {
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            fetchStatus();
+          }
         }
       )
       .subscribe();
