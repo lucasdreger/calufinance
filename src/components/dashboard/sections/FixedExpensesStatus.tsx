@@ -23,15 +23,18 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   const [totalTasks, setTotalTasks] = useState<number>(0);
   const [completedTasks, setCompletedTasks] = useState<number>(0);
   const [statusMap, setStatusMap] = useState<StatusMap>({});
+  const [stateVersion, setStateVersion] = useState(0); // Force re-render
 
+  // ✅ Fetch latest status from Supabase
   const fetchStatus = async () => {
+    console.log("🔄 Fetching status from Supabase...");
+    
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const startDate = new Date(selectedYear, selectedMonth, 1).toISOString();
     const endDate = new Date(selectedYear, selectedMonth + 1, 0).toISOString();
 
-    // Get all fixed expenses that require status
     const { data: fixedExpenses, error: fixedError } = await supabase
       .from("budget_plans")
       .select("id")
@@ -40,8 +43,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .eq("is_fixed", true);
 
     if (fixedError || !fixedExpenses) return;
-    
-    // Get completed tasks for the specific month
+
     const { data: completedStatuses, error: statusError } = await supabase
       .from("fixed_expenses_status")
       .select("budget_plan_id, is_paid")
@@ -50,23 +52,17 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .lte("date", endDate);
 
     if (statusError) return;
-    
-    // Create a map of completed statuses
+
     const statusLookup = new Map(completedStatuses?.map(status => [status.budget_plan_id, status.is_paid]));
 
-    setStatusMap((prev) => {
-      console.log("🔄 Updating status map:", Object.fromEntries(statusLookup));
-      return Object.fromEntries(statusLookup);
-    });
+    console.log("✅ Received status data:", Object.fromEntries(statusLookup));
 
-    // Count total tasks correctly (only fixed expenses that require status)
-    const totalRequiredTasks = fixedExpenses.length;
-    setTotalTasks(totalRequiredTasks);
-    
-    // Count how many of them are completed
+    setStatusMap((prev) => Object.fromEntries(statusLookup));
+    setTotalTasks(fixedExpenses.length);
     const completed = fixedExpenses.filter(expense => statusLookup.get(expense.id) === true).length;
     setCompletedTasks(completed);
-    setAllTasksCompleted(completed === totalRequiredTasks);
+    setAllTasksCompleted(completed === fixedExpenses.length);
+    setStateVersion((prev) => prev + 1); // 🔥 Force re-render
   };
 
   useEffect(() => {
@@ -77,7 +73,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .on("postgres_changes", 
         { event: "*", schema: "public", table: "fixed_expenses_status" },
         (payload) => {
-          console.log("🔔 Supabase real-time event:", payload);
+          console.log("🔔 Supabase event received:", payload);
           fetchStatus(); // Fetch latest status immediately
         }
       )
@@ -89,7 +85,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   }, [selectedYear, selectedMonth]);
 
   return (
-    <div className="space-y-4">
+    <div key={stateVersion} className="space-y-4"> {/* 🔥 Force UI update */}
       <div className="flex items-center gap-2">
         <h3 className="text-lg font-medium">Fixed Expenses Status</h3>
         <TooltipProvider>
