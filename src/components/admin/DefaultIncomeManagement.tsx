@@ -17,17 +17,22 @@ export const DefaultIncomeManagement = () => {
     camila: 0,
     other: 0,
   });
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   const fetchDefaultIncome = async () => {
+    setLoading(true);
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const user = userData?.user;
+
       if (userError || !user) {
         toast({
           title: "Error",
           description: "Please login to continue",
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
@@ -40,10 +45,17 @@ export const DefaultIncomeManagement = () => {
       if (error) throw error;
       console.log("Fetched income data:", data);
 
+      // Ensure data exists and is an array
+      if (!Array.isArray(data)) {
+        console.error("Invalid data format:", data);
+        setLoading(false);
+        return;
+      }
+
       const updatedIncome: IncomeState = {
-        lucas: data.find((item) => item.source === "Primary Job")?.amount || 0,
-        camila: data.find((item) => item.source === "Wife Job 1")?.amount || 0,
-        other: data.find((item) => item.source === "Other")?.amount || 0,
+        lucas: data.find((item) => item.source === "Primary Job")?.amount ?? 0,
+        camila: data.find((item) => item.source === "Wife Job 1")?.amount ?? 0,
+        other: data.find((item) => item.source === "Other")?.amount ?? 0,
       };
 
       setIncome(updatedIncome);
@@ -51,15 +63,19 @@ export const DefaultIncomeManagement = () => {
       console.error("Error fetching default income:", error);
       toast({
         title: "Error fetching income",
-        description: error.message,
+        description: error.message || "Unknown error",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSave = async () => {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const user = userData?.user;
+
       if (userError || !user) {
         toast({
           title: "Error",
@@ -70,53 +86,31 @@ export const DefaultIncomeManagement = () => {
       }
 
       // First, delete existing default income entries
-      const { error: deleteError } = await supabase
+      await supabase
         .from("income")
         .delete()
         .eq("user_id", user.id)
         .eq("is_default", true);
 
-      if (deleteError) throw deleteError;
-
-      // Then insert new entries with the current date
-      const currentDate = new Date().toISOString().split('T')[0];
+      // Insert new entries
+      const currentDate = new Date().toISOString().split("T")[0];
       const updates = [
-        {
-          amount: income.lucas,
-          source: "Primary Job",
-          user_id: user.id,
-          is_default: true,
-          date: currentDate
-        },
-        {
-          amount: income.camila,
-          source: "Wife Job 1",
-          user_id: user.id,
-          is_default: true,
-          date: currentDate
-        },
-        {
-          amount: income.other,
-          source: "Other",
-          user_id: user.id,
-          is_default: true,
-          date: currentDate
-        }
+        { amount: income.lucas, source: "Primary Job", user_id: user.id, is_default: true, date: currentDate },
+        { amount: income.camila, source: "Wife Job 1", user_id: user.id, is_default: true, date: currentDate },
+        { amount: income.other, source: "Other", user_id: user.id, is_default: true, date: currentDate },
       ];
 
-      const { error: insertError } = await supabase
-        .from("income")
-        .insert(updates);
-
+      const { error: insertError } = await supabase.from("income").insert(updates);
       if (insertError) throw insertError;
 
       toast({ title: "Success", description: "Default income saved successfully" });
-      await fetchDefaultIncome();
+
+      await fetchDefaultIncome(); // Refresh UI
     } catch (error: any) {
       console.error("Error saving default income:", error);
       toast({
         title: "Error saving income",
-        description: error.message,
+        description: error.message || "Unknown error",
         variant: "destructive",
       });
     }
@@ -132,7 +126,14 @@ export const DefaultIncomeManagement = () => {
         <CardTitle>Default Income Management</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <IncomeInputGroup income={income} onIncomeChange={(field, value) => setIncome((prev) => ({ ...prev, [field]: value }))} />
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <IncomeInputGroup
+            income={income}
+            onIncomeChange={(field, value) => setIncome((prev) => ({ ...prev, [field]: value }))}
+          />
+        )}
         <Button onClick={handleSave} className="w-full">
           Save Default Income
         </Button>
