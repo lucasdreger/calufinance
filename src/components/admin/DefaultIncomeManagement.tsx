@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { IncomeInputGroup } from "../shared/IncomeInputGroup";
 import { useToast } from "@/components/ui/use-toast";
 
+// Interface for managing income state
 interface IncomeState {
   lucas: number;
   camila: number;
@@ -12,23 +13,23 @@ interface IncomeState {
 }
 
 export const DefaultIncomeManagement = () => {
-  // Estados para gerenciar renda padrão
-  const [defaultIncome, setDefaultIncome] = useState<any[]>([]);
-  const { toast } = useToast();
+  // State to manage default income values
   const [income, setIncome] = useState<IncomeState>({
     lucas: 0,
     camila: 0,
     other: 0,
   });
+  const { toast } = useToast();
 
-  // Busca renda padrão do backend
+  // Fetch existing default income values from the backend
   const fetchDefaultIncome = async () => {
     try {
+      // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         toast({
-          title: "Erro",
-          description: "Por favor, faça login para continuar",
+          title: "Error",
+          description: "Please login to continue",
           variant: "destructive",
         });
         return;
@@ -36,6 +37,7 @@ export const DefaultIncomeManagement = () => {
 
       console.log('Fetching default income for user:', user.id);
 
+      // Query the database for default income entries
       const { data, error } = await supabase
         .from("income")
         .select("*")
@@ -48,40 +50,42 @@ export const DefaultIncomeManagement = () => {
       }
 
       console.log('Fetched default income data:', data);
-      setDefaultIncome(data || []);
 
-      // Atualiza o estado com os valores do backend
-      const newIncome = { lucas: 0, camila: 0, other: 0 };
-      data?.forEach((item: any) => {
-        if (item.source === "Primary Job") newIncome.lucas = item.amount;
-        if (item.source === "Wife Job 1") newIncome.camila = item.amount;
-        if (item.source === "Other") newIncome.other = item.amount;
-      });
-      console.log('Setting income state to:', newIncome);
-      setIncome(newIncome);
+      // Map backend data to state
+      if (data) {
+        const newIncome = { lucas: 0, camila: 0, other: 0 };
+        data.forEach((item: any) => {
+          if (item.source === "Primary Job") newIncome.lucas = item.amount;
+          if (item.source === "Wife Job 1") newIncome.camila = item.amount;
+          if (item.source === "Other") newIncome.other = item.amount;
+        });
+        console.log('Setting income state to:', newIncome);
+        setIncome(newIncome);
+      }
     } catch (error: any) {
       console.error('Error in fetchDefaultIncome:', error);
       toast({
-        title: "Erro ao buscar renda",
+        title: "Error fetching income",
         description: error.message,
         variant: "destructive",
       });
     }
   };
 
-  // Atualiza valores de renda
+  // Handle income field changes
   const handleIncomeChange = (field: keyof IncomeState, value: number) => {
     setIncome((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Salva renda padrão no backend
+  // Save default income values to the backend
   const handleSave = async () => {
     try {
+      // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         toast({
-          title: "Erro",
-          description: "Por favor, faça login para continuar",
+          title: "Error",
+          description: "Please login to continue",
           variant: "destructive",
         });
         return;
@@ -89,7 +93,7 @@ export const DefaultIncomeManagement = () => {
 
       const currentDate = new Date().toISOString().split('T')[0];
       
-      // Prepara dados para atualização
+      // Prepare data for upsert operation
       const updates = [
         {
           amount: income.lucas,
@@ -116,34 +120,34 @@ export const DefaultIncomeManagement = () => {
 
       console.log('Saving default income:', updates);
 
-      // Atualiza ou insere novos registros
+      // Perform upsert operation
       const { error } = await supabase
         .from("income")
-        .upsert(updates, { 
+        .upsert(updates, {
           onConflict: 'user_id,source,is_default',
-          ignoreDuplicates: false 
+          ignoreDuplicates: false
         });
 
       if (error) throw error;
 
-      toast({ 
-        title: "Sucesso", 
-        description: "Renda padrão salva com sucesso" 
+      toast({
+        title: "Success",
+        description: "Default income saved successfully"
       });
       
-      // Recarrega dados após salvar
+      // Reload data after saving
       await fetchDefaultIncome();
     } catch (error: any) {
       console.error('Error saving default income:', error);
       toast({
-        title: "Erro ao salvar renda",
+        title: "Error saving income",
         description: error.message,
         variant: "destructive",
       });
     }
   };
 
-  // Carrega dados ao montar o componente
+  // Fetch data when component mounts
   useEffect(() => {
     fetchDefaultIncome();
   }, []);
@@ -151,12 +155,12 @@ export const DefaultIncomeManagement = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gerenciamento de Renda Padrão</CardTitle>
+        <CardTitle>Default Income Management</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <IncomeInputGroup income={income} onIncomeChange={handleIncomeChange} />
         <Button onClick={handleSave} className="w-full">
-          Salvar Renda Padrão
+          Save Default Income
         </Button>
       </CardContent>
     </Card>
