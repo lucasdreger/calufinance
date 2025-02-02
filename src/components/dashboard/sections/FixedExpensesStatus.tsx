@@ -28,8 +28,8 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const startDate = new Date(selectedYear, selectedMonth, 1);
-    const endDate = new Date(selectedYear, selectedMonth + 1, 0);
+    const startDate = new Date(selectedYear, selectedMonth, 1).toISOString();
+    const endDate = new Date(selectedYear, selectedMonth + 1, 0).toISOString();
 
     // Get all fixed expenses that require status
     const { data: fixedExpenses, error: fixedError } = await supabase
@@ -46,15 +46,19 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .from("fixed_expenses_status")
       .select("budget_plan_id, is_paid")
       .eq("user_id", user.id)
-      .gte("date", startDate.toISOString())
-      .lte("date", endDate.toISOString());
+      .gte("date", startDate)
+      .lte("date", endDate);
 
     if (statusError) return;
     
     // Create a map of completed statuses
     const statusLookup = new Map(completedStatuses?.map(status => [status.budget_plan_id, status.is_paid]));
-    setStatusMap(Object.fromEntries(statusLookup));
-    
+
+    setStatusMap((prev) => {
+      console.log("🔄 Updating status map:", Object.fromEntries(statusLookup));
+      return Object.fromEntries(statusLookup);
+    });
+
     // Count total tasks correctly (only fixed expenses that require status)
     const totalRequiredTasks = fixedExpenses.length;
     setTotalTasks(totalRequiredTasks);
@@ -73,9 +77,8 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .on("postgres_changes", 
         { event: "*", schema: "public", table: "fixed_expenses_status" },
         (payload) => {
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            fetchStatus();
-          }
+          console.log("🔔 Supabase real-time event:", payload);
+          fetchStatus(); // Fetch latest status immediately
         }
       )
       .subscribe();
