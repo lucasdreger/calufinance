@@ -22,7 +22,8 @@ export const DefaultIncomeManagement = () => {
 
   const fetchDefaultIncome = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
       if (!user) {
         toast({
           title: "Error",
@@ -63,7 +64,8 @@ export const DefaultIncomeManagement = () => {
 
   const handleSave = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
       if (!user) {
         toast({
           title: "Error",
@@ -81,12 +83,10 @@ export const DefaultIncomeManagement = () => {
         date: new Date().toISOString().split('T')[0],
       }));
 
-      for (const update of updates) {
-        const { error } = await supabase
-          .from("income")
-          .upsert([update], { onConflict: ["user_id", "source", "is_default"] });
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from("income")
+        .upsert(updates, { onConflict: ["user_id", "source", "is_default"] });
+      if (error) throw error;
 
       toast({ title: "Success", description: "Income saved successfully" });
       await fetchDefaultIncome();
