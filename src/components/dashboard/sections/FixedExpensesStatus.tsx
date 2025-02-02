@@ -23,7 +23,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   const [totalTasks, setTotalTasks] = useState<number>(0);
   const [completedTasks, setCompletedTasks] = useState<number>(0);
   const [statusMap, setStatusMap] = useState<StatusMap>({});
-  const [stateVersion, setStateVersion] = useState(0); // Force re-render
+  const [stateVersion, setStateVersion] = useState(0); // Force UI refresh
 
   // ✅ Fetch latest status from Supabase
   const fetchStatus = async () => {
@@ -57,12 +57,34 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
 
     console.log("✅ Received status data:", Object.fromEntries(statusLookup));
 
-    setStatusMap((prev) => Object.fromEntries(statusLookup));
+    setStatusMap(Object.fromEntries(statusLookup));
     setTotalTasks(fixedExpenses.length);
     const completed = fixedExpenses.filter(expense => statusLookup.get(expense.id) === true).length;
     setCompletedTasks(completed);
     setAllTasksCompleted(completed === fixedExpenses.length);
-    setStateVersion((prev) => prev + 1); // 🔥 Force re-render
+    setStateVersion((prev) => prev + 1); // 🔥 Force UI re-render
+  };
+
+  // ✅ Manually Trigger UI Refresh After Checkbox Click
+  const handleCheckboxChange = async (budgetPlanId: number, isChecked: boolean) => {
+    try {
+      // Update the database with new checkbox state
+      const { error } = await supabase
+        .from("fixed_expenses_status")
+        .update({ is_paid: isChecked })
+        .eq("budget_plan_id", budgetPlanId);
+
+      if (error) {
+        console.error("❌ Error updating status:", error);
+      } else {
+        console.log(`✅ Updated budgetPlanId ${budgetPlanId}: is_paid = ${isChecked}`);
+        
+        // 🔥 Fetch updated status immediately
+        await fetchStatus();
+      }
+    } catch (err) {
+      console.error("❌ Unexpected error in handleCheckboxChange:", err);
+    }
   };
 
   useEffect(() => {
@@ -116,6 +138,20 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Checkbox UI for each expense */}
+      <div className="space-y-2">
+        {Object.keys(statusMap).map((id) => (
+          <div key={id} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={statusMap[Number(id)] || false}
+              onChange={(e) => handleCheckboxChange(Number(id), e.target.checked)}
+            />
+            <label>Expense {id}</label>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
