@@ -35,8 +35,6 @@ export const DefaultIncomeManagement = () => {
         return;
       }
 
-      console.log('Fetching default income for user:', user.id);
-
       // Query the database for default income entries
       const { data, error } = await supabase
         .from("income")
@@ -49,15 +47,13 @@ export const DefaultIncomeManagement = () => {
         throw error;
       }
 
-      console.log('Fetched default income data:', data);
-
       // Map backend data to state
-      if (data) {
+      if (data && data.length > 0) {
         const newIncome = { lucas: 0, camila: 0, other: 0 };
         data.forEach((item: any) => {
-          if (item.source === "Primary Job") newIncome.lucas = item.amount;
-          if (item.source === "Wife Job 1") newIncome.camila = item.amount;
-          if (item.source === "Other") newIncome.other = item.amount;
+          if (item.source === "Primary Job") newIncome.lucas = Number(item.amount);
+          if (item.source === "Wife Job 1") newIncome.camila = Number(item.amount);
+          if (item.source === "Other") newIncome.other = Number(item.amount);
         });
         console.log('Setting income state to:', newIncome);
         setIncome(newIncome);
@@ -118,17 +114,21 @@ export const DefaultIncomeManagement = () => {
         }
       ];
 
-      console.log('Saving default income:', updates);
-
-      // Perform upsert operation
-      const { error } = await supabase
+      // Delete existing default income entries for this user
+      const { error: deleteError } = await supabase
         .from("income")
-        .upsert(updates, {
-          onConflict: 'user_id,source,is_default',
-          ignoreDuplicates: false
-        });
+        .delete()
+        .eq("user_id", user.id)
+        .eq("is_default", true);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
+
+      // Insert new default income entries
+      const { error: insertError } = await supabase
+        .from("income")
+        .insert(updates);
+
+      if (insertError) throw insertError;
 
       toast({
         title: "Success",
