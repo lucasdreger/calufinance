@@ -22,8 +22,8 @@ export const DefaultIncomeManagement = () => {
 
   const fetchDefaultIncome = async () => {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         toast({
           title: "Error",
           description: "Please login to continue",
@@ -35,14 +35,13 @@ export const DefaultIncomeManagement = () => {
       const { data, error } = await supabase
         .from("income")
         .select("*")
+        .eq("user_id", user.id)
         .eq("is_default", true);
 
       if (error) throw error;
-
       setDefaultIncome(data || []);
 
-      // Update income state based on fetched data
-      const newIncome = { ...income };
+      const newIncome = { lucas: 0, camila: 0, other: 0 };
       data?.forEach((item: any) => {
         if (item.source === "Primary Job") newIncome.lucas = item.amount;
         if (item.source === "Wife Job 1") newIncome.camila = item.amount;
@@ -58,27 +57,6 @@ export const DefaultIncomeManagement = () => {
     }
   };
 
-  const createDefaultIncome = async (userId: string) => {
-    try {
-      const defaultEntries = [
-        { amount: 0, source: "Primary Job", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
-        { amount: 0, source: "Wife Job 1", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
-        { amount: 0, source: "Other", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
-      ];
-      
-      const { error } = await supabase.from("income").insert(defaultEntries);
-      if (error) throw error;
-      
-      await fetchDefaultIncome();
-    } catch (error: any) {
-      toast({
-        title: "Error creating default income",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleIncomeChange = (field: keyof IncomeState, value: number) => {
     setIncome((prev) => ({ ...prev, [field]: value }));
   };
@@ -86,7 +64,6 @@ export const DefaultIncomeManagement = () => {
   const handleSave = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         toast({
           title: "Error",
@@ -101,37 +78,24 @@ export const DefaultIncomeManagement = () => {
         source: key === "lucas" ? "Primary Job" : key === "camila" ? "Wife Job 1" : "Other",
         user_id: user.id,
         is_default: true,
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
       }));
 
-      const { error } = await supabase
-        .from("income")
-        .upsert(updates, { 
-          onConflict: "user_id,source,is_default",
-        });
-        
-      if (error) throw error;
+      for (const update of updates) {
+        const { error } = await supabase
+          .from("income")
+          .upsert([update], { onConflict: ["user_id", "source", "is_default"] });
+        if (error) throw error;
+      }
 
-      toast({ 
-        title: "Success", 
-        description: "Income saved successfully" 
-      });
-      
+      toast({ title: "Success", description: "Income saved successfully" });
       await fetchDefaultIncome();
     } catch (error: any) {
-      if (error.message === "User rejected the request.") {
-        toast({
-          title: "Operation cancelled",
-          description: "The request was cancelled by the user",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Error saving income",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error saving income",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
