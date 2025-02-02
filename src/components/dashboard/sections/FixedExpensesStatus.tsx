@@ -53,18 +53,15 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       if (statusError) return;
       
       // Create a map of completed statuses
-      const newStatusMap: StatusMap = {};
-      completedStatuses?.forEach((status) => {
-        newStatusMap[status.budget_plan_id] = status.is_paid;
-      });
-      setStatusMap(newStatusMap);
+      const statusLookup = new Map(completedStatuses?.map(status => [status.budget_plan_id, status.is_paid]));
+      setStatusMap(Object.fromEntries(statusLookup));
       
       // Count total tasks correctly (only fixed expenses that require status)
       const totalRequiredTasks = fixedExpenses.length;
       setTotalTasks(totalRequiredTasks);
       
       // Count how many of them are completed
-      const completed = fixedExpenses.filter(expense => newStatusMap[expense.id]).length;
+      const completed = fixedExpenses.filter(expense => statusLookup.get(expense.id)).length;
       setCompletedTasks(completed);
       setAllTasksCompleted(completed === totalRequiredTasks);
     };
