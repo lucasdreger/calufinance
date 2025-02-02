@@ -46,7 +46,7 @@ export const DefaultIncomeManagement = () => {
         other: data.find((item) => item.source === "Other")?.amount || 0,
       };
 
-      setIncome({ ...updatedIncome }); // Força re-renderização
+      setIncome(updatedIncome);
     } catch (error: any) {
       console.error("Error fetching default income:", error);
       toast({
@@ -69,19 +69,49 @@ export const DefaultIncomeManagement = () => {
         return;
       }
 
+      // First, delete existing default income entries
+      const { error: deleteError } = await supabase
+        .from("income")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("is_default", true);
+
+      if (deleteError) throw deleteError;
+
+      // Then insert new entries with the current date
+      const currentDate = new Date().toISOString().split('T')[0];
       const updates = [
-        { amount: income.lucas, source: "Primary Job", user_id: user.id, is_default: true },
-        { amount: income.camila, source: "Wife Job 1", user_id: user.id, is_default: true },
-        { amount: income.other, source: "Other", user_id: user.id, is_default: true }
+        {
+          amount: income.lucas,
+          source: "Primary Job",
+          user_id: user.id,
+          is_default: true,
+          date: currentDate
+        },
+        {
+          amount: income.camila,
+          source: "Wife Job 1",
+          user_id: user.id,
+          is_default: true,
+          date: currentDate
+        },
+        {
+          amount: income.other,
+          source: "Other",
+          user_id: user.id,
+          is_default: true,
+          date: currentDate
+        }
       ];
 
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from("income")
-        .upsert(updates, { onConflict: ["user_id", "source", "is_default"] });
-      if (error) throw error;
+        .insert(updates);
+
+      if (insertError) throw insertError;
 
       toast({ title: "Success", description: "Default income saved successfully" });
-      setTimeout(fetchDefaultIncome, 500);
+      await fetchDefaultIncome();
     } catch (error: any) {
       console.error("Error saving default income:", error);
       toast({
