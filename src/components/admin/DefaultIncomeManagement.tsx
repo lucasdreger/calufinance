@@ -22,8 +22,8 @@ export const DefaultIncomeManagement = () => {
 
   const fetchDefaultIncome = async () => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const user = sessionData?.session?.user;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       if (!user) {
         toast({
           title: "Error",
@@ -50,6 +50,7 @@ export const DefaultIncomeManagement = () => {
       });
       setIncome(newIncome);
     } catch (error: any) {
+      console.error('Error fetching default income:', error);
       toast({
         title: "Error fetching income",
         description: error.message,
@@ -64,8 +65,8 @@ export const DefaultIncomeManagement = () => {
 
   const handleSave = async () => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const user = sessionData?.session?.user;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       if (!user) {
         toast({
           title: "Error",
@@ -75,22 +76,47 @@ export const DefaultIncomeManagement = () => {
         return;
       }
 
-      const updates = Object.entries(income).map(([key, value]) => ({
-        amount: value,
-        source: key === "lucas" ? "Primary Job" : key === "camila" ? "Wife Job 1" : "Other",
-        user_id: user.id,
-        is_default: true,
-        date: new Date().toISOString().split('T')[0],
-      }));
+      const currentDate = new Date().toISOString().split('T')[0];
+      const updates = [
+        {
+          amount: income.lucas,
+          source: "Primary Job",
+          user_id: user.id,
+          is_default: true,
+          date: currentDate,
+        },
+        {
+          amount: income.camila,
+          source: "Wife Job 1",
+          user_id: user.id,
+          is_default: true,
+          date: currentDate,
+        },
+        {
+          amount: income.other,
+          source: "Other",
+          user_id: user.id,
+          is_default: true,
+          date: currentDate,
+        }
+      ];
 
       const { error } = await supabase
         .from("income")
-        .upsert(updates, { onConflict: ["user_id", "source", "is_default"] });
+        .upsert(updates, { 
+          onConflict: 'user_id,source,is_default',
+          ignoreDuplicates: false 
+        });
+
       if (error) throw error;
 
-      toast({ title: "Success", description: "Income saved successfully" });
+      toast({ 
+        title: "Success", 
+        description: "Default income saved successfully" 
+      });
       await fetchDefaultIncome();
     } catch (error: any) {
+      console.error('Error saving default income:', error);
       toast({
         title: "Error saving income",
         description: error.message,
