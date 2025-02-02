@@ -11,7 +11,7 @@ const handleLoadDefaults = async () => {
     }
 
     // Fetch default income values
-    const { data, error } = await supabase
+    const { data: defaultIncome, error } = await supabase
       .from("income")
       .select("*")
       .eq("user_id", user.id)
@@ -19,13 +19,13 @@ const handleLoadDefaults = async () => {
 
     if (error) throw error;
 
-    if (data && data.length > 0) {
+    if (defaultIncome && defaultIncome.length > 0) {
       const currentDate = new Date().toISOString().split("T")[0];
 
       const newIncome = {
-        lucas: data.find((inc) => inc.source === "Primary Job")?.amount || 0,
-        camila: data.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
-        other: data.find((inc) => inc.source === "Other")?.amount || 0,
+        lucas: defaultIncome.find((inc) => inc.source === "Primary Job")?.amount || 0,
+        camila: defaultIncome.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
+        other: defaultIncome.find((inc) => inc.source === "Other")?.amount || 0,
       };
 
       console.log("🚀 New default income values:", newIncome);
@@ -58,8 +58,8 @@ const handleLoadDefaults = async () => {
 
       if (insertError) throw insertError;
 
-      // ✅ Fix: Fetch updated values from Supabase after inserting
-      const { data: updatedData, error: fetchError } = await supabase
+      // 🚀 Fetch updated values to force synchronization
+      const { data: updatedIncome, error: fetchError } = await supabase
         .from("income")
         .select("*")
         .eq("user_id", user.id)
@@ -68,13 +68,13 @@ const handleLoadDefaults = async () => {
 
       if (fetchError) throw fetchError;
 
-      console.log("✅ Confirmed from DB:", updatedData);
+      console.log("✅ Confirmed from DB:", updatedIncome);
 
-      setIncome((prev) => ({
-        ...prev,
-        lucas: updatedData.find((inc) => inc.source === "Primary Job")?.amount || 0,
-        camila: updatedData.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
-        other: updatedData.find((inc) => inc.source === "Other")?.amount || 0,
+      // ✅ Force state update to reflect latest database values
+      setIncome(() => ({
+        lucas: updatedIncome.find((inc) => inc.source === "Primary Job")?.amount || 0,
+        camila: updatedIncome.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
+        other: updatedIncome.find((inc) => inc.source === "Other")?.amount || 0,
       }));
 
       console.log("🎯 Updated income state:", income);
