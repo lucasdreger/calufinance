@@ -28,6 +28,8 @@ const handleLoadDefaults = async () => {
         other: data.find((inc) => inc.source === "Other")?.amount || 0,
       };
 
+      console.log("New default income values:", newIncome);
+
       // Upsert income records for the current month
       const incomeEntries = [
         { amount: newIncome.lucas, source: "Primary Job" },
@@ -46,8 +48,11 @@ const handleLoadDefaults = async () => {
 
       if (upsertError) throw upsertError;
 
-      // Fetch the updated monthly income after inserting defaults
-      await fetchCurrentIncome();
+      // ✅ Force state update after inserting defaults
+      setIncome((prev) => {
+        console.log("Updating income state from:", prev, "to:", newIncome);
+        return { ...newIncome };
+      });
 
       toast({
         title: "Income Defaults Loaded",
