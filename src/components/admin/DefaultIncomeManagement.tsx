@@ -54,9 +54,9 @@ export const DefaultIncomeManagement = () => {
 
   const createDefaultIncome = async (userId: string) => {
     const defaultEntries = [
-      { amount: 0, source: "Primary Job", user_id: userId, is_default: true },
-      { amount: 0, source: "Wife Job 1", user_id: userId, is_default: true },
-      { amount: 0, source: "Other", user_id: userId, is_default: true },
+      { amount: 0, source: "Primary Job", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
+      { amount: 0, source: "Wife Job 1", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
+      { amount: 0, source: "Other", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
     ];
     await supabase.from("income").insert(defaultEntries);
     fetchDefaultIncome();
@@ -73,9 +73,10 @@ export const DefaultIncomeManagement = () => {
         source: key === "lucas" ? "Primary Job" : key === "camila" ? "Wife Job 1" : "Other",
         user_id: user.id,
         is_default: true,
+        date: new Date().toISOString().split('T')[0]
       }));
 
-      const { error } = await supabase.from("income").upsert(updates, { onConflict: ["user_id", "source", "is_default"] });
+      const { error } = await supabase.from("income").upsert(updates, { onConflict: "user_id,source,is_default" });
       if (error) throw error;
 
       toast({ title: "Success", description: "Income saved successfully" });
