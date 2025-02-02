@@ -68,25 +68,15 @@ export const DefaultIncomeManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      const { data: existingData, error: fetchError } = await supabase.from("income").select("*").eq("user_id", user.id).eq("is_default", true);
-      if (fetchError) throw fetchError;
+      const updates = Object.entries(defaultIncome).map(([key, value]) => ({
+        amount: value,
+        source: key === "lucas" ? "Primary Job" : key === "camila" ? "Wife Job 1" : "Other",
+        user_id: user.id,
+        is_default: true,
+      }));
 
-      const updates = Object.entries(defaultIncome).map(([key, value]) => {
-        return {
-          amount: value,
-          source: key === "lucas" ? "Primary Job" : key === "camila" ? "Wife Job 1" : "Other",
-          user_id: user.id,
-          is_default: true,
-        };
-      });
-
-      if (existingData && existingData.length > 0) {
-        for (const update of updates) {
-          await supabase.from("income").update({ amount: update.amount }).match({ user_id: user.id, source: update.source });
-        }
-      } else {
-        await supabase.from("income").insert(updates);
-      }
+      const { error } = await supabase.from("income").upsert(updates, { onConflict: ["user_id", "source", "is_default"] });
+      if (error) throw error;
 
       toast({ title: "Success", description: "Income saved successfully" });
       fetchDefaultIncome();
