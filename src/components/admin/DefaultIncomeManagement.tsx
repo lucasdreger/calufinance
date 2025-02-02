@@ -1,16 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
-import { Info } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { IncomeInputGroup } from "../shared/IncomeInputGroup";
+import { useToast } from "@/components/ui/use-toast";
 
 interface IncomeState {
   lucas: number;
@@ -19,56 +12,91 @@ interface IncomeState {
 }
 
 export const DefaultIncomeManagement = () => {
-  const [defaultIncome, setDefaultIncome] = useState<IncomeState>({ lucas: 0, camila: 0, other: 0 });
-  const [isLoading, setIsLoading] = useState(false);
+  const [defaultIncome, setDefaultIncome] = useState<any[]>([]);
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchDefaultIncome();
-  }, []);
+  const [income, setIncome] = useState<IncomeState>({
+    lucas: 0,
+    camila: 0,
+    other: 0,
+  });
 
   const fetchDefaultIncome = async () => {
-    setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast({
+          title: "Error",
+          description: "Please login to continue",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const { data, error } = await supabase.from("income").select("*").eq("user_id", user.id).eq("is_default", true);
+      const { data, error } = await supabase
+        .from("income")
+        .select("*")
+        .eq("is_default", true);
+
       if (error) throw error;
 
-      if (!data || data.length === 0) {
-        await createDefaultIncome(user.id);
-      } else {
-        setDefaultIncome({
-          lucas: data.find((inc) => inc.source === "Primary Job")?.amount || 0,
-          camila: data.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
-          other: data.find((inc) => inc.source === "Other")?.amount || 0,
-        });
-      }
-    } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setIsLoading(false);
+      setDefaultIncome(data || []);
+
+      // Update income state based on fetched data
+      const newIncome = { ...income };
+      data?.forEach((item: any) => {
+        if (item.source === "Primary Job") newIncome.lucas = item.amount;
+        if (item.source === "Wife Job 1") newIncome.camila = item.amount;
+        if (item.source === "Other") newIncome.other = item.amount;
+      });
+      setIncome(newIncome);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching income",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
   const createDefaultIncome = async (userId: string) => {
-    const defaultEntries = [
-      { amount: 0, source: "Primary Job", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
-      { amount: 0, source: "Wife Job 1", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
-      { amount: 0, source: "Other", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
-    ];
-    await supabase.from("income").insert(defaultEntries);
-    fetchDefaultIncome();
+    try {
+      const defaultEntries = [
+        { amount: 0, source: "Primary Job", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
+        { amount: 0, source: "Wife Job 1", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
+        { amount: 0, source: "Other", user_id: userId, is_default: true, date: new Date().toISOString().split('T')[0] },
+      ];
+      
+      const { error } = await supabase.from("income").insert(defaultEntries);
+      if (error) throw error;
+      
+      await fetchDefaultIncome();
+    } catch (error: any) {
+      toast({
+        title: "Error creating default income",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSaveDefaults = async () => {
-    setIsLoading(true);
+  const handleIncomeChange = (field: keyof IncomeState, value: number) => {
+    setIncome((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "Please login to continue",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const updates = Object.entries(defaultIncome).map(([key, value]) => ({
+      const updates = Object.entries(income).map(([key, value]) => ({
         amount: value,
         source: key === "lucas" ? "Primary Job" : key === "camila" ? "Wife Job 1" : "Other",
         user_id: user.id,
@@ -76,46 +104,51 @@ export const DefaultIncomeManagement = () => {
         date: new Date().toISOString().split('T')[0]
       }));
 
-      const { error } = await supabase.from("income").upsert(updates, { onConflict: "user_id,source,is_default" });
+      const { error } = await supabase
+        .from("income")
+        .upsert(updates, { 
+          onConflict: "user_id,source,is_default",
+        });
+        
       if (error) throw error;
 
-      toast({ title: "Success", description: "Income saved successfully" });
-      fetchDefaultIncome();
-    } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } finally {
-      setIsLoading(false);
+      toast({ 
+        title: "Success", 
+        description: "Income saved successfully" 
+      });
+      
+      await fetchDefaultIncome();
+    } catch (error: any) {
+      if (error.message === "User rejected the request.") {
+        toast({
+          title: "Operation cancelled",
+          description: "The request was cancelled by the user",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error saving income",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleIncomeChange = (field: keyof IncomeState, value: number) => {
-    setDefaultIncome((prev) => ({ ...prev, [field]: value }));
-  };
+  useEffect(() => {
+    fetchDefaultIncome();
+  }, []);
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <CardTitle>Default Monthly Income</CardTitle>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-4 w-4 text-gray-500" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Set your default monthly income values here. These will be used as templates for new months.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <CardTitle>Default Income Management</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <IncomeInputGroup income={defaultIncome} onIncomeChange={handleIncomeChange} />
-        <div className="flex justify-end">
-          <Button onClick={handleSaveDefaults} disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Defaults"}
-          </Button>
-        </div>
+        <IncomeInputGroup income={income} onIncomeChange={handleIncomeChange} />
+        <Button onClick={handleSave} className="w-full">
+          Save Default Income
+        </Button>
       </CardContent>
     </Card>
   );
