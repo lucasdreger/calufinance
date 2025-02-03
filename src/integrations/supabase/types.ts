@@ -213,6 +213,36 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_income: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          month: number
+          source: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          month: number
+          source: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          month?: number
+          source?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
