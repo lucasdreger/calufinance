@@ -12,7 +12,6 @@ export const MonthlyView = ({ children, selectedYear, selectedMonth }: MonthlyVi
   return (
     <div className="space-y-6">
       <FixedExpensesStatus selectedYear={selectedYear} selectedMonth={selectedMonth} />
-      <IncomeSection />
       <CreditCardBillCard selectedYear={selectedYear} selectedMonth={selectedMonth} />
       {children}
     </div>
