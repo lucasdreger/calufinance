@@ -43,9 +43,8 @@ export const DefaultIncomeManagement = () => {
         .eq("is_default", true);
 
       if (error) throw error;
-      console.log("Fetched income data:", data);
+      console.log("Fetched default income data:", data);
 
-      // Ensure data exists and is an array
       if (!Array.isArray(data)) {
         console.error("Invalid data format:", data);
         setLoading(false);
@@ -86,26 +85,25 @@ export const DefaultIncomeManagement = () => {
       }
 
       // First, delete existing default income entries
-      await supabase
+      const { error: deleteError } = await supabase
         .from("income")
         .delete()
         .eq("user_id", user.id)
         .eq("is_default", true);
 
-      // Insert new entries
-      const currentDate = new Date().toISOString().split("T")[0];
+      if (deleteError) throw deleteError;
+
+      // Insert new default entries
       const updates = [
-        { amount: income.lucas, source: "Primary Job", user_id: user.id, is_default: true, date: currentDate },
-        { amount: income.camila, source: "Wife Job 1", user_id: user.id, is_default: true, date: currentDate },
-        { amount: income.other, source: "Other", user_id: user.id, is_default: true, date: currentDate },
+        { amount: income.lucas, source: "Primary Job", user_id: user.id, is_default: true },
+        { amount: income.camila, source: "Wife Job 1", user_id: user.id, is_default: true },
+        { amount: income.other, source: "Other", user_id: user.id, is_default: true },
       ];
 
       const { error: insertError } = await supabase.from("income").insert(updates);
       if (insertError) throw insertError;
 
       toast({ title: "Success", description: "Default income saved successfully" });
-
-      await fetchDefaultIncome(); // Refresh UI
     } catch (error: any) {
       console.error("Error saving default income:", error);
       toast({

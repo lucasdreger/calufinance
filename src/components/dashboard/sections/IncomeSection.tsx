@@ -19,7 +19,6 @@ export const IncomeSection = () => {
   });
   const { toast } = useToast();
 
-  // ✅ Função para carregar a renda ao iniciar a página
   const fetchIncomeOnLoad = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -27,7 +26,6 @@ export const IncomeSection = () => {
 
       const currentDate = new Date().toISOString().split("T")[0];
 
-      // Buscar renda da tabela para o mês atual
       const { data, error } = await supabase
         .from("income")
         .select("*")
@@ -51,12 +49,10 @@ export const IncomeSection = () => {
     }
   };
 
-  // ✅ Chamando `fetchIncomeOnLoad()` assim que o componente é montado
   useEffect(() => {
     fetchIncomeOnLoad();
   }, []);
 
-  // ✅ Carregar valores padrão e salvar no banco de dados
   const handleLoadDefaults = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -69,6 +65,7 @@ export const IncomeSection = () => {
         return;
       }
 
+      // Fetch default income values
       const { data: defaultIncome, error } = await supabase
         .from("income")
         .select("*")
@@ -119,9 +116,7 @@ export const IncomeSection = () => {
           if (insertError) throw insertError;
         }
 
-        // ✅ Atualizar o estado local
         setIncome(newIncome);
-
         console.log("🎯 Updated income state:", newIncome);
 
         toast({
