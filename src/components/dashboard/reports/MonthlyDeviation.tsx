@@ -89,8 +89,9 @@ export const MonthlyDeviation = () => {
       }
     });
 
-    // Transform data for display
+    // Transform data for display and filter out months with no actual expenses
     const formattedData: MonthlyData[] = Object.entries(monthlyTotals)
+      .filter(([_, data]) => data.actual > 0) // Only include months with actual expenses
       .map(([month, data]) => {
         const deviation = data.actual - data.planned;
         const deviationPercentage = data.planned !== 0 

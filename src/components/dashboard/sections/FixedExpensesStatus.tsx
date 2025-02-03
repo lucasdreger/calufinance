@@ -66,19 +66,33 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   useEffect(() => {
     fetchStatus();
 
-    const channel = supabase
+    // Subscribe to changes in fixed_expenses_status table
+    const statusChannel = supabase
       .channel("fixed_expenses_status_changes")
       .on("postgres_changes", 
         { event: "*", schema: "public", table: "fixed_expenses_status" },
         (payload) => {
-          console.log("🔔 Supabase event received:", payload);
-          fetchStatus(); // Fetch latest status immediately
+          console.log("🔔 Status change detected:", payload);
+          fetchStatus();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to changes in budget_plans table
+    const plansChannel = supabase
+      .channel("budget_plans_changes")
+      .on("postgres_changes", 
+        { event: "*", schema: "public", table: "budget_plans" },
+        (payload) => {
+          console.log("🔔 Budget plans change detected:", payload);
+          fetchStatus();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(statusChannel);
+      supabase.removeChannel(plansChannel);
     };
   }, [selectedYear, selectedMonth]);
 
