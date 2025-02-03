@@ -24,14 +24,19 @@ export const IncomeSection = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const currentDate = new Date().toISOString().split("T")[0];
+      const urlParams = new URLSearchParams(window.location.search);
+      const selectedMonth = parseInt(urlParams.get('month') || new Date().getMonth().toString());
+      const selectedYear = parseInt(urlParams.get('year') || new Date().getFullYear().toString());
+      
+      // Get first day of selected month
+      const targetDate = new Date(selectedYear, selectedMonth, 1).toISOString().split('T')[0];
 
-      // First try to get monthly income
+      // Try to get monthly income for the specific month
       const { data: monthlyData, error: monthlyError } = await supabase
         .from("income")
         .select("*")
         .eq("user_id", user.id)
-        .eq("date", currentDate)
+        .eq("date", targetDate)
         .eq("is_default", false);
 
       if (monthlyError) throw monthlyError;
@@ -75,23 +80,28 @@ export const IncomeSection = () => {
       if (error) throw error;
 
       if (defaultIncome && defaultIncome.length > 0) {
-        const currentDate = new Date().toISOString().split("T")[0];
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedMonth = parseInt(urlParams.get('month') || new Date().getMonth().toString());
+        const selectedYear = parseInt(urlParams.get('year') || new Date().getFullYear().toString());
+        
+        // Get first day of selected month
+        const targetDate = new Date(selectedYear, selectedMonth, 1).toISOString().split('T')[0];
 
         // First, delete existing non-default records for this date
         const { error: deleteError } = await supabase
           .from("income")
           .delete()
           .eq("user_id", user.id)
-          .eq("date", currentDate)
+          .eq("date", targetDate)
           .eq("is_default", false);
 
         if (deleteError) throw deleteError;
 
-        // Then insert new records with the current date
+        // Then insert new records with the target date
         const newRecords = defaultIncome.map(record => ({
           amount: record.amount,
           source: record.source,
-          date: currentDate,
+          date: targetDate,
           user_id: user.id,
           is_default: false
         }));

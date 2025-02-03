@@ -23,7 +23,6 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   const [totalTasks, setTotalTasks] = useState<number>(0);
   const [completedTasks, setCompletedTasks] = useState<number>(0);
   const [statusMap, setStatusMap] = useState<StatusMap>({});
-  const [stateVersion, setStateVersion] = useState(0); // Force re-render
 
   // ✅ Fetch latest status from Supabase
   const fetchStatus = async () => {
@@ -62,7 +61,6 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const completed = fixedExpenses.filter(expense => statusLookup.get(expense.id) === true).length;
     setCompletedTasks(completed);
     setAllTasksCompleted(completed === fixedExpenses.length);
-    setStateVersion((prev) => prev + 1); // 🔥 Force re-render
   };
 
   useEffect(() => {
@@ -85,7 +83,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   }, [selectedYear, selectedMonth]);
 
   return (
-    <div key={stateVersion} className="space-y-4"> {/* 🔥 Force UI update */}
+    <div className="space-y-4">
       <div className="flex items-center gap-2">
         <h3 className="text-lg font-medium">Fixed Expenses Status</h3>
         <TooltipProvider>
