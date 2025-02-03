@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { CreditCardBillCard } from "./sections/CreditCardBillCard";
 import { FixedExpensesStatus } from "./sections/FixedExpensesStatus";
-import { IncomeSection } from "@/components/finance/IncomeSection";
 
 interface MonthlyViewProps {
   children: ReactNode;
