@@ -93,11 +93,16 @@ export const DefaultIncomeManagement = () => {
 
       if (deleteError) throw deleteError;
 
-      // Insert new default entries without a date since they're templates
+      // Get first day of current month for default values
+      const currentDate = new Date();
+      currentDate.setDate(1);
+      const defaultDate = currentDate.toISOString().split('T')[0];
+
+      // Insert new default entries
       const updates = [
-        { amount: income.lucas, source: "Primary Job", user_id: user.id, is_default: true },
-        { amount: income.camila, source: "Wife Job 1", user_id: user.id, is_default: true },
-        { amount: income.other, source: "Other", user_id: user.id, is_default: true },
+        { amount: income.lucas, source: "Primary Job", user_id: user.id, is_default: true, date: defaultDate },
+        { amount: income.camila, source: "Wife Job 1", user_id: user.id, is_default: true, date: defaultDate },
+        { amount: income.other, source: "Other", user_id: user.id, is_default: true, date: defaultDate },
       ];
 
       const { error: insertError } = await supabase.from("income").insert(updates);
