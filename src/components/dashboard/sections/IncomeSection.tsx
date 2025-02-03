@@ -88,17 +88,6 @@ export const IncomeSection = () => {
 
         console.log("🚀 New default income values:", newIncome);
 
-        // First delete any existing records for this date
-        const { error: deleteError } = await supabase
-          .from("income")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("date", currentDate)
-          .eq("is_default", false);
-
-        if (deleteError) throw deleteError;
-
-        // Then insert new records
         const sources = [
           { amount: newIncome.lucas, source: "Primary Job" },
           { amount: newIncome.camila, source: "Wife Job 1" },
@@ -106,17 +95,23 @@ export const IncomeSection = () => {
         ];
 
         for (const entry of sources) {
-          const { error: insertError } = await supabase
+          const { error: upsertError } = await supabase
             .from("income")
-            .insert({
-              amount: entry.amount,
-              source: entry.source,
-              date: currentDate,
-              user_id: user.id,
-              is_default: false,
-            });
+            .upsert(
+              {
+                amount: entry.amount,
+                source: entry.source,
+                date: currentDate,
+                user_id: user.id,
+                is_default: false,
+              },
+              {
+                onConflict: 'user_id,source,date',
+                ignoreDuplicates: false,
+              }
+            );
 
-          if (insertError) throw insertError;
+          if (upsertError) throw upsertError;
         }
 
         // ✅ Atualizar o estado local
