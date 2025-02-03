@@ -26,22 +26,22 @@ export const IncomeSection = () => {
 
       const currentDate = new Date().toISOString().split("T")[0];
 
-      const { data, error } = await supabase
+      // First try to get monthly income
+      const { data: monthlyData, error: monthlyError } = await supabase
         .from("income")
         .select("*")
         .eq("user_id", user.id)
         .eq("date", currentDate)
         .eq("is_default", false);
 
-      if (error) throw error;
+      if (monthlyError) throw monthlyError;
 
-      console.log("🔄 Income loaded from database:", data);
-
-      if (data && data.length > 0) {
+      // If monthly data exists, use it
+      if (monthlyData && monthlyData.length > 0) {
         setIncome({
-          lucas: data.find((inc) => inc.source === "Primary Job")?.amount || 0,
-          camila: data.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
-          other: data.find((inc) => inc.source === "Other")?.amount || 0,
+          lucas: monthlyData.find((inc) => inc.source === "Primary Job")?.amount || 0,
+          camila: monthlyData.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
+          other: monthlyData.find((inc) => inc.source === "Other")?.amount || 0,
         });
       }
     } catch (error: any) {
@@ -77,14 +77,6 @@ export const IncomeSection = () => {
       if (defaultIncome && defaultIncome.length > 0) {
         const currentDate = new Date().toISOString().split("T")[0];
 
-        const newIncome = {
-          lucas: defaultIncome.find((inc) => inc.source === "Primary Job")?.amount || 0,
-          camila: defaultIncome.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
-          other: defaultIncome.find((inc) => inc.source === "Other")?.amount || 0,
-        };
-
-        console.log("🚀 New default income values:", newIncome);
-
         // First, delete existing non-default records for this date
         const { error: deleteError } = await supabase
           .from("income")
@@ -95,29 +87,27 @@ export const IncomeSection = () => {
 
         if (deleteError) throw deleteError;
 
-        // Then insert new records
-        const sources = [
-          { amount: newIncome.lucas, source: "Primary Job" },
-          { amount: newIncome.camila, source: "Wife Job 1" },
-          { amount: newIncome.other, source: "Other" },
-        ];
+        // Then insert new records with the current date
+        const newRecords = defaultIncome.map(record => ({
+          amount: record.amount,
+          source: record.source,
+          date: currentDate,
+          user_id: user.id,
+          is_default: false
+        }));
 
-        for (const entry of sources) {
-          const { error: insertError } = await supabase
-            .from("income")
-            .insert({
-              amount: entry.amount,
-              source: entry.source,
-              date: currentDate,
-              user_id: user.id,
-              is_default: false,
-            });
+        const { error: insertError } = await supabase
+          .from("income")
+          .insert(newRecords);
 
-          if (insertError) throw insertError;
-        }
+        if (insertError) throw insertError;
 
-        setIncome(newIncome);
-        console.log("🎯 Updated income state:", newIncome);
+        // Update local state
+        setIncome({
+          lucas: defaultIncome.find((inc) => inc.source === "Primary Job")?.amount || 0,
+          camila: defaultIncome.find((inc) => inc.source === "Wife Job 1")?.amount || 0,
+          other: defaultIncome.find((inc) => inc.source === "Other")?.amount || 0,
+        });
 
         toast({
           title: "Income Defaults Loaded",
