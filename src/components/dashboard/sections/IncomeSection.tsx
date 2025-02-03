@@ -88,23 +88,26 @@ export const IncomeSection = () => {
 
         console.log("🚀 New default income values:", newIncome);
 
-        // ✅ Inserir os novos valores no banco
-        const incomeEntries = [
+        // ✅ Insert or update the income entries one by one
+        const sources = [
           { amount: newIncome.lucas, source: "Primary Job" },
           { amount: newIncome.camila, source: "Wife Job 1" },
           { amount: newIncome.other, source: "Other" },
-        ].map((entry) => ({
-          ...entry,
-          date: currentDate,
-          user_id: user.id,
-          is_default: false,
-        }));
+        ];
 
-        const { error: insertError } = await supabase
-          .from("income")
-          .upsert(incomeEntries, { onConflict: ["user_id", "source", "date"] });
+        for (const entry of sources) {
+          const { error: upsertError } = await supabase
+            .from("income")
+            .upsert({
+              amount: entry.amount,
+              source: entry.source,
+              date: currentDate,
+              user_id: user.id,
+              is_default: false,
+            });
 
-        if (insertError) throw insertError;
+          if (upsertError) throw upsertError;
+        }
 
         // ✅ Atualizar o estado local
         setIncome(newIncome);
