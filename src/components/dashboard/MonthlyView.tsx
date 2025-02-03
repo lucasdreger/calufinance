@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { IncomeSection } from "./sections/IncomeSection";
 import { CreditCardBillCard } from "./sections/CreditCardBillCard";
 import { FixedExpensesStatus } from "./sections/FixedExpensesStatus";
 
