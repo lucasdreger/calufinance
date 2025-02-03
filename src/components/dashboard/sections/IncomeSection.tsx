@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface IncomeState {
   lucas: number;
@@ -88,7 +88,17 @@ export const IncomeSection = () => {
 
         console.log("🚀 New default income values:", newIncome);
 
-        // ✅ Insert or update the income entries one by one
+        // First delete any existing records for this date
+        const { error: deleteError } = await supabase
+          .from("income")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("date", currentDate)
+          .eq("is_default", false);
+
+        if (deleteError) throw deleteError;
+
+        // Then insert new records
         const sources = [
           { amount: newIncome.lucas, source: "Primary Job" },
           { amount: newIncome.camila, source: "Wife Job 1" },
@@ -96,9 +106,9 @@ export const IncomeSection = () => {
         ];
 
         for (const entry of sources) {
-          const { error: upsertError } = await supabase
+          const { error: insertError } = await supabase
             .from("income")
-            .upsert({
+            .insert({
               amount: entry.amount,
               source: entry.source,
               date: currentDate,
@@ -106,7 +116,7 @@ export const IncomeSection = () => {
               is_default: false,
             });
 
-          if (upsertError) throw upsertError;
+          if (insertError) throw insertError;
         }
 
         // ✅ Atualizar o estado local
