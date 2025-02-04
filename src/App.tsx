@@ -13,7 +13,9 @@ function App() {
 
   useEffect(() => {
     // Expose Supabase globally for debugging
-    window.supabase = supabase;
+    if (typeof window !== "undefined") {
+      window.supabase = supabase;
+    }
 
     // Check current auth status
     supabase.auth.getSession().then(({ data: { session } }) => {
