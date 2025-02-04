@@ -39,19 +39,19 @@ export const ExpenseAlerts = ({
           return;
         }
 
-        // ✅ Fetch a single row safely
+        // ✅ Force Supabase to return a single row safely
         const { data, error } = await supabase
           .from("monthly_income")
           .select("amount")
-          .eq("user_id", user.id)
+          .eq("user_id", user.id) // Ensure user_id matches format
           .eq("year", selectedYear)
           .eq("month", selectedMonth)
           .eq("source", "lucas")
-          .maybeSingle(); // Ensures at most one row is returned
+          .single(); // Forces exactly one row, error if multiple
 
         if (error) throw error;
 
-        // ✅ Handle missing data safely
+        // ✅ If row exists, set amount; otherwise, default to 0
         setLucasIncome(data?.amount ?? 0);
       } catch (error: any) {
         console.error("Error fetching Lucas's income:", error);
