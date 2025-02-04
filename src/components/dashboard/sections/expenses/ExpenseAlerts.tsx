@@ -5,6 +5,10 @@ import { formatCurrency } from "@/utils/formatters";
 import { MonthlyTaskItem } from "../tasks/MonthlyTaskItem";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Edit2, Save } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ExpenseAlertsProps {
   expenses: any[];
@@ -96,5 +100,70 @@ export const ExpenseAlerts = ({
         </div>
       )}
     </>
+  );
+};
+
+interface InvestmentCardProps {
+  investment: {
+    id: string;           // Unique identifier
+    type: string;         // Investment type/category
+    current_value: number; // Current investment value
+    last_updated: string;  // Last update timestamp
+  };
+  isEditing: boolean;     // Edit mode flag
+  editValue: string;      // Current edit value
+  onEdit: () => void;     // Edit mode handler
+  onSave: () => void;     // Save handler
+  onEditValueChange: (value: string) => void; // Value change handler
+}
+
+export const InvestmentCard = ({
+  investment,
+  isEditing,
+  editValue,
+  onEdit,
+  onSave,
+  onEditValueChange,
+}: InvestmentCardProps) => {
+  return (
+    <div className="bg-white rounded-lg p-4 shadow">
+      {/* Investment type header */}
+      <div className="text-sm font-medium text-gray-700 mb-2">
+        {investment.type}
+      </div>
+      
+      {/* Value display/edit section */}
+      <div className="flex items-center justify-between gap-2">
+        {isEditing ? (
+          // Edit mode UI
+          <>
+            <Input
+              type="number"
+              value={editValue}
+              onChange={(e) => onEditValueChange(e.target.value)}
+              className="w-24 text-right"
+            />
+            <Button size="sm" onClick={onSave}>
+              <Save className="h-4 w-4" />
+            </Button>
+          </>
+        ) : (
+          // Display mode UI
+          <>
+            <span className="text-lg font-semibold">
+              {formatCurrency(investment.current_value)}
+            </span>
+            <Button size="sm" variant="ghost" onClick={onEdit}>
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          </>
+        )}
+      </div>
+      
+      {/* Last updated timestamp */}
+      <div className="text-xs text-gray-500 mt-2">
+        Last updated: {new Date(investment.last_updated).toLocaleDateString()}
+      </div>
+    </div>
   );
 };

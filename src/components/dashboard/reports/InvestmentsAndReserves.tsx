@@ -8,20 +8,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/utils/formatters";
 
+// Interface for investment records
 interface Investment {
-  id: string;
-  type: string;
-  initial_value: number;
-  current_value: number;
-  last_updated: string;
+  id: string;          // Unique identifier
+  type: string;        // Type of investment
+  initial_value: number; // Initial investment amount
+  current_value: number; // Current value of investment
+  last_updated: string;  // Last update timestamp
 }
 
+// Interface for reserve records
 interface Reserve {
-  id: string;
-  type: string;
-  current_value: number;
-  target_value: number | null;
-  last_updated: string;
+  id: string;           // Unique identifier
+  type: string;         // Type of reserve (e.g., emergency, travel)
+  current_value: number; // Current reserve amount
+  target_value: number | null; // Target amount (optional)
+  last_updated: string;  // Last update timestamp
 }
 
 export const InvestmentsAndReserves = () => {
@@ -32,10 +34,13 @@ export const InvestmentsAndReserves = () => {
   const [editValue, setEditValue] = useState<string>("");
   const { toast } = useToast();
 
+  // Fetch both investments and reserves data from Supabase
   const fetchData = async () => {
     try {
+      // Get current authenticated user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
+      // Handle authentication errors
       if (userError) throw userError;
       if (!user) {
         toast({
@@ -46,18 +51,21 @@ export const InvestmentsAndReserves = () => {
         return;
       }
 
+      // Fetch investments for current user
       const { data: investmentsData, error: investmentsError } = await supabase
         .from('investments')
         .select('*')
         .eq('user_id', user.id)
         .order('type');
 
+      // Fetch reserves for current user
       const { data: reservesData, error: reservesError } = await supabase
         .from('reserves')
         .select('*')
         .eq('user_id', user.id)
         .order('type');
 
+      // Handle any fetch errors
       if (investmentsError || reservesError) {
         console.error("Error fetching data:", { investmentsError, reservesError });
         toast({
@@ -68,6 +76,7 @@ export const InvestmentsAndReserves = () => {
         return;
       }
 
+      // Update state with fetched data
       setInvestments(investmentsData || []);
       setReserves(reservesData || []);
     } catch (error: any) {
