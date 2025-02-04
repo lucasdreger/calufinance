@@ -39,18 +39,21 @@ export const ExpenseAlerts = ({
           return;
         }
 
+        // ✅ Fetch all Lucas income entries and sum them
         const { data, error } = await supabase
           .from("monthly_income")
           .select("amount")
           .eq("user_id", user.id)
           .eq("year", selectedYear)
           .eq("month", selectedMonth)
-          .eq("source", "lucas")
-          .maybeSingle(); // Ensures at most one row is returned
+          .eq("source", "lucas");
 
         if (error) throw error;
 
-        setLucasIncome(data?.amount ?? 0);
+        // ✅ Sum all income values
+        const totalIncome = data?.reduce((sum, entry) => sum + entry.amount, 0) ?? 0;
+        
+        setLucasIncome(totalIncome);
       } catch (error: any) {
         console.error("Error fetching Lucas's income:", error);
         toast({
