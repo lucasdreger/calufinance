@@ -16,6 +16,7 @@ interface BudgetPlan {
   description: string;
   estimated_amount: number;
   requires_status: boolean;
+  owner: string;
   expenses_categories: {
     name: string;
   };
@@ -27,7 +28,7 @@ interface BudgetPlanTableProps {
   onEdit: (plan: BudgetPlan) => void;
 }
 
-type SortField = 'description' | 'category' | 'amount' | 'status';
+type SortField = 'description' | 'category' | 'amount' | 'status' | 'owner';
 type SortDirection = 'asc' | 'desc';
 
 export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTableProps) => {
@@ -69,6 +70,8 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
         return direction * (a.estimated_amount - b.estimated_amount);
       case 'status':
         return direction * (Number(a.requires_status) - Number(b.requires_status));
+      case 'owner':
+        return direction * a.owner.toLowerCase().localeCompare(b.owner.toLowerCase());
       default:
         return 0;
     }
@@ -124,6 +127,16 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('owner')}
+                    className="h-8 px-2 hover:bg-transparent"
+                  >
+                    Owner
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -145,6 +158,7 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
                       <CircleSlash className="h-4 w-4 text-gray-400" />
                     )}
                   </TableCell>
+                  <TableCell>{plan.owner}</TableCell>
                   <TableCell className="space-x-2">
                     <Button
                       variant="ghost"
