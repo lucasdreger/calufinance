@@ -30,6 +30,14 @@ export const MonthlyExpensesTable = () => {
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
 
+  // Function to check if a month has any expenses across all categories
+  const monthHasExpenses = (month: string) => {
+    return Object.values(monthlyData).some(categoryData => categoryData[month] > 0);
+  };
+
+  // Filter months to only include those with expenses
+  const activeMonths = months.filter(month => monthHasExpenses(month));
+
   const fetchData = async () => {
     try {
       // Fetch categories
@@ -122,7 +130,7 @@ export const MonthlyExpensesTable = () => {
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="font-bold text-primary w-[200px] sticky left-0 bg-background">Category</TableHead>
-              {months.map(month => (
+              {activeMonths.map(month => (
                 <TableHead key={month} className="text-right font-medium text-muted-foreground">
                   {month}
                 </TableHead>
@@ -143,7 +151,7 @@ export const MonthlyExpensesTable = () => {
                 <TableCell className="font-medium sticky left-0 bg-inherit border-r">
                   {category}
                 </TableCell>
-                {months.map(month => (
+                {activeMonths.map(month => (
                   <TableCell 
                     key={month} 
                     className="text-right tabular-nums"
