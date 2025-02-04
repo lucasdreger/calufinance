@@ -16,6 +16,8 @@ interface ExpensesTableProps {
     amount: number;
     owner: string;
   }[];
+  selectedYear: number;
+  selectedMonth: number;
 }
 
 export const ExpensesTable = ({ 
@@ -23,7 +25,9 @@ export const ExpensesTable = ({
   onExpenseUpdated,
   lucasIncome,
   creditCardBill,
-  fixedExpenses
+  fixedExpenses,
+  selectedYear,
+  selectedMonth
 }: ExpensesTableProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -96,11 +100,12 @@ export const ExpensesTable = ({
   return (
     <div className="space-y-4">
       <ExpenseAlerts 
-        expenses={filteredExpenses} 
-        transferAmount={0}
+        expenses={filteredExpenses}
         lucasIncome={lucasIncome}
         creditCardBill={creditCardBill}
         fixedExpenses={fixedExpenses}
+        selectedYear={selectedYear}
+        selectedMonth={selectedMonth}
       />
       
       <Table>

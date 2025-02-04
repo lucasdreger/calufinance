@@ -260,6 +260,8 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
               lucasIncome={lucasIncome}
               creditCardBill={creditCardBill}
               fixedExpenses={fixedExpenses}
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
             />
           </div>
         </CardContent>
