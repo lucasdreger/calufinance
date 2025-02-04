@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { LogOut } from "lucide-react";
 import { MonthlyDeviation } from "@/components/dashboard/reports/MonthlyDeviation";
-import MonthlyExpensesTable from "@/components/dashboard/reports/MonthlyExpensesTable";
+import { MonthlyExpensesTable } from "@/components/dashboard/reports/MonthlyExpensesTable";
 import {
   Tabs,
   TabsContent,
@@ -51,7 +51,7 @@ const Index = () => {
         <TabsContent value="overview" className="space-y-6">
           <BudgetOverview />
           <MonthlyDeviation />
-          <MonthlyExpensesTable expenses={[]} />
+          <MonthlyExpensesTable />
         </TabsContent>
 
         <TabsContent value="monthly">
