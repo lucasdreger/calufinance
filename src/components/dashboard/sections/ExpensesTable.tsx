@@ -10,9 +10,21 @@ import { ExpenseTableHeader } from "./expenses/ExpenseTableHeader";
 interface ExpensesTableProps {
   expenses: any[];
   onExpenseUpdated: () => void;
+  lucasIncome: number;
+  creditCardBill: number;
+  fixedExpenses: {
+    amount: number;
+    owner: string;
+  }[];
 }
 
-export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps) => {
+export const ExpensesTable = ({ 
+  expenses, 
+  onExpenseUpdated,
+  lucasIncome,
+  creditCardBill,
+  fixedExpenses
+}: ExpensesTableProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const { toast } = useToast();
@@ -81,18 +93,15 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
     expense.expenses_categories?.name !== 'Credit Card'
   );
 
-  // Calculate Lucas's salary from filtered expenses
-  const lucasSalary = filteredExpenses.find(expense => 
-    expense.description?.toLowerCase().includes('lucas') && 
-    expense.description?.toLowerCase().includes('salary')
-  )?.amount || 0;
-
-  // Calculate transfer amount (30% of Lucas's salary)
-  const transferAmount = lucasSalary * 0.3;
-
   return (
     <div className="space-y-4">
-      <ExpenseAlerts expenses={filteredExpenses} transferAmount={transferAmount} />
+      <ExpenseAlerts 
+        expenses={filteredExpenses} 
+        transferAmount={0}
+        lucasIncome={lucasIncome}
+        creditCardBill={creditCardBill}
+        fixedExpenses={fixedExpenses}
+      />
       
       <Table>
         <ExpenseTableHeader />

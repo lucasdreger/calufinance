@@ -17,7 +17,6 @@ interface ExpenseAlertsProps {
 
 export const ExpenseAlerts = ({ 
   expenses, 
-  transferAmount,
   lucasIncome,
   creditCardBill,
   fixedExpenses 
