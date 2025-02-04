@@ -2,36 +2,79 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 import { MonthlyTaskItem } from "../tasks/MonthlyTaskItem";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ExpenseAlertsProps {
   expenses: any[];
-  transferAmount: number;
-  lucasIncome: number;
+  selectedYear: number;
+  selectedMonth: number;
   creditCardBill: number;
-  fixedExpenses: {
-    amount: number;
-    owner: string;
-  }[];
+  fixedExpenses: { amount: number; owner: string }[];
 }
 
 export const ExpenseAlerts = ({ 
   expenses, 
-  lucasIncome,
+  selectedYear,
+  selectedMonth,
   creditCardBill,
   fixedExpenses 
 }: ExpenseAlertsProps) => {
   const [isTransferCompleted, setIsTransferCompleted] = useState(false);
+  const [lucasIncome, setLucasIncome] = useState<number | null>(null);
+  const { toast } = useToast();
 
-  // Calculate Lucas's fixed expenses total
+  // ✅ Fetch Lucas's income for the selected month and year
+  useEffect(() => {
+    const fetchLucasIncome = async () => {
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        const user = userData?.user;
+
+        if (userError || !user) {
+          toast({ title: "Error", description: "Please login to continue", variant: "destructive" });
+          return;
+        }
+
+        // ✅ Fetch only Lucas's income for the current month & year
+        const { data, error } = await supabase
+          .from("monthly_income")
+          .select("amount")
+          .eq("user_id", user.id)
+          .eq("year", selectedYear)
+          .eq("month", selectedMonth)
+          .eq("source", "lucas")
+          .single(); // Ensures only one row is returned
+
+        if (error && error.code !== "PGRST116") throw error; // Ignore "no rows found" error
+
+        setLucasIncome(data?.amount ?? 0); // Default to 0 if no row exists
+      } catch (error: any) {
+        console.error("Error fetching Lucas's income:", error);
+        toast({
+          title: "Error fetching income",
+          description: error.message || "Unknown error",
+          variant: "destructive",
+        });
+        setLucasIncome(0); // Fallback in case of error
+      }
+    };
+
+    fetchLucasIncome();
+  }, [selectedYear, selectedMonth]);
+
+  if (lucasIncome === null) return null; // Avoid rendering alerts until income is loaded
+
+  // ✅ Calculate Lucas's total fixed expenses
   const lucasFixedExpensesTotal = fixedExpenses
-    .filter(expense => expense.owner === 'Lucas')
+    .filter(expense => expense.owner === "Lucas")
     .reduce((sum, expense) => sum + expense.amount, 0);
 
-  // Calculate remaining amount after bills
+  // ✅ Calculate remaining amount after bills
   const remainingAmount = lucasIncome - creditCardBill - lucasFixedExpensesTotal;
-  
-  // Calculate transfer needed if remaining is less than 400
+
+  // ✅ Calculate transfer needed if remaining is less than 400
   const transferNeeded = remainingAmount < 400 ? 400 - remainingAmount : 0;
 
   return (
