@@ -138,6 +138,15 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
           <Button onClick={handleSave}>Save</Button>
         </div>
 
+        {amount === 0 && (
+          <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
+              The Credit Card bill amount is set to 0. Please update it if you have received the bill.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {showTransferAlert && (
           <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
             <AlertCircle className="h-4 w-4 text-yellow-600" />

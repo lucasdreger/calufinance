@@ -76,8 +76,13 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
     });
   };
 
-  // Calculate Lucas's salary
-  const lucasSalary = expenses.find(expense => 
+  // Filter out credit card expenses
+  const filteredExpenses = expenses.filter(expense => 
+    expense.expenses_categories?.name !== 'Credit Card'
+  );
+
+  // Calculate Lucas's salary from filtered expenses
+  const lucasSalary = filteredExpenses.find(expense => 
     expense.description?.toLowerCase().includes('lucas') && 
     expense.description?.toLowerCase().includes('salary')
   )?.amount || 0;
@@ -87,12 +92,12 @@ export const ExpensesTable = ({ expenses, onExpenseUpdated }: ExpensesTableProps
 
   return (
     <div className="space-y-4">
-      <ExpenseAlerts expenses={expenses} transferAmount={transferAmount} />
+      <ExpenseAlerts expenses={filteredExpenses} transferAmount={transferAmount} />
       
       <Table>
         <ExpenseTableHeader />
         <TableBody>
-          {expenses.map((expense) => (
+          {filteredExpenses.map((expense) => (
             <ExpenseRow
               key={expense.id}
               expense={expense}
