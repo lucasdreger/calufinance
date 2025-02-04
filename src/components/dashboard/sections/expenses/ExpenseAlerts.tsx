@@ -8,7 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ExpenseAlertsProps {
   expenses: any[];
-  lucasIncome: number;
   creditCardBill: number;
   fixedExpenses: {
     amount: number;
@@ -20,24 +19,60 @@ interface ExpenseAlertsProps {
 
 export const ExpenseAlerts = ({ 
   expenses, 
-  lucasIncome,
   creditCardBill,
   fixedExpenses,
   selectedYear,
   selectedMonth
 }: ExpenseAlertsProps) => {
   const [isTransferCompleted, setIsTransferCompleted] = useState(false);
+  const [lucasIncome, setLucasIncome] = useState<number | null>(null);
   const { toast } = useToast();
 
-  // Calculate Lucas's fixed expenses total
+  useEffect(() => {
+    const fetchLucasIncome = async () => {
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        const user = userData?.user;
+
+        if (userError || !user) {
+          toast({ title: "Error", description: "Please login to continue", variant: "destructive" });
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("monthly_income")
+          .select("amount")
+          .eq("user_id", user.id)
+          .eq("year", selectedYear)
+          .eq("month", selectedMonth)
+          .eq("source", "lucas")
+          .maybeSingle(); // Ensures at most one row is returned
+
+        if (error) throw error;
+
+        setLucasIncome(data?.amount ?? 0);
+      } catch (error: any) {
+        console.error("Error fetching Lucas's income:", error);
+        toast({
+          title: "Error fetching income",
+          description: error.message || "Unknown error",
+          variant: "destructive",
+        });
+        setLucasIncome(0);
+      }
+    };
+
+    fetchLucasIncome();
+  }, [selectedYear, selectedMonth]);
+
+  if (lucasIncome === null) return null; // Prevents rendering before data loads
+
   const lucasFixedExpensesTotal = fixedExpenses
     .filter(expense => expense.owner === "Lucas")
     .reduce((sum, expense) => sum + expense.amount, 0);
 
-  // Calculate remaining amount after bills
   const remainingAmount = lucasIncome - creditCardBill - lucasFixedExpensesTotal;
 
-  // Calculate transfer needed if remaining is less than 400
   const transferNeeded = remainingAmount < 400 ? 400 - remainingAmount : 0;
 
   return (
