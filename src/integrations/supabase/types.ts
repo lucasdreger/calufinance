@@ -16,7 +16,7 @@ export type Database = {
           description: string
           estimated_amount: number
           id: string
-          is_fixed: boolean | null
+          is_fixed: boolean
           owner: string
           requires_status: boolean | null
           user_id: string
@@ -27,8 +27,8 @@ export type Database = {
           description: string
           estimated_amount: number
           id?: string
-          is_fixed?: boolean | null
-          owner?: string
+          is_fixed?: boolean
+          owner: string
           requires_status?: boolean | null
           user_id: string
         }
@@ -38,7 +38,7 @@ export type Database = {
           description?: string
           estimated_amount?: number
           id?: string
-          is_fixed?: boolean | null
+          is_fixed?: boolean
           owner?: string
           requires_status?: boolean | null
           user_id?: string
