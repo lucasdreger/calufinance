@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface CurrencyInputProps {
   value: number;
   onChange: (value: number) => void;
   placeholder?: string;
   className?: string;
+  label?: string;
 }
 
 export const CurrencyInput = ({
@@ -13,21 +15,19 @@ export const CurrencyInput = ({
   onChange,
   placeholder = "Enter amount",
   className,
+  label
 }: CurrencyInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [inputValue, setInputValue] = useState(value.toString());
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Get raw input value
     let newValue = e.target.value;
     
-    // Allow only numbers and one decimal point
     if (newValue === '' || newValue === '.') {
       setInputValue(newValue);
       return;
     }
 
-    // Validate decimal format (only one decimal point, max 2 decimal places)
     const decimalRegex = /^\d*\.?\d{0,2}$/;
     if (!decimalRegex.test(newValue)) {
       return;
@@ -35,7 +35,6 @@ export const CurrencyInput = ({
 
     setInputValue(newValue);
     
-    // Convert to number for onChange
     const numericValue = parseFloat(newValue || '0');
     if (!isNaN(numericValue)) {
       onChange(numericValue);
@@ -45,17 +44,14 @@ export const CurrencyInput = ({
   const handleBlur = () => {
     setIsFocused(false);
     
-    // If empty or just a decimal point, set to 0
     if (inputValue === '' || inputValue === '.') {
       setInputValue('0');
       onChange(0);
       return;
     }
 
-    // Ensure proper decimal formatting
     const numericValue = parseFloat(inputValue);
     if (!isNaN(numericValue)) {
-      // Format with 2 decimal places
       const formattedValue = numericValue.toFixed(2);
       setInputValue(formattedValue);
       onChange(parseFloat(formattedValue));
@@ -64,7 +60,6 @@ export const CurrencyInput = ({
 
   const handleFocus = () => {
     setIsFocused(true);
-    // If value is 0, clear the input
     if (parseFloat(inputValue) === 0) {
       setInputValue('');
     }
@@ -74,23 +69,29 @@ export const CurrencyInput = ({
     if (isFocused) {
       return inputValue;
     }
-    // When not focused, show formatted currency
     return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(parseFloat(inputValue || '0'));
   };
 
   return (
-    <Input
-      type="text"
-      value={formatValue()}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      placeholder={placeholder}
-      className={className}
-      inputMode="decimal"
-    />
+    <div className="space-y-2">
+      {label && <Label>{label}</Label>}
+      <div className="relative">
+        <Input
+          type="text"
+          value={formatValue()}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          className={className}
+          inputMode="decimal"
+        />
+      </div>
+    </div>
   );
 };

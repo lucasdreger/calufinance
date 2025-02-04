@@ -16,6 +16,9 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   const [expenses, setExpenses] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const { toast } = useToast();
+  const [lucasIncome, setLucasIncome] = useState<number>(0);
+  const [creditCardBill, setCreditCardBill] = useState<number>(0);
+  const [fixedExpenses, setFixedExpenses] = useState<any[]>([]);
 
   const fetchExpenses = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -90,9 +93,14 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   };
 
   const fetchCategories = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from('expenses_categories')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id)
+      .order('name');
     
     if (error) {
       toast({
@@ -103,12 +111,91 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
       return;
     }
     
-    setCategories(data || []);
+    // Remove duplicates based on name
+    const uniqueCategories = data?.filter((category, index, self) =>
+      index === self.findIndex((c) => c.name === category.name)
+    ) || [];
+    
+    setCategories(uniqueCategories);
+  };
+
+  const fetchLucasIncome = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('income')
+      .select('amount')
+      .eq('source', 'Primary Job')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      toast({
+        title: "Error fetching Lucas's income",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLucasIncome(data?.amount || 0);
+  };
+
+  const fetchCreditCardBill = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: categories } = await supabase
+      .from('expenses_categories')
+      .select('id')
+      .eq('name', 'Credit Card')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!categories) return;
+
+    const { data: creditCardExpense } = await supabase
+      .from('expenses')
+      .select('amount')
+      .eq('category_id', categories.id)
+      .eq('user_id', user.id)
+      .gte('date', new Date(selectedYear, selectedMonth, 1).toISOString())
+      .lte('date', new Date(selectedYear, selectedMonth + 1, 0).toISOString())
+      .maybeSingle();
+
+    setCreditCardBill(creditCardExpense?.amount || 0);
+  };
+
+  const fetchFixedExpenses = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('fixed_expenses_status')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('date', new Date(selectedYear, selectedMonth, 1).toISOString())
+      .lt('date', new Date(selectedYear, selectedMonth + 1, 1).toISOString());
+
+    if (error) {
+      toast({
+        title: "Error fetching fixed expenses",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFixedExpenses(data || []);
   };
 
   useEffect(() => {
     fetchCategories();
     fetchExpenses();
+    fetchLucasIncome();
+    fetchCreditCardBill();
+    fetchFixedExpenses();
 
     // Subscribe to changes in expenses
     const expensesChannel = supabase
@@ -170,6 +257,9 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
             <ExpensesTable 
               expenses={expenses} 
               onExpenseUpdated={fetchExpenses}
+              lucasIncome={lucasIncome}
+              creditCardBill={creditCardBill}
+              fixedExpenses={fixedExpenses}
             />
           </div>
         </CardContent>

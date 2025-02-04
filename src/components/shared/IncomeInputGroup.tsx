@@ -20,17 +20,17 @@ export const IncomeInputGroup = ({ income, onIncomeChange }: IncomeInputGroupPro
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <div>
-        <label className="text-sm font-medium">Lucas's Income</label>
         <CurrencyInput
-          key={income.lucas} // Forces re-render
+          label="Lucas's Income"
+          key={income.lucas}
           value={income.lucas}
           onChange={(value) => onIncomeChange("lucas", value)}
           placeholder="Enter income"
         />
       </div>
       <div>
-        <label className="text-sm font-medium">Camila's Income</label>
         <CurrencyInput
+          label="Camila's Income"
           key={income.camila}
           value={income.camila}
           onChange={(value) => onIncomeChange("camila", value)}
@@ -38,8 +38,8 @@ export const IncomeInputGroup = ({ income, onIncomeChange }: IncomeInputGroupPro
         />
       </div>
       <div>
-        <label className="text-sm font-medium">Other Income</label>
         <CurrencyInput
+          label="Other Income"
           key={income.other}
           value={income.other}
           onChange={(value) => onIncomeChange("other", value)}
