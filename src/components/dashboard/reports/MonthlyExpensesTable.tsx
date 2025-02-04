@@ -1,4 +1,5 @@
 import React from "react";
+import { MonthlyExpensesTable } from "/src/components/dashboard/reports/MonthlyExpensesTable";
 
 interface Expense {
   category: string;
