@@ -46,6 +46,7 @@ export const ExpenseAlerts = ({
           .eq("user_id", user.id) // Ensure user_id matches format
           .eq("year", selectedYear)
           .eq("month", selectedMonth)
+          console.log("Fetching data for month:", selectedMonth);
           .eq("source", "lucas")
           .single(); // Forces exactly one row, error if multiple
 
