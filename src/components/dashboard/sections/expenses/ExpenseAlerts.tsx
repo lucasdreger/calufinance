@@ -43,18 +43,22 @@ export const ExpenseAlerts = ({
           return;
         }
 
-        const { data, error } = await supabase
-          .from("monthly_income")
-          .select("amount")
-          .eq("user_id", user.id)
-          .eq("year", selectedYear)
-          .eq("month", selectedMonth)
-          .eq("source", "lucas")
+        const { data: lucasIncome } = await supabase
+          .from('income')
+          .select('amount')
+          .eq('source', 'lucas')
+          .eq('user_id', user.id)
+          .gte('date', startOfMonth)
+          .lte('date', endOfMonth)
+          .order('date', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
 
-        setLucasIncome(data?.amount ?? 0);
+        setLucasIncome(lucasIncome?.amount ?? 0);
       } catch (error: any) {
         console.error("Error fetching Lucas's income:", error);
         toast({
@@ -67,7 +71,7 @@ export const ExpenseAlerts = ({
     };
 
     fetchLucasIncome();
-  }, [selectedYear, selectedMonth]);
+  }, [selectedYear, selectedMonth, toast]);
 
   if (lucasIncome === null) return null;
 
