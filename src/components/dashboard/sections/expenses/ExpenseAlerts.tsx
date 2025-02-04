@@ -43,19 +43,17 @@ export const ExpenseAlerts = ({
           return;
         }
 
-        // ✅ Force Supabase to return a single row safely
         const { data, error } = await supabase
           .from("monthly_income")
           .select("amount")
-          .eq("user_id", user.id) // Ensure user_id matches format
+          .eq("user_id", user.id)
           .eq("year", selectedYear)
           .eq("month", selectedMonth)
           .eq("source", "lucas")
-          .single(); // Forces exactly one row, error if multiple
+          .maybeSingle();
 
-        if (error) throw error;
+        if (error && error.code !== 'PGRST116') throw error;
 
-        // ✅ If row exists, set amount; otherwise, default to 0
         setLucasIncome(data?.amount ?? 0);
       } catch (error: any) {
         console.error("Error fetching Lucas's income:", error);
@@ -71,14 +69,13 @@ export const ExpenseAlerts = ({
     fetchLucasIncome();
   }, [selectedYear, selectedMonth]);
 
-  if (lucasIncome === null) return null; // Prevents rendering before data loads
+  if (lucasIncome === null) return null;
 
   const lucasFixedExpensesTotal = fixedExpenses
     .filter(expense => expense.owner === "Lucas")
     .reduce((sum, expense) => sum + expense.amount, 0);
 
   const remainingAmount = lucasIncome - creditCardBill - lucasFixedExpensesTotal;
-
   const transferNeeded = remainingAmount < 400 ? 400 - remainingAmount : 0;
 
   return (
