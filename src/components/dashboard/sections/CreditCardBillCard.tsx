@@ -25,56 +25,58 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     fetchData();
   }, [selectedYear, selectedMonth]);
 
-  useEffect(() => {
-    const expensesChannel = supabase
-      .channel("credit_card_expenses_changes")
-      .on("postgres_changes", 
-        { event: "*", schema: "public", table: "expenses" },
-        () => fetchData()
-      )
-      .subscribe();
-
-    const tasksChannel = supabase
-      .channel("monthly_tasks_changes")
-      .on("postgres_changes", 
-        { event: "*", schema: "public", table: "monthly_tasks" },
-        () => fetchData()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(expensesChannel);
-      supabase.removeChannel(tasksChannel);
-    };
-  }, [selectedYear, selectedMonth]);
-
   const fetchData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
-        .rpc('get_credit_card_data', {
-          p_user_id: user.id,
-          p_year: selectedYear,
-          p_month: selectedMonth
-        });
+      // First get the credit card category
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('expenses_categories')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', 'Credit Card')
+        .single();
 
-      if (error) {
-        toast({
-          title: "Error fetching data",
-          description: error.message,
-          variant: "destructive"
-        });
+      if (categoryError) {
+        console.error('Error fetching category:', categoryError);
         return;
       }
 
-      if (data && Array.isArray(data) && data[0]) {
-        const creditCardData = data[0];
-        setAmount(creditCardData.credit_card_amount || 0);
-        setTransferAmount(creditCardData.transfer_amount || 0);
-        setIsTransferCompleted(creditCardData.is_transfer_completed || false);
+      // Then get the expense for this month
+      const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+      
+      const { data: expenseData, error: expenseError } = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('user_id', user.id)
+        .eq('category_id', categoryData.id)
+        .eq('date', formattedDate)
+        .single();
+
+      if (expenseError && expenseError.code !== 'PGRST116') { // Ignore "no rows returned" error
+        console.error('Error fetching expense:', expenseError);
+        return;
       }
+
+      // Get transfer completion status
+      const { data: taskData, error: taskError } = await supabase
+        .from('monthly_tasks')
+        .select('is_completed')
+        .eq('user_id', user.id)
+        .eq('year', selectedYear)
+        .eq('month', selectedMonth)
+        .eq('task_id', 'credit-card-transfer')
+        .single();
+
+      if (taskError && taskError.code !== 'PGRST116') {
+        console.error('Error fetching task status:', taskError);
+      }
+
+      setAmount(expenseData?.amount || 0);
+      setTransferAmount(expenseData?.amount || 0);
+      setIsTransferCompleted(taskData?.is_completed || false);
+      
     } catch (error: any) {
       console.error('Error in fetchData:', error);
       toast({
@@ -106,10 +108,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      const nextMonth = selectedMonth + 1;
-      const nextYear = nextMonth > 11 ? selectedYear + 1 : selectedYear;
-      const adjustedMonth = nextMonth > 11 ? 0 : nextMonth;
-      const formattedDate = `${nextYear}-${String(adjustedMonth + 1).padStart(2, '0')}-01`;
+      const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
       
       // First, delete any existing expense for this month
       const { error: deleteError } = await supabase
@@ -129,7 +128,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
           category_id: category.id,
           amount: amount,
           date: formattedDate,
-          description: `Credit Card Bill for ${nextYear}-${String(adjustedMonth + 1).padStart(2, '0')}`
+          description: `Credit Card Bill for ${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
         });
 
       if (insertError) throw insertError;
