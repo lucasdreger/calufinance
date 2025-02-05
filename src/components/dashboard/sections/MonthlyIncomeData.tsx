@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
 import { useToast } from "@/components/ui/use-toast";
 import { IncomeSource, IncomeState } from "@/types/income";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface MonthlyIncomeDataProps {
   selectedYear: number;
@@ -187,10 +188,41 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
           <p>Loading...</p>
         ) : (
           <>
-            <IncomeInputGroup
-              income={income}
-              onIncomeChange={(field, value) => setIncome((prev) => ({ ...prev, [field]: value }))}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="lucas-income" className="font-medium">
+                  Lucas's Income
+                </label>
+                <CurrencyInput
+                  value={income.lucas}
+                  onChange={(value) => setIncome(prev => ({ ...prev, lucas: value }))}
+                  className="w-full"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="camila-income" className="font-medium">
+                  Camila's Income
+                </label>
+                <CurrencyInput
+                  value={income.camila}
+                  onChange={(value) => setIncome(prev => ({ ...prev, camila: value }))}
+                  className="w-full"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="other-income" className="font-medium">
+                  Other Income
+                </label>
+                <CurrencyInput
+                  value={income.other}
+                  onChange={(value) => setIncome(prev => ({ ...prev, other: value }))}
+                  className="w-full"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
             <div className="flex gap-4">
               <Button onClick={loadDefaults} variant="outline" className="flex-1">
                 Load Defaults
