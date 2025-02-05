@@ -5,7 +5,8 @@ import { AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
-import { MonthlyTaskItem } from "./tasks/MonthlyTaskItem";
+import { MonthlyTaskItem } from "../tasks/MonthlyTaskItem";
+import { CreditCardData } from "@/types/supabase";
 
 interface CreditCardBillProps {
   selectedYear: number;
@@ -26,63 +27,26 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get Credit Card bill
-    const { data: creditCardCategory } = await supabase
-      .from('expenses_categories')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('name', 'Credit Card')
-      .maybeSingle();
+    const { data, error } = await supabase
+      .rpc<CreditCardData>('get_credit_card_data', {
+        p_user_id: user.id,
+        p_year: selectedYear,
+        p_month: selectedMonth
+      })
+      .single();
 
-    if (!creditCardCategory) return;
+    if (error) {
+      toast({
+        title: "Error fetching data",
+        description: error.message,
+        variant: "destructive"
+      });
+      return;
+    }
 
-    const { data: creditCardExpense } = await supabase
-      .from('expenses')
-      .select('amount')
-      .eq('category_id', creditCardCategory.id)
-      .eq('user_id', user.id)
-      .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
-      .maybeSingle();
-
-    const creditCardTotal = creditCardExpense?.amount || 0;
-    setAmount(creditCardTotal);
-
-    // Get Lucas's income
-    const { data: lucasIncome } = await supabase
-      .from('monthly_income')
-      .select('amount')
-      .eq('user_id', user.id)
-      .eq('source', 'LUCAS')
-      .eq('year', selectedYear)
-      .eq('month', selectedMonth)
-      .maybeSingle();
-
-    // Get Lucas's fixed expenses
-    const { data: lucasFixedExpenses } = await supabase
-      .from('budget_plans')
-      .select('estimated_amount')
-      .eq('user_id', user.id)
-      .eq('owner', 'Lucas')
-      .eq('is_fixed', true);
-
-    const lucasTotal = lucasIncome?.amount || 0;
-    const fixedExpensesTotal = (lucasFixedExpenses || []).reduce((sum, expense) => sum + expense.estimated_amount, 0);
-    
-    const remainingAmount = lucasTotal - creditCardTotal - fixedExpensesTotal;
-    const transfer = remainingAmount < 500 ? Math.max(0, 500 - remainingAmount) : 0;
-    setTransferAmount(transfer);
-
-    // Get task status
-    const { data: taskStatus } = await supabase
-      .from('monthly_tasks')
-      .select('is_completed')
-      .eq('user_id', user.id)
-      .eq('year', selectedYear)
-      .eq('month', selectedMonth)
-      .eq('task_id', 'credit-card-transfer')
-      .maybeSingle();
-
-    setIsTransferCompleted(taskStatus?.is_completed || false);
+    setAmount(data.credit_card_amount);
+    setTransferAmount(data.transfer_amount);
+    setIsTransferCompleted(data.is_transfer_completed);
   };
 
   const handleTransferStatusChange = async (completed: boolean) => {
@@ -91,28 +55,24 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
 
     const { error } = await supabase
       .from('monthly_tasks')
-      .upsert(
-        {
-          user_id: user.id,
-          year: selectedYear,
-          month: selectedMonth,
-          task_id: 'credit-card-transfer',
-          is_completed: completed
-        },
-        {
-          onConflict: ['user_id', 'year', 'month', 'task_id']
-        }
-      );
+      .upsert({
+        user_id: user.id,
+        year: selectedYear,
+        month: selectedMonth,
+        task_id: 'credit-card-transfer',
+        is_completed: completed
+      });
 
     if (error) {
       toast({
-        title: 'Error updating task',
+        title: "Error updating status",
         description: error.message,
-        variant: 'destructive'
+        variant: "destructive"
       });
-    } else {
-      setIsTransferCompleted(completed);
+      return;
     }
+
+    setIsTransferCompleted(completed);
   };
 
   return (
