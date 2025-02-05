@@ -358,11 +358,8 @@ export type Database = {
         }
         Returns: {
           credit_card_amount: number
-          lucas_income: number
-          fixed_expenses_total: number
-          is_transfer_completed: boolean
-          remaining_amount: number
           transfer_amount: number
+          is_transfer_completed: boolean
         }[]
       }
       get_financial_overview: {
