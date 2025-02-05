@@ -5,6 +5,7 @@ import { formatCurrency } from "@/utils/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { formatDateForSupabase } from "@/utils/dateHelpers";
+import { getStartOfMonth, getEndOfMonth } from "@/utils/dateHelpers";
 
 interface BudgetPlan {
   id: string;
@@ -25,6 +26,31 @@ export const FixedExpensesTable = () => {
     const fetchBudgetPlans = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      const currentDate = new Date();
+      const startDate = getStartOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
+      const endDate = getEndOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
+
+      const { data: statusData, error: statusError } = await supabase
+        .from('fixed_expenses_status')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', formatDateForSupabase(startDate))
+        .lt('date', formatDateForSupabase(endDate));
+
+      if (statusError) {
+        toast({
+          title: "Error fetching status",
+          description: statusError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setStatusMap(statusData?.reduce((acc, status) => ({
+        ...acc,
+        [status.budget_plan_id]: status.is_paid
+      }), {} as Record<string, boolean>));
 
       const { data, error } = await supabase
         .from('budget_plans')
@@ -48,33 +74,6 @@ export const FixedExpensesTable = () => {
       }
 
       setBudgetPlans(data || []);
-
-      // Fetch status for current month
-      const currentDate = new Date();
-      const firstDayOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), 1));
-      const lastDayOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999));
-      
-      const { data: statusData, error: statusError } = await supabase
-        .from('fixed_expenses_status')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('date', formatDateForSupabase(firstDayOfMonth))
-        .lt('date', formatDateForSupabase(lastDayOfMonth));
-
-      if (statusError) {
-        toast({
-          title: "Error fetching status",
-          description: statusError.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const newStatusMap: Record<string, boolean> = {};
-      statusData?.forEach((status) => {
-        newStatusMap[status.budget_plan_id] = status.is_paid;
-      });
-      setStatusMap(newStatusMap);
     };
 
     fetchBudgetPlans();
@@ -85,16 +84,15 @@ export const FixedExpensesTable = () => {
     if (!user) return;
 
     const currentDate = new Date();
-    const firstDayOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), 1));
-    const lastDayOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999));
+    const startDate = getStartOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
 
     const { data: existingStatus, error: checkError } = await supabase
       .from('fixed_expenses_status')
       .select('*')
       .eq('budget_plan_id', planId)
       .eq('user_id', user.id)
-      .gte('date', formatDateForSupabase(firstDayOfMonth))
-      .lt('date', formatDateForSupabase(lastDayOfMonth))
+      .gte('date', formatDateForSupabase(startDate))
+      .lt('date', formatDateForSupabase(getEndOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1)))
       .maybeSingle();
 
     if (checkError) {
@@ -106,38 +104,27 @@ export const FixedExpensesTable = () => {
       return;
     }
 
-    let error;
+    const now = new Date();
+    const timestamp = formatDateForSupabase(now);
+
     if (existingStatus) {
-      // Update existing status
-      const { error: updateError } = await supabase
+      await supabase
         .from('fixed_expenses_status')
         .update({
           is_paid: checked,
-          completed_at: checked ? new Date().toISOString() : null
+          completed_at: checked ? timestamp : null
         })
         .eq('id', existingStatus.id);
-      error = updateError;
     } else {
-      // Insert new status
-      const { error: insertError } = await supabase
+      await supabase
         .from('fixed_expenses_status')
         .insert({
           budget_plan_id: planId,
           user_id: user.id,
-          date: formatDateForSupabase(firstDayOfMonth),
+          date: formatDateForSupabase(startDate),
           is_paid: checked,
-          completed_at: checked ? new Date().toISOString() : null
+          completed_at: checked ? timestamp : null
         });
-      error = insertError;
-    }
-
-    if (error) {
-      toast({
-        title: "Error updating status",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
     }
 
     setStatusMap(prev => ({

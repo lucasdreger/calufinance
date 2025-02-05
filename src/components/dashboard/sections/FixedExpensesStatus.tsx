@@ -59,11 +59,10 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
 
     console.log("✅ Received status data:", Object.fromEntries(statusLookup));
 
-    setStatusMap((prev) => Object.fromEntries(statusLookup));
-    setTotalTasks(fixedExpenses.length);
-    const completed = fixedExpenses.filter(expense => statusLookup.get(expense.id) === true).length;
-    setCompletedTasks(completed);
-    setAllTasksCompleted(completed === fixedExpenses.length);
+    setStatusMap(Object.fromEntries(statusLookup));
+    setTotalTasks(fixedExpenses?.length || 0);
+    setCompletedTasks(statusData?.filter(status => status.is_paid)?.length || 0);
+    setAllTasksCompleted(statusData?.filter(status => status.is_paid)?.length === fixedExpenses?.length);
   };
 
   useEffect(() => {
