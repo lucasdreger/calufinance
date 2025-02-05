@@ -98,22 +98,31 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      // Set the date to the first day of next month
+      // Delete existing entry for this month first
       const billDate = new Date(selectedYear, selectedMonth + 1, 1);
+      const formattedDate = billDate.toISOString().split('T')[0];
       
-      const { error: upsertError } = await supabase
+      const { error: deleteError } = await supabase
         .from('expenses')
-        .upsert({
+        .delete()
+        .eq('user_id', user.id)
+        .eq('category_id', category.id)
+        .eq('date', formattedDate);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new entry
+      const { error: insertError } = await supabase
+        .from('expenses')
+        .insert({
           user_id: user.id,
           category_id: category.id,
           amount: amount,
-          date: billDate.toISOString().split('T')[0],
+          date: formattedDate,
           description: `Credit Card Bill for ${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
-        }, {
-          onConflict: 'user_id,category_id,date'
         });
 
-      if (upsertError) throw upsertError;
+      if (insertError) throw insertError;
 
       toast({
         title: "Success",
