@@ -23,16 +23,13 @@ export const TaskManager = () => {
   const { toast } = useToast();
 
   const updateTasks = async () => {
-    // Get the selected month from the URL
     const urlParams = new URLSearchParams(window.location.search);
     const selectedMonth = parseInt(urlParams.get('month') || new Date().getMonth().toString());
     const selectedYear = parseInt(urlParams.get('year') || new Date().getFullYear().toString());
 
-    // Calculate start and end of selected month
-    const startOfMonth = new Date(selectedYear, selectedMonth, 1).toISOString();
-    const endOfMonth = new Date(selectedYear, selectedMonth + 1, 0).toISOString();
+    const startDate = getStartOfMonth(selectedYear, selectedMonth + 1);
+    const endDate = getEndOfMonth(selectedYear, selectedMonth + 1);
 
-    // Get Credit Card category
     const { data: categories } = await supabase
       .from('expenses_categories')
       .select('id')
@@ -44,13 +41,12 @@ export const TaskManager = () => {
       return;
     }
 
-    // Fetch Credit Card expenses for the selected month only
     const { data: creditCardExpenses } = await supabase
       .from('expenses')
       .select('amount')
       .eq('category_id', categories.id)
-      .gte('date', startOfMonth)
-      .lte('date', endOfMonth)
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate))
       .maybeSingle();
 
     const creditCardTotal = creditCardExpenses?.amount || 0;
@@ -68,8 +64,8 @@ export const TaskManager = () => {
       .from('income')
       .select('amount')
       .eq('source', IncomeSource.LUCAS)
-      .gte('date', startOfMonth)
-      .lte('date', endOfMonth)
+      .gte('date', startDate)
+      .lte('date', endDate)
       .order('date', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -85,8 +81,8 @@ export const TaskManager = () => {
       shouldShowTransfer: remainingAmount < 1000,
       transferAmount,
       date: new Date().toISOString(),
-      startOfMonth,
-      endOfMonth,
+      startDate,
+      endDate,
       incomeRecord: lucasIncome,
       selectedMonth,
       selectedYear

@@ -40,31 +40,26 @@ export const MonthlyExpensesTable = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch categories
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('expenses_categories')
         .select('*');
 
       if (categoriesError) throw categoriesError;
 
-      // Get current year's start and end dates
       const currentYear = new Date().getFullYear();
-      const startDate = `${currentYear}-01-01`;
-      const endDate = `${currentYear}-12-31`;
+      const startDate = new Date(Date.UTC(currentYear, 0, 1));
+      const endDate = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
 
-      // Fetch expenses
       const { data: expensesData, error: expensesError } = await supabase
         .from('expenses')
         .select('*')
-        .gte('date', startDate)
-        .lte('date', endDate);
+        .gte('date', formatDateForSupabase(startDate))
+        .lte('date', formatDateForSupabase(endDate));
 
       if (expensesError) throw expensesError;
 
       // Process data
       const processedData: MonthlyData = {};
-
-      // Initialize data structure
       categoriesData?.forEach(category => {
         processedData[category.name] = {
           total: 0,
@@ -73,11 +68,12 @@ export const MonthlyExpensesTable = () => {
         };
       });
 
-      // Fill in expense data
       expensesData?.forEach(expense => {
         const category = categoriesData?.find(c => c.id === expense.category_id);
         if (category) {
-          const month = new Date(expense.date).toLocaleString('default', { month: 'short' });
+          const date = new Date(expense.date);
+          const month = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+            .toLocaleString('default', { month: 'short' });
           processedData[category.name][month] += parseFloat(expense.amount);
           processedData[category.name].total += parseFloat(expense.amount);
         }
