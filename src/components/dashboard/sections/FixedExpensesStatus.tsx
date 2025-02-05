@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
@@ -25,7 +26,6 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   const [completedTasks, setCompletedTasks] = useState<number>(0);
   const [statusMap, setStatusMap] = useState<StatusMap>({});
 
-  // ✅ Fetch latest status from Supabase
   const fetchStatus = async () => {
     console.log("🔄 Fetching status from Supabase...");
     
@@ -34,6 +34,11 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
 
     const startDate = getStartOfMonth(selectedYear, selectedMonth);
     const endDate = getEndOfMonth(selectedYear, selectedMonth);
+
+    console.log("Date range:", {
+      startDate: formatDateForSupabase(startDate),
+      endDate: formatDateForSupabase(endDate)
+    });
 
     const { data: fixedExpenses, error: expensesError } = await supabase
       .from('budget_plans')
@@ -53,22 +58,30 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .gte('date', formatDateForSupabase(startDate))
       .lt('date', formatDateForSupabase(endDate));
 
-    if (statusError) return;
+    if (statusError) {
+      console.error('Error fetching status:', statusError);
+      return;
+    }
 
-    const statusLookup = new Map(statusData?.map(status => [status.budget_plan_id, status.is_paid]));
+    console.log("📊 Status data:", statusData);
 
-    console.log("✅ Received status data:", Object.fromEntries(statusLookup));
+    const statusLookup = new Map(statusData?.map(status => [status.budget_plan_id, status.is_paid]) || []);
+    const newStatusMap = Object.fromEntries(statusLookup);
 
-    setStatusMap(Object.fromEntries(statusLookup));
+    console.log("✅ Processed status data:", newStatusMap);
+
+    setStatusMap(newStatusMap);
     setTotalTasks(fixedExpenses?.length || 0);
     setCompletedTasks(statusData?.filter(status => status.is_paid)?.length || 0);
-    setAllTasksCompleted(statusData?.filter(status => status.is_paid)?.length === fixedExpenses?.length);
+    setAllTasksCompleted(
+      fixedExpenses?.length > 0 && 
+      statusData?.filter(status => status.is_paid)?.length === fixedExpenses?.length
+    );
   };
 
   useEffect(() => {
     fetchStatus();
 
-    // Subscribe to changes in fixed_expenses_status table
     const statusChannel = supabase
       .channel("fixed_expenses_status_changes")
       .on("postgres_changes", 
@@ -80,7 +93,6 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       )
       .subscribe();
 
-    // Subscribe to changes in budget_plans table
     const plansChannel = supabase
       .channel("budget_plans_changes")
       .on("postgres_changes", 
