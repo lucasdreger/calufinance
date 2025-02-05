@@ -13,9 +13,13 @@ export const MonthlySpending = () => {
   const { toast } = useToast();
 
   const fetchCategories = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from('expenses_categories')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id);
     
     if (error) {
       toast({
@@ -30,9 +34,13 @@ export const MonthlySpending = () => {
   };
 
   const fetchExpenses = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const { data, error } = await supabase
       .from('expenses')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id);
     
     if (error) {
       toast({

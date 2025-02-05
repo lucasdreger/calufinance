@@ -10,18 +10,23 @@ export const FinanceOverview = () => {
   const { toast } = useToast();
 
   const fetchData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const endDate = new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 23, 59, 59, 999));
     const startDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth() - 5, 1, 0, 0, 0, 0));
 
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
       .select('amount, date')
+      .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
       .lte('date', formatDateForSupabase(endDate));
 
     const { data: incomes, error: incomesError } = await supabase
       .from('income')
       .select('amount, date')
+      .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
       .lte('date', formatDateForSupabase(endDate));
 
