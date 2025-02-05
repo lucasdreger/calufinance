@@ -1,13 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency, parseCurrencyInput } from "@/utils/formatters";
-import { MonthlyTaskItem } from "./tasks/MonthlyTaskItem";
+import { formatCurrency } from "@/utils/formatters";
+import { MonthlyTaskItem } from "@/components/dashboard/sections/tasks/MonthlyTaskItem";
 import { CreditCardData } from "@/types/supabase";
 
 interface CreditCardBillProps {
@@ -17,8 +16,6 @@ interface CreditCardBillProps {
 
 export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBillProps) => {
   const [amount, setAmount] = useState<number>(0);
-  const [editAmount, setEditAmount] = useState<string>("");
-  const [isEditing, setIsEditing] = useState(false);
   const [isTransferCompleted, setIsTransferCompleted] = useState(false);
   const [transferAmount, setTransferAmount] = useState<number>(0);
   const { toast } = useToast();
@@ -53,72 +50,6 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     setIsTransferCompleted(data.is_transfer_completed);
   };
 
-  const handleSave = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const newAmount = parseCurrencyInput(editAmount);
-    if (isNaN(newAmount)) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid number",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Get Credit Card category
-    const { data: category } = await supabase
-      .from('expenses_categories')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('name', 'Credit Card')
-      .single();
-
-    if (!category) {
-      toast({
-        title: "Error",
-        description: "Credit Card category not found",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Set the date to the first day of next month
-    const billDate = new Date(selectedYear, selectedMonth + 1, 1);
-
-    const { error } = await supabase
-      .from('expenses')
-      .upsert({
-        user_id: user.id,
-        category_id: category.id,
-        amount: newAmount,
-        date: billDate.toISOString().split('T')[0],
-        description: `Credit Card Bill for ${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
-      }, {
-        onConflict: 'user_id,category_id,date'
-      });
-
-    if (error) {
-      toast({
-        title: "Error saving bill",
-        description: error.message,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setAmount(newAmount);
-    setIsEditing(false);
-    setEditAmount("");
-    fetchData(); // Refresh data to update transfer amount
-    
-    toast({
-      title: "Success",
-      description: "Credit card bill saved successfully"
-    });
-  };
-
   const handleTransferStatusChange = async (completed: boolean) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -131,6 +62,8 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         month: selectedMonth,
         task_id: 'credit-card-transfer',
         is_completed: completed
+      }, {
+        onConflict: ['user_id', 'year', 'month', 'task_id']
       });
 
     if (error) {
@@ -153,30 +86,9 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <span>Total:</span>
-          {isEditing ? (
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={editAmount}
-                onChange={(e) => setEditAmount(e.target.value)}
-                className="w-32"
-                placeholder="Enter amount"
-              />
-              <Button size="sm" onClick={handleSave}>Save</Button>
-              <Button size="sm" variant="outline" onClick={() => {
-                setIsEditing(false);
-                setEditAmount("");
-              }}>Cancel</Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">{formatCurrency(amount)}</span>
-              <Button size="sm" variant="outline" onClick={() => {
-                setIsEditing(true);
-                setEditAmount(amount.toString());
-              }}>Edit</Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{formatCurrency(amount)}</span>
+          </div>
         </div>
 
         {transferAmount > 0 && (

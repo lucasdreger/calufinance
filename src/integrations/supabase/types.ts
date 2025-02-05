@@ -365,6 +365,30 @@ export type Database = {
           transfer_amount: number
         }[]
       }
+      get_financial_overview: {
+        Args: {
+          p_user_id: string
+          p_start_date: string
+          p_end_date: string
+        }
+        Returns: {
+          month_key: string
+          total_income: number
+          total_expenses: number
+        }[]
+      }
+      get_fixed_expenses_status: {
+        Args: {
+          p_user_id: string
+          p_start_date: string
+          p_end_date: string
+        }
+        Returns: {
+          total_tasks: number
+          completed_tasks: number
+          all_completed: boolean
+        }[]
+      }
       insert_default_categories: {
         Args: {
           user_uuid: string
