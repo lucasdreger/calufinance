@@ -4,12 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { IncomeInputGroup } from "../shared/IncomeInputGroup";
 import { useToast } from "@/components/ui/use-toast";
-
-interface IncomeState {
-  lucas: number;
-  camila: number;
-  other: number;
-}
+import { IncomeSource, IncomeState } from "@/types/income";
 
 export const DefaultIncomeManagement = () => {
   const [income, setIncome] = useState<IncomeState>({
@@ -100,9 +95,9 @@ export const DefaultIncomeManagement = () => {
 
       // Insert new default entries
       const updates = [
-        { amount: income.lucas, source: "Primary Job", user_id: user.id, is_default: true, date: defaultDate },
-        { amount: income.camila, source: "Wife Job 1", user_id: user.id, is_default: true, date: defaultDate },
-        { amount: income.other, source: "Other", user_id: user.id, is_default: true, date: defaultDate },
+        { amount: income.lucas, source: IncomeSource.LUCAS, user_id: user.id, is_default: true, date: defaultDate },
+        { amount: income.camila, source: IncomeSource.CAMILA, user_id: user.id, is_default: true, date: defaultDate },
+        { amount: income.other, source: IncomeSource.OTHER, user_id: user.id, is_default: true, date: defaultDate },
       ];
 
       const { error: insertError } = await supabase.from("income").insert(updates);

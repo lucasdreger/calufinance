@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
 import { TaskList } from "./TaskList";
+import { IncomeSource } from "@/types/income";
 
 interface MonthlyTask {
   id: string;
@@ -66,7 +67,7 @@ export const TaskManager = () => {
     const { data: lucasIncome } = await supabase
       .from('income')
       .select('amount')
-      .eq('source', 'Primary Job')
+      .eq('source', IncomeSource.LUCAS)
       .gte('date', startOfMonth)
       .lte('date', endOfMonth)
       .order('date', { ascending: false })

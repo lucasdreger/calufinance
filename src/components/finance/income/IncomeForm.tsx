@@ -3,9 +3,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { IncomeSource } from "@/types/income";
 
 interface IncomeFormProps {
-  source: string;
+  source: IncomeSource;
   onIncomeSaved: () => void;
 }
 

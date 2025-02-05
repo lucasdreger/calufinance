@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/formatters";
 import { IncomeForm } from "./income/IncomeForm";
+import { IncomeSource } from "@/types/income";
 
 export const IncomeSection = () => {
   const [incomes, setIncomes] = useState<any[]>([]);
@@ -42,9 +43,9 @@ export const IncomeSection = () => {
         <CardTitle className="text-[#1a365d]">Monthly Income</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <IncomeForm source="Primary Job" onIncomeSaved={fetchIncomes} />
-        <IncomeForm source="Wife Job 1" onIncomeSaved={fetchIncomes} />
-        <IncomeForm source="Wife Job 2" onIncomeSaved={fetchIncomes} />
+        <IncomeForm source={IncomeSource.LUCAS} onIncomeSaved={fetchIncomes} />
+        <IncomeForm source={IncomeSource.CAMILA} onIncomeSaved={fetchIncomes} />
+        <IncomeForm source={IncomeSource.OTHER} onIncomeSaved={fetchIncomes} />
         
         <div className="pt-4 border-t">
           <div className="flex justify-between items-center">

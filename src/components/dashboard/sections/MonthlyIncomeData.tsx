@@ -4,16 +4,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
 import { useToast } from "@/components/ui/use-toast";
+import { IncomeSource, IncomeState } from "@/types/income";
 
 interface MonthlyIncomeDataProps {
   selectedYear: number;
   selectedMonth: number;
-}
-
-interface IncomeState {
-  lucas: number;
-  camila: number;
-  other: number;
 }
 
 export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncomeDataProps) => {
@@ -51,9 +46,9 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
       if (error) throw error;
 
       const updatedIncome: IncomeState = {
-        lucas: data?.find((item) => item.source === "Primary Job")?.amount ?? 0,
-        camila: data?.find((item) => item.source === "Wife Job 1")?.amount ?? 0,
-        other: data?.find((item) => item.source === "Other")?.amount ?? 0,
+        lucas: data?.find((item) => item.source === IncomeSource.LUCAS)?.amount ?? 0,
+        camila: data?.find((item) => item.source === IncomeSource.CAMILA)?.amount ?? 0,
+        other: data?.find((item) => item.source === IncomeSource.OTHER)?.amount ?? 0,
       };
 
       setIncome(updatedIncome);
@@ -156,9 +151,9 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
 
       // Insert new entries
       const updates = [
-        { amount: income.lucas, source: "Primary Job", user_id: user.id, year: selectedYear, month: selectedMonth },
-        { amount: income.camila, source: "Wife Job 1", user_id: user.id, year: selectedYear, month: selectedMonth },
-        { amount: income.other, source: "Other", user_id: user.id, year: selectedYear, month: selectedMonth },
+        { amount: income.lucas, source: IncomeSource.LUCAS, user_id: user.id, year: selectedYear, month: selectedMonth },
+        { amount: income.camila, source: IncomeSource.CAMILA, user_id: user.id, year: selectedYear, month: selectedMonth },
+        { amount: income.other, source: IncomeSource.OTHER, user_id: user.id, year: selectedYear, month: selectedMonth },
       ];
 
       const { error: insertError } = await supabase
