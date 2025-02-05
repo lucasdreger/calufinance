@@ -29,6 +29,21 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     const data = await calculateCreditCardTransfer(selectedYear, selectedMonth);
     setTransferData(data);
     setAmount(data?.creditCardTotal || 0);
+
+    // Fetch transfer task status
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: taskStatus } = await supabase
+      .from('monthly_tasks')
+      .select('is_completed')
+      .eq('user_id', user.id)
+      .eq('year', selectedYear)
+      .eq('month', selectedMonth)
+      .eq('task_id', 'credit-card-transfer')
+      .maybeSingle();
+
+    setIsTransferCompleted(taskStatus?.is_completed || false);
   };
 
   const handleSave = async () => {
@@ -76,6 +91,34 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     fetchData();
   };
 
+  const handleTransferStatusChange = async (completed: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('monthly_tasks')
+      .upsert({
+        user_id: user.id,
+        year: selectedYear,
+        month: selectedMonth,
+        task_id: 'credit-card-transfer',
+        is_completed: completed
+      }, {
+        onConflict: 'user_id,year,month,task_id'
+      });
+
+    if (error) {
+      toast({
+        title: "Error saving task status",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTransferCompleted(completed);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -118,7 +161,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
               id="credit-card-transfer"
               name={`Transfer ${formatCurrency(transferData.transferAmount)} to Lucas`}
               completed={isTransferCompleted}
-              onCompletedChange={setIsTransferCompleted}
+              onCompletedChange={handleTransferStatusChange}
             />
           </>
         )}
