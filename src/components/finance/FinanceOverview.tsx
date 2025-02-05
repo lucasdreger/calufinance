@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { FinanceLineChart } from "./charts/FinanceLineChart";
+import { formatDateForSupabase } from "@/utils/dateHelpers";
 
 export const FinanceOverview = () => {
   const [data, setData] = useState<any[]>([]);
@@ -12,18 +13,20 @@ export const FinanceOverview = () => {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 5);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
 
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
       .select('amount, date')
-      .gte('date', startDate.toISOString())
-      .lte('date', endDate.toISOString());
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate));
 
     const { data: incomes, error: incomesError } = await supabase
       .from('income')
-      .select('amount, date, source')
-      .gte('date', startDate.toISOString())
-      .lte('date', endDate.toISOString());
+      .select('amount, date')
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate));
 
     if (expensesError || incomesError) {
       toast({
@@ -53,7 +56,7 @@ export const FinanceOverview = () => {
     incomes?.forEach((income: any) => {
       const monthKey = income.date.substring(0, 7);
       if (monthlyData[monthKey]) {
-        monthlyData[monthKey].income += parseFloat(income.amount) || 0;
+        monthlyData[monthKey].income += parseFloat(income.amount);
       }
     });
 

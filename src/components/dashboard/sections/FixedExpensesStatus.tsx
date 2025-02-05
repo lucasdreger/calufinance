@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getStartOfMonth, getEndOfMonth, formatDateForSupabase } from "@/utils/dateHelpers";
 
 interface FixedExpensesStatusProps {
   selectedYear: number;
@@ -31,28 +32,30 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const startDate = new Date(selectedYear, selectedMonth, 1).toISOString();
-    const endDate = new Date(selectedYear, selectedMonth + 1, 0).toISOString();
+    const startDate = getStartOfMonth(selectedYear, selectedMonth);
+    const endDate = getEndOfMonth(selectedYear, selectedMonth);
 
-    const { data: fixedExpenses, error: fixedError } = await supabase
-      .from("budget_plans")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("requires_status", true)
-      .eq("is_fixed", true);
+    const { data: fixedExpenses, error: expensesError } = await supabase
+      .from('budget_plans')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_fixed', true);
 
-    if (fixedError || !fixedExpenses) return;
+    if (expensesError) {
+      console.error('Error fetching fixed expenses:', expensesError);
+      return;
+    }
 
-    const { data: completedStatuses, error: statusError } = await supabase
-      .from("fixed_expenses_status")
-      .select("budget_plan_id, is_paid")
-      .eq("user_id", user.id)
-      .gte("date", startDate)
-      .lte("date", endDate);
+    const { data: statusData, error: statusError } = await supabase
+      .from('fixed_expenses_status')
+      .select('budget_plan_id, is_paid')
+      .eq('user_id', user.id)
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate));
 
     if (statusError) return;
 
-    const statusLookup = new Map(completedStatuses?.map(status => [status.budget_plan_id, status.is_paid]));
+    const statusLookup = new Map(statusData?.map(status => [status.budget_plan_id, status.is_paid]));
 
     console.log("✅ Received status data:", Object.fromEntries(statusLookup));
 

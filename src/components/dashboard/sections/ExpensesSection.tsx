@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FixedExpensesTable } from "./FixedExpensesTable";
 import { ExpenseForm } from "./ExpenseForm";
 import { ExpensesTable } from "./ExpensesTable";
+import { getStartOfMonth, getEndOfMonth, formatDateForSupabase } from "@/utils/dateHelpers";
 
 interface ExpensesSectionProps {
   selectedYear: number;
@@ -24,9 +25,8 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Calculate start and end dates for the selected month
-    const startDate = new Date(selectedYear, selectedMonth, 1);
-    const endDate = new Date(selectedYear, selectedMonth + 1, 0); // Last day of the month
+    const startDate = getStartOfMonth(selectedYear, selectedMonth);
+    const endDate = getEndOfMonth(selectedYear, selectedMonth);
 
     // First, ensure we have a credit card expense for this month
     const { data: creditCardCategory } = await supabase
@@ -42,8 +42,8 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
         .select('*')
         .eq('category_id', creditCardCategory.id)
         .eq('user_id', user.id)
-        .gte('date', startDate.toISOString().split('T')[0])
-        .lte('date', endDate.toISOString().split('T')[0])
+        .gte('date', formatDateForSupabase(startDate))
+        .lte('date', formatDateForSupabase(endDate))
         .maybeSingle();
 
       // If no credit card expense exists for this month, create one
@@ -53,7 +53,7 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
           .insert({
             amount: 0,
             description: 'Monthly Credit Card Bill',
-            date: startDate.toISOString().split('T')[0],
+            date: formatDateForSupabase(startDate),
             category_id: creditCardCategory.id,
             user_id: user.id,
             is_fixed: false
@@ -71,8 +71,8 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
         )
       `)
       .eq('user_id', user.id)
-      .gte('date', startDate.toISOString().split('T')[0])
-      .lte('date', endDate.toISOString().split('T')[0])
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate))
       .order('date', { ascending: false });
     
     if (error) {
@@ -160,8 +160,8 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
       .select('amount')
       .eq('category_id', categories.id)
       .eq('user_id', user.id)
-      .gte('date', new Date(selectedYear, selectedMonth, 1).toISOString())
-      .lte('date', new Date(selectedYear, selectedMonth + 1, 0).toISOString())
+      .gte('date', formatDateForSupabase(new Date(selectedYear, selectedMonth, 1)))
+      .lte('date', formatDateForSupabase(new Date(selectedYear, selectedMonth + 1, 0)))
       .maybeSingle();
 
     setCreditCardBill(creditCardExpense?.amount || 0);
@@ -175,8 +175,8 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
       .from('fixed_expenses_status')
       .select('*')
       .eq('user_id', user.id)
-      .gte('date', new Date(selectedYear, selectedMonth, 1).toISOString())
-      .lt('date', new Date(selectedYear, selectedMonth + 1, 1).toISOString());
+      .gte('date', formatDateForSupabase(new Date(selectedYear, selectedMonth, 1)))
+      .lt('date', formatDateForSupabase(new Date(selectedYear, selectedMonth + 1, 1)));
 
     if (error) {
       toast({

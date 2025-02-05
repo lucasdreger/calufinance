@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDateForSupabase } from "@/utils/dateHelpers";
 
 interface MonthlyData {
   month: string;
@@ -28,10 +29,11 @@ export const MonthlyDeviation = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get start and end dates for the last 12 months
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 11); // Get last 12 months
+    startDate.setMonth(startDate.getMonth() - 11);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
 
     // Get all budget plans (planned expenses)
     const { data: budgetPlans, error: budgetError } = await supabase
@@ -53,8 +55,8 @@ export const MonthlyDeviation = () => {
       .from('expenses')
       .select('*')
       .eq('user_id', user.id)
-      .gte('date', startDate.toISOString())
-      .lte('date', endDate.toISOString());
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate));
 
     if (expensesError) {
       toast({
