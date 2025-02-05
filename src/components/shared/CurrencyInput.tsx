@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,13 +73,12 @@ export const CurrencyInput = ({
 
   const handleFocus = () => {
     setIsFocused(true);
-    // When focusing, show the raw numeric value without formatting
-    if (parseFloat(inputValue) === 0) {
-      setInputValue('');
-    } else {
-      // Remove any currency formatting when focusing
-      const numericValue = parseFloat(inputValue);
+    // Remove any formatting when focusing
+    const numericValue = parseFloat(inputValue);
+    if (!isNaN(numericValue)) {
       setInputValue(numericValue.toString());
+    } else {
+      setInputValue('');
     }
   };
 
@@ -90,6 +88,10 @@ export const CurrencyInput = ({
     }
 
     const numericValue = parseFloat(inputValue || '0');
+    if (isNaN(numericValue)) {
+      return '0.00';
+    }
+
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -116,4 +118,3 @@ export const CurrencyInput = ({
     </div>
   );
 };
-
