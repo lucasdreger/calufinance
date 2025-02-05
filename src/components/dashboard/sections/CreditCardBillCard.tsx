@@ -97,7 +97,10 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+      const nextMonth = selectedMonth + 1;
+      const nextYear = nextMonth > 11 ? selectedYear + 1 : selectedYear;
+      const adjustedMonth = nextMonth > 11 ? 0 : nextMonth;
+      const formattedDate = `${nextYear}-${String(adjustedMonth + 1).padStart(2, '0')}-01`;
       
       const { error: deleteError } = await supabase
         .from('expenses')
@@ -115,13 +118,11 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
           category_id: category.id,
           amount: amount,
           date: formattedDate,
-          description: `Credit Card Bill for ${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
+          description: `Credit Card Bill for ${nextYear}-${String(adjustedMonth + 1).padStart(2, '0')}`
         });
 
       if (insertError) throw insertError;
 
-      setAmount(amount);
-      
       toast({
         title: "Success",
         description: "Credit card bill saved successfully"
