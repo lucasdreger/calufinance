@@ -1,12 +1,19 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { supabase } from "@/integrations/supabase/client";
-console.log("✅ Imported Supabase:", supabase);
+import type { User } from "@supabase/supabase-js";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import type { User } from "@supabase/supabase-js";
+
+// Extend Window interface to include supabase
+declare global {
+  interface Window {
+    supabase: typeof supabase;
+  }
+}
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
