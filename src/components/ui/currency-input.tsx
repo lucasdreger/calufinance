@@ -9,36 +9,27 @@ interface CurrencyInputProps {
 }
 
 export const CurrencyInput = ({ value, onChange, className, placeholder }: CurrencyInputProps) => {
-  // Format the display value
-  const displayValue = typeof value === 'number' 
-    ? value.toFixed(2)
-    : value;
+  // Convert number to string for editing
+  const displayValue = typeof value === 'string' ? value : value.toString();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
     
-    // Remove any non-numeric characters except decimal point
-    newValue = newValue.replace(/[^\d.]/g, '');
-    
-    // Ensure only one decimal point
-    const parts = newValue.split('.');
-    if (parts.length > 2) {
-      newValue = parts[0] + '.' + parts.slice(1).join('');
-    }
-    
-    // Limit to 2 decimal places
-    if (parts[1]?.length > 2) {
-      newValue = parts[0] + '.' + parts[1].slice(0, 2);
+    // Allow only numbers and one decimal point
+    if (!/^\d*\.?\d*$/.test(newValue)) {
+      return;
     }
     
     onChange(newValue);
   };
 
   const handleBlur = () => {
-    // On blur, format the number to always show 2 decimal places
+    // Format on blur only
     if (value) {
       const numValue = parseCurrencyInput(value.toString());
-      onChange(numValue.toFixed(2));
+      if (!isNaN(numValue)) {
+        onChange(numValue.toFixed(2));
+      }
     }
   };
 
@@ -49,7 +40,7 @@ export const CurrencyInput = ({ value, onChange, className, placeholder }: Curre
       onChange={handleChange}
       onBlur={handleBlur}
       className={className}
-      placeholder={placeholder}
+      placeholder={placeholder || "0.00"}
     />
   );
 }; 
