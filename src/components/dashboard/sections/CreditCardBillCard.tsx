@@ -49,30 +49,39 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
   }, [selectedYear, selectedMonth]);
 
   const fetchData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data, error } = await supabase
-      .rpc('get_credit_card_data', {
-        p_user_id: user.id,
-        p_year: selectedYear,
-        p_month: selectedMonth
-      });
+      const { data, error } = await supabase
+        .rpc('get_credit_card_data', {
+          p_user_id: user.id,
+          p_year: selectedYear,
+          p_month: selectedMonth
+        });
 
-    if (error) {
+      if (error) {
+        toast({
+          title: "Error fetching data",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data && Array.isArray(data) && data[0]) {
+        const creditCardData = data[0];
+        setAmount(creditCardData.credit_card_amount || 0);
+        setTransferAmount(creditCardData.transfer_amount || 0);
+        setIsTransferCompleted(creditCardData.is_transfer_completed || false);
+      }
+    } catch (error: any) {
+      console.error('Error in fetchData:', error);
       toast({
-        title: "Error fetching data",
+        title: "Error",
         description: error.message,
         variant: "destructive"
       });
-      return;
-    }
-
-    if (data && Array.isArray(data) && data[0]) {
-      const creditCardData = data[0];
-      setAmount(creditCardData.credit_card_amount || 0);
-      setTransferAmount(creditCardData.transfer_amount || 0);
-      setIsTransferCompleted(creditCardData.is_transfer_completed || false);
     }
   };
 
@@ -102,6 +111,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       const adjustedMonth = nextMonth > 11 ? 0 : nextMonth;
       const formattedDate = `${nextYear}-${String(adjustedMonth + 1).padStart(2, '0')}-01`;
       
+      // First, delete any existing expense for this month
       const { error: deleteError } = await supabase
         .from('expenses')
         .delete()
@@ -111,6 +121,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
 
       if (deleteError) throw deleteError;
 
+      // Then insert the new expense
       const { error: insertError } = await supabase
         .from('expenses')
         .insert({
@@ -128,8 +139,9 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         description: "Credit card bill saved successfully"
       });
       
-      fetchData();
+      await fetchData();
     } catch (error: any) {
+      console.error('Error in handleSave:', error);
       toast({
         title: "Error saving bill",
         description: error.message,
