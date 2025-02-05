@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Table, TableBody } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
@@ -101,7 +102,6 @@ export const ExpensesTable = ({
     <div className="space-y-4">
       <ExpenseAlerts 
         expenses={filteredExpenses}
-        lucasIncome={lucasIncome}
         creditCardBill={creditCardBill}
         fixedExpenses={fixedExpenses}
         selectedYear={selectedYear}
