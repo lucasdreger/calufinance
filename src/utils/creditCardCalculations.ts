@@ -35,18 +35,17 @@ export const calculateCreditCardTransfer = async (selectedYear: number, selected
     .eq('owner', 'Lucas')
     .eq('is_fixed', true);
 
-  // Get Lucas's income
-  const { data: lucasIncome } = await supabase
-    .from('monthly_income')
+  // Get Lucas's income - modified to handle multiple records
+  const { data: lucasIncomes } = await supabase
+    .from('income')
     .select('amount')
     .eq('user_id', user.id)
-    .eq('year', selectedYear)
-    .eq('month', selectedMonth)
     .eq('source', 'Primary Job')
-    .maybeSingle();
+    .gte('date', formatDateForSupabase(startDate))
+    .lte('date', formatDateForSupabase(endDate));
 
   const creditCardTotal = creditCardExpense?.amount || 0;
-  const lucasTotal = lucasIncome?.amount || 0;
+  const lucasTotal = lucasIncomes?.reduce((sum, income) => sum + (income.amount || 0), 0) || 0;
   const fixedExpensesTotal = (lucasFixedExpenses || []).reduce((sum, expense) => sum + expense.estimated_amount, 0);
   
   const remainingAmount = lucasTotal - creditCardTotal - fixedExpensesTotal;

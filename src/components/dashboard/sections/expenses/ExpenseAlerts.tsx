@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -25,50 +24,30 @@ export const ExpenseAlerts = ({
   selectedYear,
   selectedMonth
 }: ExpenseAlertsProps) => {
-  const [isTransferCompleted, setIsTransferCompleted] = useState(false);
   const [lucasIncome, setLucasIncome] = useState<number | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchLucasIncome = async () => {
-      try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        const user = userData?.user;
-
-        if (userError || !user) {
-          toast({ title: "Error", description: "Please login to continue", variant: "destructive" });
-          return;
-        }
-
-        console.log("Fetching data for month:", selectedMonth);
-
-        const { data, error } = await supabase
-          .from('monthly_income')
-          .select('amount')
-          .eq('user_id', user.id)
-          .eq('year', selectedYear)
-          .eq('month', selectedMonth)
-          .eq('source', 'Primary Job')
-          .maybeSingle();
-
-        if (error && error.code !== 'PGRST116') {
-          throw error;
-        }
-
-        setLucasIncome(data?.amount ?? 0);
-      } catch (error: any) {
-        console.error("Error fetching Lucas's income:", error);
-        toast({
-          title: "Error fetching income",
-          description: error.message || "Unknown error",
-          variant: "destructive",
-        });
-        setLucasIncome(0);
-      }
-    };
-
     fetchLucasIncome();
-  }, [selectedYear, selectedMonth, toast]);
+  }, [selectedYear, selectedMonth]);
+
+  const fetchLucasIncome = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const startDate = getStartOfMonth(selectedYear, selectedMonth);
+    const endDate = getEndOfMonth(selectedYear, selectedMonth);
+
+    const { data: incomes } = await supabase
+      .from('income')
+      .select('amount')
+      .eq('source', 'Primary Job')
+      .eq('user_id', user.id)
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate));
+
+    const totalIncome = incomes?.reduce((sum, income) => sum + (income.amount || 0), 0) || 0;
+    setLucasIncome(totalIncome);
+  };
 
   if (lucasIncome === null) return null;
 
@@ -80,23 +59,8 @@ export const ExpenseAlerts = ({
   const transferNeeded = remainingAmount < 400 ? 400 - remainingAmount : 0;
 
   return (
-    <>
-      {transferNeeded > 0 && (
-        <div className="space-y-4">
-          <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800">
-              Camila to transfer {formatCurrency(transferNeeded)} to Lucas
-            </AlertDescription>
-          </Alert>
-          <MonthlyTaskItem
-            id="transfer-task"
-            name={`Transfer ${formatCurrency(transferNeeded)} to Lucas`}
-            completed={isTransferCompleted}
-            onCompletedChange={setIsTransferCompleted}
-          />
-        </div>
-      )}
-    </>
+    <div className="space-y-4">
+      {/* Other alerts can go here */}
+    </div>
   );
 };

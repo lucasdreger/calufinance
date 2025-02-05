@@ -22,12 +22,14 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchTransferData = async () => {
-      const data = await calculateCreditCardTransfer(selectedYear, selectedMonth);
-      setTransferData(data);
-    };
-    fetchTransferData();
-  }, [selectedYear, selectedMonth, amount]);
+    fetchData();
+  }, [selectedYear, selectedMonth]);
+
+  const fetchData = async () => {
+    const data = await calculateCreditCardTransfer(selectedYear, selectedMonth);
+    setTransferData(data);
+    setAmount(data?.creditCardTotal || 0);
+  };
 
   const handleSave = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -71,17 +73,20 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       description: "The credit card bill has been updated successfully.",
     });
 
-    fetchTransferData();
+    fetchData();
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Credit Card Bill
-        </CardTitle>
+        <CardTitle>Credit Card Bill</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span>Total:</span>
+          <span className="font-semibold">{formatCurrency(amount)}</span>
+        </div>
+
         <div className="flex gap-4">
           <Input
             type="number"
@@ -102,7 +107,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         )}
 
         {transferData?.transferAmount > 0 && (
-          <div className="mt-4 space-y-4">
+          <>
             <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
               <AlertCircle className="h-4 w-4 text-yellow-600" />
               <AlertDescription className="text-yellow-800">
@@ -110,12 +115,12 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
               </AlertDescription>
             </Alert>
             <MonthlyTaskItem
-              id="transfer-task"
+              id="credit-card-transfer"
               name={`Transfer ${formatCurrency(transferData.transferAmount)} to Lucas`}
               completed={isTransferCompleted}
               onCompletedChange={setIsTransferCompleted}
             />
-          </div>
+          </>
         )}
       </CardContent>
     </Card>
