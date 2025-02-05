@@ -5,8 +5,17 @@ import { formatCurrency } from "@/utils/formatters";
 import { IncomeForm } from "./income/IncomeForm";
 import { IncomeSource } from "@/types/income";
 
+interface Income {
+  id: string;
+  amount: number;
+  source: IncomeSource;
+  date: string;
+  user_id: string;
+  is_default: boolean;
+}
+
 export const IncomeSection = () => {
-  const [incomes, setIncomes] = useState<any[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
 
   const fetchIncomes = async () => {
     const { data } = await supabase
@@ -35,7 +44,7 @@ export const IncomeSection = () => {
     };
   }, []);
 
-  const totalIncome = incomes.reduce((sum, income) => sum + parseFloat(income.amount), 0);
+  const totalIncome = incomes.reduce((sum, income) => sum + (income.amount || 0), 0);
 
   return (
     <Card className="shadow-lg">

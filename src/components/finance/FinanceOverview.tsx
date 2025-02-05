@@ -21,7 +21,7 @@ export const FinanceOverview = () => {
 
     const { data: incomes, error: incomesError } = await supabase
       .from('income')
-      .select('amount, date')
+      .select('amount, date, source')
       .gte('date', startDate.toISOString())
       .lte('date', endDate.toISOString());
 
@@ -53,7 +53,7 @@ export const FinanceOverview = () => {
     incomes?.forEach((income: any) => {
       const monthKey = income.date.substring(0, 7);
       if (monthlyData[monthKey]) {
-        monthlyData[monthKey].income += parseFloat(income.amount);
+        monthlyData[monthKey].income += parseFloat(income.amount) || 0;
       }
     });
 

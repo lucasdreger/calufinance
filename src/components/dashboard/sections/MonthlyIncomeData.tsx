@@ -96,16 +96,16 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
 
       if (deleteError) throw deleteError;
 
-      // Insert new entries based on defaults
-      const updates = defaultIncome?.map((item) => ({
+      // Ensure defaultIncome is an array and map values
+      const updates = (defaultIncome || []).map((item) => ({
         year: selectedYear,
         month: selectedMonth,
-        source: item.source,
-        amount: item.amount,
+        source: item.source as IncomeSource,
+        amount: parseFloat(item.amount) || 0,
         user_id: user.id,
       }));
 
-      if (updates && updates.length > 0) {
+      if (updates.length > 0) {
         const { error: insertError } = await supabase
           .from("monthly_income")
           .insert(updates);
