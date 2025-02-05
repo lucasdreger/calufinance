@@ -99,7 +99,11 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         month: selectedMonth,
         task_id: 'credit-card-transfer',
         is_completed: completed,
-        name: `Transfer ${formatCurrency(transferAmount)} to Lucas`
+        name: `Transfer ${formatCurrency(transferAmount)} to Lucas`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,year,month,task_id'
       });
 
     if (!error) {
@@ -118,12 +122,12 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
           <span className="font-semibold">{formatCurrency(amount)}</span>
         </div>
 
-        {transferAmount > 0 && (
+        {transferAmount > 0 && !isTransferCompleted && (
           <div className="space-y-4">
             <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
               <AlertCircle className="h-4 w-4 text-yellow-600" />
               <AlertDescription className="text-yellow-800">
-                Camila to transfer {formatCurrency(transferAmount)} to Lucas
+                Camila needs to transfer {formatCurrency(transferAmount)} to Lucas
               </AlertDescription>
             </Alert>
             <MonthlyTaskItem
