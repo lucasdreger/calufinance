@@ -25,11 +25,9 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Calculate start and end dates for the selected month
-    const startDate = new Date(selectedYear, selectedMonth, 1);
-    const endDate = new Date(selectedYear, selectedMonth + 1, 0); // Last day of the month
+    const startDate = getStartOfMonth(selectedYear, selectedMonth);
+    const endDate = getEndOfMonth(selectedYear, selectedMonth);
 
-    // First, ensure we have a credit card expense for this month
     const { data: creditCardCategory } = await supabase
       .from('expenses_categories')
       .select('id')
@@ -37,24 +35,22 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
       .maybeSingle();
 
     if (creditCardCategory) {
-      // Check if a credit card expense exists for this month
       const { data: existingCreditCardExpense } = await supabase
         .from('expenses')
         .select('*')
         .eq('category_id', creditCardCategory.id)
         .eq('user_id', user.id)
-        .gte('date', startDate.toISOString().split('T')[0])
-        .lte('date', endDate.toISOString().split('T')[0])
+        .gte('date', formatDateForSupabase(startDate))
+        .lte('date', formatDateForSupabase(endDate))
         .maybeSingle();
 
-      // If no credit card expense exists for this month, create one
       if (!existingCreditCardExpense) {
         await supabase
           .from('expenses')
           .insert({
             amount: 0,
             description: 'Monthly Credit Card Bill',
-            date: startDate.toISOString().split('T')[0],
+            date: formatDateForSupabase(startDate),
             category_id: creditCardCategory.id,
             user_id: user.id,
             is_fixed: false
@@ -62,7 +58,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
       }
     }
 
-    // Now fetch all expenses including the credit card expense
     const { data, error } = await supabase
       .from('expenses')
       .select(`
@@ -72,8 +67,8 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
         )
       `)
       .eq('user_id', user.id)
-      .gte('date', startDate.toISOString().split('T')[0])
-      .lte('date', endDate.toISOString().split('T')[0])
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate))
       .order('date', { ascending: false });
     
     if (error) {

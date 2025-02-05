@@ -51,7 +51,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .select('budget_plan_id, is_paid')
       .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
-      .lte('date', formatDateForSupabase(endDate));
+      .lt('date', formatDateForSupabase(endDate));
 
     if (statusError) return;
 
