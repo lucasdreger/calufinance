@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
@@ -24,21 +23,13 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   const [allTasksCompleted, setAllTasksCompleted] = useState<boolean>(false);
   const [totalTasks, setTotalTasks] = useState<number>(0);
   const [completedTasks, setCompletedTasks] = useState<number>(0);
-  const [statusMap, setStatusMap] = useState<StatusMap>({});
 
   const fetchStatus = async () => {
-    console.log("🔄 Fetching status from Supabase...");
-    
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const startDate = getStartOfMonth(selectedYear, selectedMonth);
     const endDate = getEndOfMonth(selectedYear, selectedMonth);
-
-    console.log("Date range:", {
-      startDate: formatDateForSupabase(startDate),
-      endDate: formatDateForSupabase(endDate)
-    });
 
     const { data: fixedExpenses, error: expensesError } = await supabase
       .from('budget_plans')
@@ -46,10 +37,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .eq('user_id', user.id)
       .eq('is_fixed', true);
 
-    if (expensesError) {
-      console.error('Error fetching fixed expenses:', expensesError);
-      return;
-    }
+    if (expensesError) return;
 
     const { data: statusData, error: statusError } = await supabase
       .from('fixed_expenses_status')
@@ -58,19 +46,8 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .gte('date', formatDateForSupabase(startDate))
       .lt('date', formatDateForSupabase(endDate));
 
-    if (statusError) {
-      console.error('Error fetching status:', statusError);
-      return;
-    }
+    if (statusError) return;
 
-    console.log("📊 Status data:", statusData);
-
-    const statusLookup = new Map(statusData?.map(status => [status.budget_plan_id, status.is_paid]) || []);
-    const newStatusMap = Object.fromEntries(statusLookup);
-
-    console.log("✅ Processed status data:", newStatusMap);
-
-    setStatusMap(newStatusMap);
     setTotalTasks(fixedExpenses?.length || 0);
     setCompletedTasks(statusData?.filter(status => status.is_paid)?.length || 0);
     setAllTasksCompleted(
@@ -86,10 +63,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .channel("fixed_expenses_status_changes")
       .on("postgres_changes", 
         { event: "*", schema: "public", table: "fixed_expenses_status" },
-        (payload) => {
-          console.log("🔔 Status change detected:", payload);
-          fetchStatus();
-        }
+        () => fetchStatus()
       )
       .subscribe();
 
@@ -97,10 +71,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       .channel("budget_plans_changes")
       .on("postgres_changes", 
         { event: "*", schema: "public", table: "budget_plans" },
-        (payload) => {
-          console.log("🔔 Budget plans change detected:", payload);
-          fetchStatus();
-        }
+        () => fetchStatus()
       )
       .subscribe();
 

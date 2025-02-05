@@ -7,7 +7,7 @@ import { AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
-import { MonthlyTaskItem } from "@/components/MonthlyTaskItem";
+import { MonthlyTaskItem } from "../tasks/MonthlyTaskItem";
 
 interface CreditCardBillProps {
   selectedYear: number;
@@ -91,17 +91,20 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase
+    const { error } = await supabase
       .from('monthly_tasks')
       .upsert({
         user_id: user.id,
         year: selectedYear,
         month: selectedMonth,
         task_id: 'credit-card-transfer',
-        is_completed: completed
+        is_completed: completed,
+        name: `Transfer ${formatCurrency(transferAmount)} to Lucas`
       });
 
-    setIsTransferCompleted(completed);
+    if (!error) {
+      setIsTransferCompleted(completed);
+    }
   };
 
   return (
