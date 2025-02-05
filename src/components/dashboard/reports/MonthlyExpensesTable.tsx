@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/utils/formatters";
+import { formatDateForSupabase } from "@/utils/dateHelpers";
 
 interface MonthlyData {
   [key: string]: {
@@ -30,12 +31,10 @@ export const MonthlyExpensesTable = () => {
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
 
-  // Function to check if a month has any expenses across all categories
   const monthHasExpenses = (month: string) => {
     return Object.values(monthlyData).some(categoryData => categoryData[month] > 0);
   };
 
-  // Filter months to only include those with expenses
   const activeMonths = months.filter(month => monthHasExpenses(month));
 
   const fetchData = async () => {
@@ -58,7 +57,6 @@ export const MonthlyExpensesTable = () => {
 
       if (expensesError) throw expensesError;
 
-      // Process data
       const processedData: MonthlyData = {};
       categoriesData?.forEach(category => {
         processedData[category.name] = {
@@ -79,7 +77,6 @@ export const MonthlyExpensesTable = () => {
         }
       });
 
-      // Calculate averages
       Object.keys(processedData).forEach(category => {
         const monthsWithExpenses = months.filter(month => processedData[category][month] > 0).length;
         processedData[category].average = monthsWithExpenses > 0

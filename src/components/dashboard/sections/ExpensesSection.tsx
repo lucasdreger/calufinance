@@ -21,6 +21,32 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   const [creditCardBill, setCreditCardBill] = useState<number>(0);
   const [fixedExpenses, setFixedExpenses] = useState<any[]>([]);
 
+  const updateTasks = async () => {
+    const startDate = getStartOfMonth(selectedYear, selectedMonth + 1);
+    const endDate = getEndOfMonth(selectedYear, selectedMonth + 1);
+
+    const { data: creditCardCategory } = await supabase
+      .from('expenses_categories')
+      .select('id, name')
+      .eq('name', 'Credit Card')
+      .maybeSingle();
+
+    if (!creditCardCategory) {
+      console.error('Credit Card category not found');
+      return;
+    }
+
+    const { data: creditCardExpenses } = await supabase
+      .from('expenses')
+      .select('amount')
+      .eq('category_id', creditCardCategory.id)
+      .gte('date', formatDateForSupabase(startDate))
+      .lte('date', formatDateForSupabase(endDate))
+      .maybeSingle();
+
+    const creditCardTotal = creditCardExpenses?.amount || 0;
+  };
+
   const fetchExpenses = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;

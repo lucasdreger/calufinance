@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
 import { TaskList } from "./TaskList";
 import { IncomeSource } from "@/types/income";
+import { getStartOfMonth, getEndOfMonth, formatDateForSupabase } from "@/utils/dateHelpers";
 
 interface MonthlyTask {
   id: string;
