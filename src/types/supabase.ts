@@ -1,3 +1,4 @@
+
 export interface CreditCardData {
   credit_card_amount: number;
   lucas_income: number;
@@ -5,4 +6,4 @@ export interface CreditCardData {
   is_transfer_completed: boolean;
   remaining_amount: number;
   transfer_amount: number;
-} 
+}
