@@ -47,9 +47,9 @@ export const DefaultIncomeManagement = () => {
       }
 
       const updatedIncome: IncomeState = {
-        lucas: data.find((item) => item.source === "Primary Job")?.amount ?? 0,
-        camila: data.find((item) => item.source === "Wife Job 1")?.amount ?? 0,
-        other: data.find((item) => item.source === "Other")?.amount ?? 0,
+        lucas: data?.find((item) => item.source === IncomeSource.LUCAS)?.amount ?? 0,
+        camila: data?.find((item) => item.source === IncomeSource.CAMILA)?.amount ?? 0,
+        other: data?.find((item) => item.source === IncomeSource.OTHER)?.amount ?? 0,
       };
 
       setIncome(updatedIncome);
