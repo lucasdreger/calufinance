@@ -172,10 +172,6 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span>Total:</span>
-            <span className="font-semibold">{formatCurrency(amount)}</span>
-          </div>
           <CurrencyInput
             value={amount}
             onChange={setAmount}
