@@ -24,7 +24,8 @@ export const CurrencyInput = ({
   // Sync input value with external value changes
   useEffect(() => {
     if (!isFocused) {
-      setInputValue(value.toString());
+      const formattedValue = value.toFixed(2);
+      setInputValue(formattedValue);
     }
   }, [value, isFocused]);
 
@@ -57,7 +58,7 @@ export const CurrencyInput = ({
     
     // Handle empty or invalid input
     if (inputValue === '' || inputValue === '.') {
-      setInputValue('0');
+      setInputValue('0.00');
       onChange(0);
       return;
     }
@@ -67,14 +68,19 @@ export const CurrencyInput = ({
     if (!isNaN(numericValue)) {
       const formattedValue = numericValue.toFixed(2);
       setInputValue(formattedValue);
-      onChange(parseFloat(formattedValue));
+      onChange(numericValue);
     }
   };
 
   const handleFocus = () => {
     setIsFocused(true);
+    // When focusing, show the raw numeric value without formatting
     if (parseFloat(inputValue) === 0) {
       setInputValue('');
+    } else {
+      // Remove any currency formatting when focusing
+      const numericValue = parseFloat(inputValue);
+      setInputValue(numericValue.toString());
     }
   };
 
@@ -110,3 +116,4 @@ export const CurrencyInput = ({
     </div>
   );
 };
+
