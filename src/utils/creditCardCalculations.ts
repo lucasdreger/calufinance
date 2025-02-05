@@ -1,55 +1,62 @@
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "./formatters";
 
-export const calculateCreditCardTransfer = async () => {
+export const calculateCreditCardTransfer = async (selectedYear: number, selectedMonth: number) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const currentDate = new Date();
-  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
-  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString();
+  const startDate = getStartOfMonth(selectedYear, selectedMonth);
+  const endDate = getEndOfMonth(selectedYear, selectedMonth);
 
-  // Get Credit Card category
-  const { data: categories } = await supabase
+  // Get Credit Card bill
+  const { data: creditCardCategory } = await supabase
     .from('expenses_categories')
     .select('id')
     .eq('user_id', user.id)
     .eq('name', 'Credit Card')
     .maybeSingle();
 
-  if (!categories) {
-    console.error('Credit Card category not found');
-    return null;
-  }
+  if (!creditCardCategory) return null;
 
-  // Fetch Credit Card expenses
-  const { data: creditCardExpenses } = await supabase
+  const { data: creditCardExpense } = await supabase
     .from('expenses')
     .select('amount')
+    .eq('category_id', creditCardCategory.id)
     .eq('user_id', user.id)
-    .eq('category_id', categories.id)
-    .gte('date', startOfMonth)
-    .lte('date', endOfMonth)
+    .gte('date', formatDateForSupabase(startDate))
+    .lte('date', formatDateForSupabase(endDate))
     .maybeSingle();
 
-  // Fetch Lucas's income
+  // Get Lucas's fixed expenses
+  const { data: lucasFixedExpenses } = await supabase
+    .from('budget_plans')
+    .select('estimated_amount')
+    .eq('user_id', user.id)
+    .eq('owner', 'Lucas')
+    .eq('is_fixed', true);
+
+  // Get Lucas's income
   const { data: lucasIncome } = await supabase
-    .from('income')
+    .from('monthly_income')
     .select('amount')
     .eq('user_id', user.id)
+    .eq('year', selectedYear)
+    .eq('month', selectedMonth)
     .eq('source', 'Primary Job')
-    .gte('date', startOfMonth)
-    .lte('date', endOfMonth)
     .maybeSingle();
 
-  const creditCardTotal = creditCardExpenses?.amount || 0;
+  const creditCardTotal = creditCardExpense?.amount || 0;
   const lucasTotal = lucasIncome?.amount || 0;
-  const remainingAmount = lucasTotal - creditCardTotal;
+  const fixedExpensesTotal = (lucasFixedExpenses || []).reduce((sum, expense) => sum + expense.estimated_amount, 0);
+  
+  const remainingAmount = lucasTotal - creditCardTotal - fixedExpensesTotal;
+  const transferAmount = remainingAmount < 500 ? Math.max(0, 500 - remainingAmount) : 0;
 
   return {
     creditCardTotal,
     lucasTotal,
     remainingAmount,
-    transferAmount: remainingAmount < 1000 ? 1000 - remainingAmount : 0
+    transferAmount,
+    fixedExpensesTotal
   };
 };

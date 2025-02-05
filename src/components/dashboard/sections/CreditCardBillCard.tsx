@@ -7,6 +7,8 @@ import { AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/utils/formatters";
+import { calculateCreditCardTransfer } from "@/utils/creditCardCalculations";
+import { MonthlyTaskItem } from "@/components/MonthlyTaskItem";
 
 interface CreditCardBillProps {
   selectedYear: number;
@@ -15,65 +17,17 @@ interface CreditCardBillProps {
 
 export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBillProps) => {
   const [amount, setAmount] = useState<number>(0);
-  const [lucasIncome, setLucasIncome] = useState<number>(0);
-  const [showTransferAlert, setShowTransferAlert] = useState(false);
-  const [transferAmount, setTransferAmount] = useState<number>(0);
+  const [isTransferCompleted, setIsTransferCompleted] = useState(false);
+  const [transferData, setTransferData] = useState<any>(null);
   const { toast } = useToast();
 
-  const fetchData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Get Credit Card category
-    const { data: categories } = await supabase
-      .from('expenses_categories')
-      .select('id')
-      .eq('name', 'Credit Card')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!categories) return;
-
-    // Get the date range for the selected month
-    const startDate = new Date(selectedYear, selectedMonth, 1);
-    const endDate = new Date(selectedYear, selectedMonth + 1, 0);
-
-    // Fetch Credit Card bill
-    const { data: creditCardExpense } = await supabase
-      .from('expenses')
-      .select('amount')
-      .eq('category_id', categories.id)
-      .eq('user_id', user.id)
-      .gte('date', startDate.toISOString())
-      .lte('date', endDate.toISOString())
-      .maybeSingle();
-
-    // Fetch Lucas's income
-    const { data: income } = await supabase
-      .from('income')
-      .select('amount')
-      .eq('source', 'Primary Job')
-      .eq('user_id', user.id)
-      .gte('date', startDate.toISOString())
-      .lte('date', endDate.toISOString())
-      .maybeSingle();
-
-    if (creditCardExpense) {
-      setAmount(creditCardExpense.amount);
-    }
-
-    if (income) {
-      setLucasIncome(income.amount);
-      const remaining = income.amount - (creditCardExpense?.amount || 0);
-      const transfer = remaining < 1000 ? Math.max(0, 1000 - remaining) : 0;
-      setTransferAmount(transfer);
-      setShowTransferAlert(transfer > 0);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
-  }, [selectedYear, selectedMonth]);
+    const fetchTransferData = async () => {
+      const data = await calculateCreditCardTransfer(selectedYear, selectedMonth);
+      setTransferData(data);
+    };
+    fetchTransferData();
+  }, [selectedYear, selectedMonth, amount]);
 
   const handleSave = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -117,7 +71,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       description: "The credit card bill has been updated successfully.",
     });
 
-    fetchData();
+    fetchTransferData();
   };
 
   return (
@@ -147,13 +101,21 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
           </Alert>
         )}
 
-        {showTransferAlert && (
-          <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800">
-              Camila needs to transfer {formatCurrency(transferAmount)} for this month's Credit Card bill
-            </AlertDescription>
-          </Alert>
+        {transferData?.transferAmount > 0 && (
+          <div className="mt-4 space-y-4">
+            <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                Camila to transfer {formatCurrency(transferData.transferAmount)} to Lucas
+              </AlertDescription>
+            </Alert>
+            <MonthlyTaskItem
+              id="transfer-task"
+              name={`Transfer ${formatCurrency(transferData.transferAmount)} to Lucas`}
+              completed={isTransferCompleted}
+              onCompletedChange={setIsTransferCompleted}
+            />
+          </div>
         )}
       </CardContent>
     </Card>
