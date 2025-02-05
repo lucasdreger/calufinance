@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/utils/formatters";
+import { formatCurrency, parseCurrencyInput } from "@/utils/formatters";
 import { MonthlyTaskItem } from "@/components/dashboard/sections/tasks/MonthlyTaskItem";
-import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { CreditCardData } from "@/types/supabase";
 
 interface CreditCardBillProps {
@@ -17,11 +17,15 @@ interface CreditCardBillProps {
 
 export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBillProps) => {
   const [amount, setAmount] = useState(0);
-  const [editAmount, setEditAmount] = useState(0);
+  const [editAmount, setEditAmount] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isTransferCompleted, setIsTransferCompleted] = useState(false);
   const [transferAmount, setTransferAmount] = useState(0);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
     fetchData();
@@ -57,7 +61,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         p_user_id: user.id,
         p_year: selectedYear,
         p_month: selectedMonth
-      }) as { data: CreditCardData[] | null, error: Error | null };
+      }).single();
 
     if (error) {
       toast({
@@ -68,17 +72,24 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       return;
     }
 
-    if (data && data[0]) {
-      setAmount(data[0].credit_card_amount || 0);
-      setEditAmount(data[0].credit_card_amount || 0);
-      setTransferAmount(data[0].transfer_amount || 0);
-      setIsTransferCompleted(data[0].is_transfer_completed || false);
-    }
+    setAmount(data.credit_card_amount);
+    setTransferAmount(data.transfer_amount);
+    setIsTransferCompleted(data.is_transfer_completed);
   };
 
   const handleSave = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    const newAmount = parseCurrencyInput(editAmount);
+    if (isNaN(newAmount)) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid number",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Get Credit Card category
     const { data: category } = await supabase
@@ -104,7 +115,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       .upsert({
         user_id: user.id,
         category_id: category.id,
-        amount: editAmount,
+        amount: newAmount,
         date: billDate.toISOString().split('T')[0],
         description: `Credit Card Bill for ${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
       }, {
@@ -120,8 +131,9 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       return;
     }
 
-    setAmount(editAmount);
+    setAmount(newAmount);
     setIsEditing(false);
+    setEditAmount("");
     fetchData(); // Refresh data to update transfer amount
     toast({
       title: "Success",
@@ -164,10 +176,11 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         <div className="flex items-center justify-between">
           <span>Total:</span>
           {isEditing ? (
-            <div className="flex gap-2 items-center">
-              <CurrencyInput
+            <div className="flex gap-2">
+              <Input
+                type="text"
                 value={editAmount}
-                onChange={setEditAmount}
+                onChange={(e) => setEditAmount(e.target.value)}
                 className="w-32"
                 placeholder="Enter amount"
               />
@@ -177,7 +190,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
                 variant="outline"
                 onClick={() => {
                   setIsEditing(false);
-                  setEditAmount(amount);
+                  setEditAmount("");
                 }}
               >
                 Cancel
@@ -191,7 +204,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
                 variant="outline"
                 onClick={() => {
                   setIsEditing(true);
-                  setEditAmount(amount);
+                  setEditAmount(amount.toString());
                 }}
               >
                 Edit
