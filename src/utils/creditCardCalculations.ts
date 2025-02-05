@@ -16,10 +16,10 @@ export const calculateCreditCardTransfer = async (selectedYear: number, selected
   if (error || !data || !Array.isArray(data) || data.length === 0) return null;
 
   return {
-    creditCardTotal: data[0].credit_card_amount,
-    lucasTotal: data[0].lucas_income,
-    remainingAmount: data[0].remaining_amount,
-    transferAmount: data[0].transfer_amount,
-    fixedExpensesTotal: data[0].fixed_expenses_total
+    creditCardTotal: data[0].credit_card_amount || 0,
+    lucasTotal: data[0].lucas_income || 0,
+    remainingAmount: data[0].remaining_amount || 0,
+    transferAmount: data[0].transfer_amount || 0,
+    fixedExpensesTotal: data[0].fixed_expenses_total || 0
   };
 };

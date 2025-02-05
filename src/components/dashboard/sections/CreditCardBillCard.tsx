@@ -49,9 +49,9 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     }
 
     if (data && data[0]) {
-      setAmount(data[0].credit_card_amount);
-      setTransferAmount(data[0].transfer_amount);
-      setIsTransferCompleted(data[0].is_transfer_completed);
+      setAmount(data[0].credit_card_amount || 0);
+      setTransferAmount(data[0].transfer_amount || 0);
+      setIsTransferCompleted(data[0].is_transfer_completed || false);
     }
   };
 
@@ -182,7 +182,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
                 variant="outline"
                 onClick={() => {
                   setIsEditing(true);
-                  setEditAmount(amount.toString());
+                  setEditAmount(amount ? amount.toString() : "0");
                 }}
               >
                 Edit
