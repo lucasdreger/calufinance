@@ -98,8 +98,8 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      // Delete existing entry for this month first
-      const billDate = new Date(selectedYear, selectedMonth + 1, 1);
+      // Fix: Correct date calculation for current month
+      const billDate = new Date(selectedYear, selectedMonth, 1);
       const formattedDate = billDate.toISOString().split('T')[0];
       
       const { error: deleteError } = await supabase
