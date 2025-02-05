@@ -1,11 +1,11 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { IncomeInputGroup } from "@/components/shared/IncomeInputGroup";
 import { useToast } from "@/components/ui/use-toast";
 import { IncomeSource, IncomeState } from "@/types/income";
-import { CurrencyInput } from "@/components/shared/CurrencyInput";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface MonthlyIncomeDataProps {
   selectedYear: number;
@@ -195,7 +195,7 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
                 </label>
                 <CurrencyInput
                   value={income.lucas}
-                  onChange={(value) => setIncome((prev) => ({ ...prev, lucas: value }))}
+                  onChange={(value) => setIncome(prev => ({ ...prev, lucas: value }))}
                   className="w-full"
                   placeholder="0.00"
                 />
@@ -206,7 +206,7 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
                 </label>
                 <CurrencyInput
                   value={income.camila}
-                  onChange={(value) => setIncome((prev) => ({ ...prev, camila: value }))}
+                  onChange={(value) => setIncome(prev => ({ ...prev, camila: value }))}
                   className="w-full"
                   placeholder="0.00"
                 />
@@ -217,7 +217,7 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
                 </label>
                 <CurrencyInput
                   value={income.other}
-                  onChange={(value) => setIncome((prev) => ({ ...prev, other: value }))}
+                  onChange={(value) => setIncome(prev => ({ ...prev, other: value }))}
                   className="w-full"
                   placeholder="0.00"
                 />
