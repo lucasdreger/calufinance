@@ -93,20 +93,26 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
 
     const { error } = await supabase
       .from('monthly_tasks')
-      .upsert({
-        user_id: user.id,
-        year: selectedYear,
-        month: selectedMonth,
-        task_id: 'credit-card-transfer',
-        is_completed: completed,
-        name: `Transfer ${formatCurrency(transferAmount)} to Lucas`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,year,month,task_id'
-      });
+      .upsert(
+        {
+          user_id: user.id,
+          year: selectedYear,
+          month: selectedMonth,
+          task_id: 'credit-card-transfer',
+          is_completed: completed
+        },
+        {
+          onConflict: 'user_id,year,month,task_id'
+        }
+      );
 
-    if (!error) {
+    if (error) {
+      toast({
+        title: 'Error updating task',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } else {
       setIsTransferCompleted(completed);
     }
   };
