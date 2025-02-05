@@ -10,11 +10,8 @@ export const FinanceOverview = () => {
   const { toast } = useToast();
 
   const fetchData = async () => {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 5);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
+    const endDate = new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 23, 59, 59, 999));
+    const startDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth() - 5, 1, 0, 0, 0, 0));
 
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
@@ -40,8 +37,7 @@ export const FinanceOverview = () => {
     const monthlyData: Record<string, { income: number; expenses: number }> = {};
 
     for (let i = 0; i < 6; i++) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
+      const date = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth() - i, 1));
       const monthKey = date.toISOString().substring(0, 7);
       monthlyData[monthKey] = { income: 0, expenses: 0 };
     }

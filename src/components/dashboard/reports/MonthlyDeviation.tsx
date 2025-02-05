@@ -29,11 +29,8 @@ export const MonthlyDeviation = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 11);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
+    const endDate = new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 23, 59, 59, 999));
+    const startDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth() - 11, 1, 0, 0, 0, 0));
 
     // Get all budget plans (planned expenses)
     const { data: budgetPlans, error: budgetError } = await supabase

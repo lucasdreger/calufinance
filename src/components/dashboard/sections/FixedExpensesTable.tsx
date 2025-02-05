@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/utils/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { formatDateForSupabase } from "@/utils/dateHelpers";
 
 interface BudgetPlan {
   id: string;
@@ -50,14 +51,15 @@ export const FixedExpensesTable = () => {
 
       // Fetch status for current month
       const currentDate = new Date();
-      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const firstDayOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), 1));
+      const lastDayOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999));
       
       const { data: statusData, error: statusError } = await supabase
         .from('fixed_expenses_status')
         .select('*')
         .eq('user_id', user.id)
-        .gte('date', firstDayOfMonth.toISOString())
-        .lt('date', new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1).toISOString());
+        .gte('date', formatDateForSupabase(firstDayOfMonth))
+        .lt('date', formatDateForSupabase(lastDayOfMonth));
 
       if (statusError) {
         toast({
@@ -83,16 +85,16 @@ export const FixedExpensesTable = () => {
     if (!user) return;
 
     const currentDate = new Date();
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const firstDayOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), 1));
+    const lastDayOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999));
 
-    // First, check if a status already exists for this plan and month
     const { data: existingStatus, error: checkError } = await supabase
       .from('fixed_expenses_status')
-      .select('id')
+      .select('*')
       .eq('budget_plan_id', planId)
       .eq('user_id', user.id)
-      .gte('date', firstDayOfMonth.toISOString())
-      .lt('date', new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1).toISOString())
+      .gte('date', formatDateForSupabase(firstDayOfMonth))
+      .lt('date', formatDateForSupabase(lastDayOfMonth))
       .maybeSingle();
 
     if (checkError) {
@@ -122,7 +124,7 @@ export const FixedExpensesTable = () => {
         .insert({
           budget_plan_id: planId,
           user_id: user.id,
-          date: firstDayOfMonth.toISOString(),
+          date: formatDateForSupabase(firstDayOfMonth),
           is_paid: checked,
           completed_at: checked ? new Date().toISOString() : null
         });
