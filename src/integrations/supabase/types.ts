@@ -120,31 +120,31 @@ export type Database = {
       }
       fixed_expenses_status: {
         Row: {
-          budget_plan_id: string | null
+          budget_plan_id: string
           completed_at: string | null
           created_at: string
           date: string
           id: string
-          is_paid: boolean | null
-          user_id: string | null
+          is_paid: boolean
+          user_id: string
         }
         Insert: {
-          budget_plan_id?: string | null
+          budget_plan_id: string
           completed_at?: string | null
           created_at?: string
           date: string
           id?: string
-          is_paid?: boolean | null
-          user_id?: string | null
+          is_paid?: boolean
+          user_id: string
         }
         Update: {
-          budget_plan_id?: string | null
+          budget_plan_id?: string
           completed_at?: string | null
           created_at?: string
           date?: string
           id?: string
-          is_paid?: boolean | null
-          user_id?: string | null
+          is_paid?: boolean
+          user_id?: string
         }
         Relationships: [
           {
@@ -246,6 +246,39 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_tasks: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_completed: boolean | null
+          month: number
+          task_id: string
+          updated_at: string | null
+          user_id: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          month: number
+          task_id: string
+          updated_at?: string | null
+          user_id?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          month?: number
+          task_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -317,9 +350,35 @@ export type Database = {
         }
         Returns: string
       }
+      get_credit_card_data: {
+        Args: {
+          p_user_id: string
+          p_year: number
+          p_month: number
+        }
+        Returns: {
+          credit_card_amount: number
+          lucas_income: number
+          fixed_expenses_total: number
+          is_transfer_completed: boolean
+          remaining_amount: number
+          transfer_amount: number
+        }[]
+      }
       insert_default_categories: {
         Args: {
           user_uuid: string
+        }
+        Returns: undefined
+      }
+      upsert_monthly_income: {
+        Args: {
+          p_user_id: string
+          p_year: number
+          p_month: number
+          p_lucas_amount: number
+          p_camila_amount: number
+          p_other_amount: number
         }
         Returns: undefined
       }
