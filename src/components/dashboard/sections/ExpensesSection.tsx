@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -171,10 +172,17 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     const startDate = getStartOfMonth(selectedYear, selectedMonth);
     const endDate = getEndOfMonth(selectedYear, selectedMonth);
 
+    // First, find the Credit Card category
+    const creditCardCategory = categories.find(cat => cat.name === 'Credit Card');
+    if (!creditCardCategory) {
+      console.error('Credit Card category not found');
+      return;
+    }
+
     const { data: creditCardExpense } = await supabase
       .from('expenses')
       .select('amount')
-      .eq('category_id', categories.id)
+      .eq('category_id', creditCardCategory.id)
       .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
       .lte('date', formatDateForSupabase(endDate))
