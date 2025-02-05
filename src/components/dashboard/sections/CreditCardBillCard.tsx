@@ -81,7 +81,6 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get Credit Card category
       const { data: category } = await supabase
         .from('expenses_categories')
         .select('id')
@@ -98,9 +97,8 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      // Fix: Correct date calculation for current month
-      const billDate = new Date(selectedYear, selectedMonth, 1);
-      const formattedDate = billDate.toISOString().split('T')[0];
+      // Format date correctly for the next month (when bill is due)
+      const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
       
       const { error: deleteError } = await supabase
         .from('expenses')
@@ -111,7 +109,6 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
 
       if (deleteError) throw deleteError;
 
-      // Insert new entry
       const { error: insertError } = await supabase
         .from('expenses')
         .insert({
