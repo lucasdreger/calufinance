@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -26,6 +25,27 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
 
   useEffect(() => {
     fetchData();
+
+    const expensesChannel = supabase
+      .channel("credit_card_expenses_changes")
+      .on("postgres_changes", 
+        { event: "*", schema: "public", table: "expenses" },
+        () => fetchData()
+      )
+      .subscribe();
+
+    const tasksChannel = supabase
+      .channel("monthly_tasks_changes")
+      .on("postgres_changes", 
+        { event: "*", schema: "public", table: "monthly_tasks" },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(expensesChannel);
+      supabase.removeChannel(tasksChannel);
+    };
   }, [selectedYear, selectedMonth]);
 
   const fetchData = async () => {
