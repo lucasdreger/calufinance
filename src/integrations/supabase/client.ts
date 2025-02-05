@@ -9,3 +9,33 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: window.localStorage
   }
 });
+
+const handleTransferStatusChange = async (completed: boolean) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { error } = await supabase
+    .from('monthly_tasks')
+    .upsert(
+      {
+        user_id: user.id,
+        year: selectedYear,
+        month: selectedMonth,
+        task_id: 'credit-card-transfer',
+        is_completed: completed
+      },
+      {
+        onConflict: ['user_id', 'year', 'month', 'task_id']
+      }
+    );
+
+  if (error) {
+    toast({
+      title: 'Error updating task',
+      description: error.message,
+      variant: 'destructive'
+    });
+  } else {
+    setIsTransferCompleted(completed);
+  }
+};

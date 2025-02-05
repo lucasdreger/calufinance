@@ -102,7 +102,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
           is_completed: completed
         },
         {
-          onConflict: 'user_id,year,month,task_id'
+          onConflict: ['user_id', 'year', 'month', 'task_id']
         }
       );
 
