@@ -97,7 +97,6 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      // Format date correctly for the next month (when bill is due)
       const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
       
       const { error: deleteError } = await supabase
@@ -121,6 +120,8 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
 
       if (insertError) throw insertError;
 
+      setAmount(amount);
+      
       toast({
         title: "Success",
         description: "Credit card bill saved successfully"

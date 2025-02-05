@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Input } from "./input";
 import { formatCurrency, parseCurrencyInput } from "@/utils/formatters";
 
