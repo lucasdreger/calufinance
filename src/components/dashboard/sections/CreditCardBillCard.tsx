@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -32,7 +33,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     if (!user) return;
 
     const { data, error } = await supabase
-      .rpc<CreditCardData>('get_credit_card_data', {
+      .rpc<{ p_user_id: string; p_year: number; p_month: number }, CreditCardData>('get_credit_card_data', {
         p_user_id: user.id,
         p_year: selectedYear,
         p_month: selectedMonth

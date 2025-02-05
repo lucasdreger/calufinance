@@ -7,7 +7,7 @@ export const calculateCreditCardTransfer = async (selectedYear: number, selected
   if (!user) return null;
 
   const { data, error } = await supabase
-    .rpc<CreditCardData>('get_credit_card_data', {
+    .rpc<{ p_user_id: string; p_year: number; p_month: number }, CreditCardData>('get_credit_card_data', {
       p_user_id: user.id,
       p_year: selectedYear,
       p_month: selectedMonth
