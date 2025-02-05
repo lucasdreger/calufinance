@@ -33,11 +33,11 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
     if (!user) return;
 
     const { data, error } = await supabase
-      .rpc<{ p_user_id: string; p_year: number; p_month: number }, CreditCardData>('get_credit_card_data', {
+      .rpc('get_credit_card_data', {
         p_user_id: user.id,
         p_year: selectedYear,
         p_month: selectedMonth
-      });
+      }) as { data: CreditCardData[] | null, error: Error | null };
 
     if (error) {
       toast({
