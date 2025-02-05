@@ -132,8 +132,6 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         month: selectedMonth,
         task_id: 'credit-card-transfer',
         is_completed: completed
-      }, {
-        onConflict: 'user_id,year,month,task_id'
       });
 
     if (error) {

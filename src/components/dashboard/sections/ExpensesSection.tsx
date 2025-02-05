@@ -16,15 +16,17 @@ interface ExpensesSectionProps {
 export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSectionProps) => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [lucasIncome, setLucasIncome] = useState<number>(0);
+  const [creditCardBill, setCreditCardBill] = useState<number>(0);
   const { toast } = useToast();
   const [fixedExpenses, setFixedExpenses] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchExpenses();
+    fetchData();
     fetchFixedExpenses();
   }, [selectedYear, selectedMonth]);
 
-  const fetchExpenses = async () => {
+  const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -59,6 +61,38 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     })) || [];
     
     setExpenses(formattedExpenses);
+
+    // Fetch Lucas's income
+    const { data: lucasIncomeData } = await supabase
+      .from('monthly_income')
+      .select('amount')
+      .eq('user_id', user.id)
+      .eq('source', 'LUCAS')
+      .eq('year', selectedYear)
+      .eq('month', selectedMonth)
+      .maybeSingle();
+
+    setLucasIncome(lucasIncomeData?.amount || 0);
+
+    // Fetch credit card bill
+    const { data: creditCardCategory } = await supabase
+      .from('expenses_categories')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('name', 'Credit Card')
+      .single();
+
+    if (creditCardCategory) {
+      const { data: creditCardExpense } = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('category_id', creditCardCategory.id)
+        .eq('user_id', user.id)
+        .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
+        .maybeSingle();
+
+      setCreditCardBill(creditCardExpense?.amount || 0);
+    }
   };
 
   const fetchCategories = async () => {
@@ -113,7 +147,7 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
 
   useEffect(() => {
     fetchCategories();
-    fetchExpenses();
+    fetchData();
     fetchFixedExpenses();
 
     // Subscribe to changes in expenses
@@ -122,7 +156,7 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'expenses' },
         () => {
-          fetchExpenses();
+          fetchData();
         }
       )
       .subscribe();
@@ -171,11 +205,13 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
           <div className="space-y-4">
             <ExpenseForm 
               categories={categories}
-              onExpenseAdded={fetchExpenses}
+              onExpenseAdded={fetchData}
             />
             <ExpensesTable 
               expenses={expenses} 
-              onExpenseUpdated={fetchExpenses}
+              onExpenseUpdated={fetchData}
+              lucasIncome={lucasIncome}
+              creditCardBill={creditCardBill}
               fixedExpenses={fixedExpenses}
               selectedYear={selectedYear}
               selectedMonth={selectedMonth}

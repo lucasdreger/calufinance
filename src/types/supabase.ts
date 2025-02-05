@@ -7,3 +7,4 @@ export interface CreditCardData {
   remaining_amount: number;
   transfer_amount: number;
 }
+

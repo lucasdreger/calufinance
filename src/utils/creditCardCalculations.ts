@@ -1,5 +1,5 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "./formatters";
 import { CreditCardData } from "@/types/supabase";
 
 export const calculateCreditCardTransfer = async (selectedYear: number, selectedMonth: number) => {
@@ -20,6 +20,7 @@ export const calculateCreditCardTransfer = async (selectedYear: number, selected
     creditCardTotal: data.credit_card_amount,
     lucasTotal: data.lucas_income,
     remainingAmount: data.remaining_amount,
-    transferAmount: data
+    transferAmount: data.transfer_amount,
+    fixedExpensesTotal: data.fixed_expenses_total
   };
 };
