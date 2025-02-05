@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -37,8 +36,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         p_user_id: user.id,
         p_year: selectedYear,
         p_month: selectedMonth
-      })
-      .single();
+      });
 
     if (error) {
       toast({
@@ -49,10 +47,10 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       return;
     }
 
-    if (data) {
-      setAmount(data.credit_card_amount);
-      setTransferAmount(data.transfer_amount);
-      setIsTransferCompleted(data.is_transfer_completed);
+    if (data && data[0]) {
+      setAmount(data[0].credit_card_amount);
+      setTransferAmount(data[0].transfer_amount);
+      setIsTransferCompleted(data[0].is_transfer_completed);
     }
   };
 

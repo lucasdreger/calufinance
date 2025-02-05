@@ -11,16 +11,15 @@ export const calculateCreditCardTransfer = async (selectedYear: number, selected
       p_user_id: user.id,
       p_year: selectedYear,
       p_month: selectedMonth
-    })
-    .single();
+    });
 
-  if (error) return null;
+  if (error || !data || data.length === 0) return null;
 
   return {
-    creditCardTotal: data.credit_card_amount,
-    lucasTotal: data.lucas_income,
-    remainingAmount: data.remaining_amount,
-    transferAmount: data.transfer_amount,
-    fixedExpensesTotal: data.fixed_expenses_total
+    creditCardTotal: data[0].credit_card_amount,
+    lucasTotal: data[0].lucas_income,
+    remainingAmount: data[0].remaining_amount,
+    transferAmount: data[0].transfer_amount,
+    fixedExpensesTotal: data[0].fixed_expenses_total
   };
 };
