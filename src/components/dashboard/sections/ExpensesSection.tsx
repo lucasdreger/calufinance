@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,35 +17,12 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   const [expenses, setExpenses] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const { toast } = useToast();
-  const [lucasIncome, setLucasIncome] = useState<number>(0);
-  const [creditCardBill, setCreditCardBill] = useState<number>(0);
   const [fixedExpenses, setFixedExpenses] = useState<any[]>([]);
 
-  const updateTasks = async () => {
-    const startDate = getStartOfMonth(selectedYear, selectedMonth + 1);
-    const endDate = getEndOfMonth(selectedYear, selectedMonth + 1);
-
-    const { data: creditCardCategory } = await supabase
-      .from('expenses_categories')
-      .select('id, name')
-      .eq('name', 'Credit Card')
-      .maybeSingle();
-
-    if (!creditCardCategory) {
-      console.error('Credit Card category not found');
-      return;
-    }
-
-    const { data: creditCardExpenses } = await supabase
-      .from('expenses')
-      .select('amount')
-      .eq('category_id', creditCardCategory.id)
-      .gte('date', formatDateForSupabase(startDate))
-      .lte('date', formatDateForSupabase(endDate))
-      .maybeSingle();
-
-    const creditCardTotal = creditCardExpenses?.amount || 0;
-  };
+  useEffect(() => {
+    fetchExpenses();
+    fetchFixedExpenses();
+  }, [selectedYear, selectedMonth]);
 
   const fetchExpenses = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -54,36 +30,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
 
     const startDate = getStartOfMonth(selectedYear, selectedMonth);
     const endDate = getEndOfMonth(selectedYear, selectedMonth);
-
-    const { data: creditCardCategory } = await supabase
-      .from('expenses_categories')
-      .select('id')
-      .eq('name', 'Credit Card')
-      .maybeSingle();
-
-    if (creditCardCategory) {
-      const { data: existingCreditCardExpense } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('category_id', creditCardCategory.id)
-        .eq('user_id', user.id)
-        .gte('date', formatDateForSupabase(startDate))
-        .lte('date', formatDateForSupabase(endDate))
-        .maybeSingle();
-
-      if (!existingCreditCardExpense) {
-        await supabase
-          .from('expenses')
-          .insert({
-            amount: 0,
-            description: 'Monthly Credit Card Bill',
-            date: formatDateForSupabase(startDate),
-            category_id: creditCardCategory.id,
-            user_id: user.id,
-            is_fixed: false
-          });
-      }
-    }
 
     const { data, error } = await supabase
       .from('expenses')
@@ -142,55 +88,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     setCategories(uniqueCategories);
   };
 
-  const fetchLucasIncome = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('income')
-      .select('amount')
-      .eq('source', 'Primary Job')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (error) {
-      toast({
-        title: "Error fetching Lucas's income",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLucasIncome(data?.amount || 0);
-  };
-
-  const fetchCreditCardBill = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const startDate = getStartOfMonth(selectedYear, selectedMonth);
-    const endDate = getEndOfMonth(selectedYear, selectedMonth);
-
-    // First, find the Credit Card category
-    const creditCardCategory = categories.find(cat => cat.name === 'Credit Card');
-    if (!creditCardCategory) {
-      console.error('Credit Card category not found');
-      return;
-    }
-
-    const { data: creditCardExpense } = await supabase
-      .from('expenses')
-      .select('amount')
-      .eq('category_id', creditCardCategory.id)
-      .eq('user_id', user.id)
-      .gte('date', formatDateForSupabase(startDate))
-      .lte('date', formatDateForSupabase(endDate))
-      .maybeSingle();
-
-    setCreditCardBill(creditCardExpense?.amount || 0);
-  };
-
   const fetchFixedExpenses = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -217,8 +114,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   useEffect(() => {
     fetchCategories();
     fetchExpenses();
-    fetchLucasIncome();
-    fetchCreditCardBill();
     fetchFixedExpenses();
 
     // Subscribe to changes in expenses
@@ -281,8 +176,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
             <ExpensesTable 
               expenses={expenses} 
               onExpenseUpdated={fetchExpenses}
-              lucasIncome={lucasIncome}
-              creditCardBill={creditCardBill}
               fixedExpenses={fixedExpenses}
               selectedYear={selectedYear}
               selectedMonth={selectedMonth}
