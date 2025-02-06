@@ -26,6 +26,22 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
     fetchData();
   }, [selectedYear, selectedMonth]);
 
+  useEffect(() => {
+    const statusChannel = supabase
+      .channel("credit_card_status_changes")
+      .on("postgres_changes", 
+        { event: "*", schema: "public", table: "fixed_expenses_status" },
+        () => {
+          fetchTransferStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(statusChannel);
+    };
+  }, [selectedYear, selectedMonth]);
+
   const fetchData = async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
