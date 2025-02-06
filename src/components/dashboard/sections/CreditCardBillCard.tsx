@@ -147,6 +147,51 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
     }
   };
 
+  const handleTransferStatusChange = async (checked: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: existingTask } = await supabase
+        .from('monthly_tasks')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('year', selectedYear)
+        .eq('month', selectedMonth)
+        .eq('task_id', 'credit-card-transfer')
+        .maybeSingle();
+
+      if (existingTask) {
+        const { error } = await supabase
+          .from('monthly_tasks')
+          .update({ is_completed: checked })
+          .eq('id', existingTask.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('monthly_tasks')
+          .insert({
+            user_id: user.id,
+            year: selectedYear,
+            month: selectedMonth,
+            task_id: 'credit-card-transfer',
+            is_completed: checked
+          });
+
+        if (error) throw error;
+      }
+
+      setIsTransferCompleted(checked);
+    } catch (error: any) {
+      toast({
+        title: "Error updating status",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -164,13 +209,27 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
             onChange={(value) => setAmount(value)}
           />
         </div>
-        <div className="flex justify-between items-center">
-          <Button onClick={handleSave} variant="outline" size="sm">
-            Save
-          </Button>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <Button onClick={handleSave} variant="outline" size="sm">
+              Save
+            </Button>
+            {transferAmount > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Transfer needed: {formatCurrency(transferAmount)}
+              </div>
+            )}
+          </div>
           {transferAmount > 0 && (
-            <div className="text-sm text-muted-foreground">
-              Transfer needed: {formatCurrency(transferAmount)}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="transfer-status"
+                checked={isTransferCompleted}
+                onCheckedChange={handleTransferStatusChange}
+              />
+              <label htmlFor="transfer-status" className="text-sm">
+                I have transferred {formatCurrency(transferAmount)} to Lucas
+              </label>
             </div>
           )}
         </div>
