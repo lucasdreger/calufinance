@@ -8,6 +8,7 @@ import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getStartOfMonth, formatDateForSupabase } from "@/utils/dateHelpers";
 
 interface CreditCardBillCardProps {
   selectedYear: number;
