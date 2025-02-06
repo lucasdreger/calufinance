@@ -9,6 +9,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getStartOfMonth, formatDateForSupabase } from "@/utils/dateHelpers";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CreditCardBillCardProps {
   selectedYear: number;
@@ -216,12 +217,13 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         .eq('date', formatDateForSupabase(startDate))
         .maybeSingle();
 
+      const now = new Date();
       if (existingStatus) {
         await supabase
           .from('fixed_expenses_status')
           .update({
             is_paid: checked,
-            completed_at: checked ? new Date().toISOString() : null
+            completed_at: checked ? now.toISOString() : null
           })
           .eq('id', existingStatus.id);
       } else {
@@ -232,11 +234,15 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
             user_id: user.id,
             date: formatDateForSupabase(startDate),
             is_paid: checked,
-            completed_at: checked ? new Date().toISOString() : null
+            completed_at: checked ? now.toISOString() : null
           });
       }
 
       setIsTransferCompleted(checked);
+
+      // Invalidate the fixed expenses status query to update the count
+      const queryClient = useQueryClient();
+      queryClient.invalidateQueries({ queryKey: ['fixedExpensesStatus'] });
 
     } catch (error: any) {
       console.error('Error updating transfer status:', error);

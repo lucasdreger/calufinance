@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,7 +32,7 @@ export const FixedExpensesTable = () => {
       const startDate = getStartOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
       const endDate = getEndOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
 
-      // Get only budget plans that require status tracking
+      // Get only budget plans that require status tracking, excluding credit card transfer
       const { data, error } = await supabase
         .from('budget_plans')
         .select(`
@@ -41,6 +42,7 @@ export const FixedExpensesTable = () => {
           )
         `)
         .eq('requires_status', true)
+        .neq('description', 'Credit Card Transfer')  // Exclude credit card transfer
         .order('expenses_categories(name)', { ascending: true })
         .order('description', { ascending: true });
 

@@ -377,18 +377,29 @@ export type Database = {
           total_expenses: number
         }[]
       }
-      get_fixed_expenses_status: {
-        Args: {
-          p_user_id: string
-          p_start_date: string
-          p_end_date: string
-        }
-        Returns: {
-          total_tasks: number
-          completed_tasks: number
-          all_completed: boolean
-        }[]
-      }
+      get_fixed_expenses_status:
+        | {
+            Args: {
+              p_user_id: string
+              p_start_date: string
+              p_end_date: string
+            }
+            Returns: {
+              total_tasks: number
+              completed_tasks: number
+              all_completed: boolean
+            }[]
+          }
+        | {
+            Args: {
+              p_year: number
+              p_month: number
+            }
+            Returns: {
+              total_tasks: number
+              completed_tasks: number
+            }[]
+          }
       insert_default_categories: {
         Args: {
           user_uuid: string
