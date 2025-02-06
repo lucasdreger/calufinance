@@ -21,7 +21,15 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
 
   const fetchData = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in again to continue",
+          variant: "destructive",
+        });
+        return;
+      }
       if (!user) return;
 
       const { data, error } = await supabase
