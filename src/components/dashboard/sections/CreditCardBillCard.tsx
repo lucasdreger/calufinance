@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -22,16 +22,7 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
   const [transferAmount, setTransferAmount] = useState(0);
   const { toast } = useToast();
 
-  useRealtimeSubscription(
-    ['expenses', 'monthly_tasks', 'monthly_income', 'budget_plans'],
-    fetchData
-  );
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedYear, selectedMonth]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -58,7 +49,16 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
         variant: "destructive"
       });
     }
-  };
+  }, [selectedYear, selectedMonth, toast]);
+
+  useRealtimeSubscription(
+    ['expenses', 'monthly_tasks', 'monthly_income', 'budget_plans'],
+    fetchData
+  );
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleSave = async () => {
     try {
