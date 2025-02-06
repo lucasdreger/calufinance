@@ -187,7 +187,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         <div className="text-2xl font-bold mb-4">
           <CurrencyInput
             value={amount}
-            onValueChange={(value) => setAmount(value)}
+            onChange={(value) => setAmount(value)}
           />
         </div>
         <div className="flex justify-between items-center">
