@@ -40,6 +40,7 @@ export const FixedExpensesTable = () => {
             name
           )
         `)
+        .eq('requires_status', true)
         .order('expenses_categories(name)', { ascending: true })
         .order('description', { ascending: true });
 
