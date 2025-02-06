@@ -43,24 +43,26 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
+      const { data: expenses } = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('user_id', user.id)
+        .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
+        .single();
+
+      if (expenses) {
+        setAmount(expenses.amount);
+      }
+
       const { data, error } = await supabase.rpc('get_credit_card_data', {
         p_user_id: user.id,
         p_year: selectedYear,
         p_month: selectedMonth
       });
 
-      if (error) {
-        console.error('Error fetching credit card data:', error);
-        toast({
-          title: "Error fetching data",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
 
       if (data && data.length > 0) {
-        setAmount(data[0].credit_card_amount || 0);
         setTransferAmount(data[0].transfer_amount || 0);
         setIsTransferCompleted(data[0].is_transfer_completed || false);
       }
