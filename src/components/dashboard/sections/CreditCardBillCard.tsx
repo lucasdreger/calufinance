@@ -53,13 +53,18 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
 
       if (category) {
         // Get existing credit card expense
-        const { data: expense } = await supabase
+        const { data: expense, error: expenseError } = await supabase
           .from('expenses')
           .select('amount')
           .eq('user_id', user.id)
           .eq('category_id', category.id)
           .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
-          .single();
+          .maybeSingle();
+
+        if (expenseError) {
+          console.error('Error fetching expense:', expenseError);
+          return;
+        }
 
         if (expense) {
           setAmount(expense.amount);
@@ -159,7 +164,23 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         description: "Credit card bill amount saved successfully",
       });
 
-      await fetchData();
+      // After successful save, fetch only the transfer data
+      const { data: updatedData, error: rpcError } = await supabase.rpc('get_credit_card_data', {
+        p_user_id: user.id,
+        p_year: selectedYear,
+        p_month: selectedMonth
+      });
+
+      if (rpcError) {
+        console.error('Error fetching updated data:', rpcError);
+        return;
+      }
+
+      if (updatedData && updatedData.length > 0) {
+        setTransferAmount(updatedData[0].transfer_amount || 0);
+        setIsTransferCompleted(updatedData[0].is_transfer_completed || false);
+      }
+
     } catch (error: any) {
       console.error('Error in handleSave:', error);
       toast({
