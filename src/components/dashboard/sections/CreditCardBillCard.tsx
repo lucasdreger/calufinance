@@ -196,23 +196,46 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
-        .from('monthly_tasks')
-        .upsert({
-          user_id: user.id,
-          year: selectedYear,
-          month: selectedMonth,
-          task_id: 'credit-card-transfer',
-          is_completed: checked,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,year,month,task_id'
-        });
+      const startDate = getStartOfMonth(selectedYear, selectedMonth);
 
-      if (error) throw error;
+      // Get the credit card transfer budget plan
+      const { data: budgetPlan } = await supabase
+        .from('budget_plans')
+        .select('id')
+        .eq('description', 'Credit Card Transfer')
+        .single();
+
+      if (!budgetPlan) return;
+
+      // Update or insert status
+      const { data: existingStatus } = await supabase
+        .from('fixed_expenses_status')
+        .select('id')
+        .eq('budget_plan_id', budgetPlan.id)
+        .eq('date', formatDateForSupabase(startDate))
+        .maybeSingle();
+
+      if (existingStatus) {
+        await supabase
+          .from('fixed_expenses_status')
+          .update({
+            is_paid: checked,
+            completed_at: checked ? new Date().toISOString() : null
+          })
+          .eq('id', existingStatus.id);
+      } else {
+        await supabase
+          .from('fixed_expenses_status')
+          .insert({
+            budget_plan_id: budgetPlan.id,
+            user_id: user.id,
+            date: formatDateForSupabase(startDate),
+            is_paid: checked,
+            completed_at: checked ? new Date().toISOString() : null
+          });
+      }
 
       setIsTransferCompleted(checked);
-      await fetchData();
 
     } catch (error: any) {
       console.error('Error updating transfer status:', error);
