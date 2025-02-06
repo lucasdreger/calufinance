@@ -209,7 +209,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
 
       if (!budgetPlan) return;
 
-      // Update or insert status - note: removed user_id filters
+      // Update or insert status
       const { data: existingStatus } = await supabase
         .from('fixed_expenses_status')
         .select('id')
@@ -231,6 +231,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
           .from('fixed_expenses_status')
           .insert({
             budget_plan_id: budgetPlan.id,
+            user_id: user.id,
             date: formatDateForSupabase(startDate),
             is_paid: checked,
             completed_at: checked ? now.toISOString() : null
