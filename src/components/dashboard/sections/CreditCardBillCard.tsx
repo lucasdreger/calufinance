@@ -43,15 +43,27 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      const { data: expenses } = await supabase
-        .from('expenses')
-        .select('amount')
+      // Get Credit Card category first
+      const { data: category } = await supabase
+        .from('expenses_categories')
+        .select('id')
         .eq('user_id', user.id)
-        .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
+        .eq('name', 'Credit Card')
         .single();
 
-      if (expenses) {
-        setAmount(expenses.amount);
+      if (category) {
+        // Get existing credit card expense
+        const { data: expense } = await supabase
+          .from('expenses')
+          .select('amount')
+          .eq('user_id', user.id)
+          .eq('category_id', category.id)
+          .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
+          .single();
+
+        if (expense) {
+          setAmount(expense.amount);
+        }
       }
 
       const { data, error } = await supabase.rpc('get_credit_card_data', {
