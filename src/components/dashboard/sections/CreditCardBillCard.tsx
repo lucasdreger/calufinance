@@ -123,29 +123,51 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
   };
 
   const handleTransferStatusChange = async (completed: boolean) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { error } = await supabase
-      .from('monthly_tasks')
-      .upsert({
-        user_id: user.id,
-        year: selectedYear,
-        month: selectedMonth,
-        task_id: 'credit-card-transfer',
-        is_completed: completed
-      });
+      // First check if the task exists
+      const { data: existingTask } = await supabase
+        .from('monthly_tasks')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('year', selectedYear)
+        .eq('month', selectedMonth)
+        .eq('task_id', 'credit-card-transfer')
+        .maybeSingle();
 
-    if (error) {
+      if (existingTask) {
+        // Update existing task
+        const { error } = await supabase
+          .from('monthly_tasks')
+          .update({ is_completed: completed })
+          .eq('id', existingTask.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new task
+        const { error } = await supabase
+          .from('monthly_tasks')
+          .insert({
+            user_id: user.id,
+            year: selectedYear,
+            month: selectedMonth,
+            task_id: 'credit-card-transfer',
+            is_completed: completed
+          });
+
+        if (error) throw error;
+      }
+
+      setIsTransferCompleted(completed);
+    } catch (error: any) {
       toast({
         title: "Error updating status",
         description: error.message,
         variant: "destructive"
       });
-      return;
     }
-
-    setIsTransferCompleted(completed);
   };
 
   return (
