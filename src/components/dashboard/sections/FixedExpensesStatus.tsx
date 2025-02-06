@@ -31,18 +31,19 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const startDate = getStartOfMonth(selectedYear, selectedMonth);
     const endDate = getEndOfMonth(selectedYear, selectedMonth);
 
+    // Get all budget plans that require status tracking
     const { data: fixedExpenses, error: expensesError } = await supabase
       .from('budget_plans')
       .select('*')
-      .eq('user_id', user.id)
-      .eq('is_fixed', true);
+      .eq('requires_status', true);
 
     if (expensesError) return;
 
+    // Get status for those plans
     const { data: statusData, error: statusError } = await supabase
       .from('fixed_expenses_status')
       .select('budget_plan_id, is_paid')
-      .eq('user_id', user.id)
+      .in('budget_plan_id', fixedExpenses?.map(exp => exp.id) || [])
       .gte('date', formatDateForSupabase(startDate))
       .lt('date', formatDateForSupabase(endDate));
 
