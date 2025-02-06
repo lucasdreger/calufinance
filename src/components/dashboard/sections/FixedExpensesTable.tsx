@@ -42,7 +42,7 @@ export const FixedExpensesTable = () => {
           )
         `)
         .eq('requires_status', true)
-        .neq('description', 'Credit Card Transfer')  // Exclude credit card transfer
+        .neq('description', 'Credit Card Transfer')
         .order('expenses_categories(name)', { ascending: true })
         .order('description', { ascending: true });
 

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
@@ -31,7 +32,7 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const startDate = getStartOfMonth(selectedYear, selectedMonth);
     const endDate = getEndOfMonth(selectedYear, selectedMonth);
 
-    // Get all budget plans that require status tracking
+    // Get all budget plans that require status tracking, including Credit Card Transfer
     const { data: fixedExpenses, error: expensesError } = await supabase
       .from('budget_plans')
       .select('*')
