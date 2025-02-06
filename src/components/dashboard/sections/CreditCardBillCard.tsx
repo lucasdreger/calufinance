@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/utils/formatters";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CreditCardBillCardProps {
   selectedYear: number;
@@ -103,6 +105,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         .single();
 
       if (categoryError) {
+        console.error('Error getting category:', categoryError);
         throw categoryError;
       }
 
@@ -153,6 +156,39 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
     }
   };
 
+  const handleTransferStatusChange = async (checked: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('monthly_tasks')
+        .upsert({
+          user_id: user.id,
+          year: selectedYear,
+          month: selectedMonth,
+          task_id: 'credit-card-transfer',
+          is_completed: checked,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,year,month,task_id'
+        });
+
+      if (error) throw error;
+
+      setIsTransferCompleted(checked);
+      await fetchData();
+
+    } catch (error: any) {
+      console.error('Error updating transfer status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update transfer status",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -170,13 +206,36 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
             onChange={(value) => setAmount(value)}
           />
         </div>
-        <div className="flex justify-between items-center">
-          <Button onClick={handleSave} variant="outline" size="sm">
-            Save
-          </Button>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <Button onClick={handleSave} variant="outline" size="sm">
+              Save
+            </Button>
+          </div>
+          
           {transferAmount > 0 && (
-            <div className="text-sm text-muted-foreground">
-              Transfer needed: {formatCurrency(transferAmount)}
+            <div className="space-y-2">
+              {isTransferCompleted ? (
+                <Alert className="bg-green-50 border-green-200 text-green-800">
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>Transfer of {formatCurrency(transferAmount)} already done</span>
+                    <Checkbox
+                      checked={isTransferCompleted}
+                      onCheckedChange={handleTransferStatusChange}
+                    />
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert variant="warning">
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>Transfer needed: {formatCurrency(transferAmount)}</span>
+                    <Checkbox
+                      checked={isTransferCompleted}
+                      onCheckedChange={handleTransferStatusChange}
+                    />
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
         </div>
