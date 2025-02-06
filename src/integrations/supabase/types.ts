@@ -350,12 +350,6 @@ export type Database = {
         }
         Returns: string
       }
-      ensure_credit_card_transfer_budget_plan: {
-        Args: {
-          user_uuid: string
-        }
-        Returns: undefined
-      }
       get_credit_card_data: {
         Args: {
           p_user_id: string
