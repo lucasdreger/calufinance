@@ -9,6 +9,7 @@ import { formatCurrency } from "@/utils/formatters";
 import { MonthlyTaskItem } from "@/components/dashboard/sections/tasks/MonthlyTaskItem";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { CreditCardData } from "@/types/supabase";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 interface CreditCardBillProps {
   selectedYear: number;
@@ -21,6 +22,11 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
   const [transferAmount, setTransferAmount] = useState(0);
   const { toast } = useToast();
 
+  useRealtimeSubscription(
+    ['expenses', 'monthly_tasks', 'monthly_income', 'budget_plans'],
+    fetchData
+  );
+
   useEffect(() => {
     fetchData();
   }, [selectedYear, selectedMonth]);
@@ -30,53 +36,20 @@ export const CreditCardBillCard = ({ selectedYear, selectedMonth }: CreditCardBi
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // First get the credit card category
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('expenses_categories')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('name', 'Credit Card')
-        .single();
+      const { data, error } = await supabase
+        .rpc('get_credit_card_data', {
+          p_user_id: user.id,
+          p_year: selectedYear,
+          p_month: selectedMonth
+        });
 
-      if (categoryError) {
-        console.error('Error fetching category:', categoryError);
-        return;
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setAmount(data[0].credit_card_amount || 0);
+        setTransferAmount(data[0].transfer_amount || 0);
+        setIsTransferCompleted(data[0].is_transfer_completed || false);
       }
-
-      // Then get the expense for this month
-      const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
-      
-      const { data: expenseData, error: expenseError } = await supabase
-        .from('expenses')
-        .select('amount')
-        .eq('user_id', user.id)
-        .eq('category_id', categoryData.id)
-        .eq('date', formattedDate)
-        .single();
-
-      if (expenseError && expenseError.code !== 'PGRST116') { // Ignore "no rows returned" error
-        console.error('Error fetching expense:', expenseError);
-        return;
-      }
-
-      // Get transfer completion status
-      const { data: taskData, error: taskError } = await supabase
-        .from('monthly_tasks')
-        .select('is_completed')
-        .eq('user_id', user.id)
-        .eq('year', selectedYear)
-        .eq('month', selectedMonth)
-        .eq('task_id', 'credit-card-transfer')
-        .single();
-
-      if (taskError && taskError.code !== 'PGRST116') {
-        console.error('Error fetching task status:', taskError);
-      }
-
-      setAmount(expenseData?.amount || 0);
-      setTransferAmount(expenseData?.amount || 0);
-      setIsTransferCompleted(taskData?.is_completed || false);
-      
     } catch (error: any) {
       console.error('Error in fetchData:', error);
       toast({

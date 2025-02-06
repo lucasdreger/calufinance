@@ -7,6 +7,7 @@ import { FixedExpensesTable } from "./FixedExpensesTable";
 import { ExpenseForm } from "./ExpenseForm";
 import { ExpensesTable } from "./ExpensesTable";
 import { getStartOfMonth, getEndOfMonth, formatDateForSupabase } from "@/utils/dateHelpers";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 interface ExpensesSectionProps {
   selectedYear: number;
@@ -21,8 +22,18 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   const { toast } = useToast();
   const [fixedExpenses, setFixedExpenses] = useState<any[]>([]);
 
+  useRealtimeSubscription(
+    ['expenses', 'expenses_categories', 'monthly_income', 'budget_plans'],
+    () => {
+      fetchData();
+      fetchCategories();
+      fetchFixedExpenses();
+    }
+  );
+
   useEffect(() => {
     fetchData();
+    fetchCategories();
     fetchFixedExpenses();
   }, [selectedYear, selectedMonth]);
 
@@ -144,39 +155,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
 
     setFixedExpenses(data || []);
   };
-
-  useEffect(() => {
-    fetchCategories();
-    fetchData();
-    fetchFixedExpenses();
-
-    // Subscribe to changes in expenses
-    const expensesChannel = supabase
-      .channel('expenses_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'expenses' },
-        () => {
-          fetchData();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to changes in categories
-    const categoriesChannel = supabase
-      .channel('expenses_categories_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'expenses_categories' },
-        () => {
-          fetchCategories();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(expensesChannel);
-      supabase.removeChannel(categoriesChannel);
-    };
-  }, [selectedYear, selectedMonth]);
 
   const handleLoadDefaults = () => {
     toast({
