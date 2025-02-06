@@ -22,82 +22,46 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
     fetchData();
   }, [selectedYear, selectedMonth]);
 
-  useEffect(() => {
-    const expensesChannel = supabase
-      .channel("credit_card_expenses_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "expenses" },
-        () => fetchData()
-      )
-      .subscribe();
-
-    const tasksChannel = supabase
-      .channel("monthly_tasks_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "monthly_tasks" },
-        () => fetchData()
-      )
-      .subscribe();
-
-    return () => {
-      expensesChannel.unsubscribe();
-      tasksChannel.unsubscribe();
-    };
-  }, [selectedYear, selectedMonth]);
-
   const fetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // First get the credit card category
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('expenses_categories')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('name', 'Credit Card')
-        .single();
-
-      if (categoryError) {
-        console.error('Error fetching category:', categoryError);
-        return;
-      }
-
-      // Then get the expense for this month
-      const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      const { data: expenseData, error: expenseError } = await supabase
-        .from('expenses')
-        .select('amount')
-        .eq('user_id', user.id)
-        .eq('category_id', categoryData.id)
-        .eq('date', formattedDate)
-        .single();
-
-      if (expenseError && expenseError.code !== 'PGRST116') {
-        console.error('Error fetching expense:', expenseError);
+      if (authError) {
+        console.error('Authentication error:', authError);
+        toast({
+          title: "Authentication Error",
+          description: "Please try logging in again",
+          variant: "destructive",
+        });
         return;
       }
 
-      // Get transfer completion status
-      const { data: taskData, error: taskError } = await supabase
-        .from('monthly_tasks')
-        .select('is_completed')
-        .eq('user_id', user.id)
-        .eq('year', selectedYear)
-        .eq('month', selectedMonth)
-        .eq('task_id', 'credit-card-transfer')
-        .single();
-
-      if (taskError && taskError.code !== 'PGRST116') {
-        console.error('Error fetching task status:', taskError);
+      if (!user) {
+        console.error('No user found');
+        return;
       }
 
-      setAmount(expenseData?.amount || 0);
-      setTransferAmount(expenseData?.amount || 0);
-      setIsTransferCompleted(taskData?.is_completed || false);
+      const { data, error } = await supabase.rpc('get_credit_card_data', {
+        p_user_id: user.id,
+        p_year: selectedYear,
+        p_month: selectedMonth
+      });
+
+      if (error) {
+        console.error('Error fetching credit card data:', error);
+        toast({
+          title: "Error fetching data",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setAmount(data[0].credit_card_amount || 0);
+        setTransferAmount(data[0].transfer_amount || 0);
+        setIsTransferCompleted(data[0].is_transfer_completed || false);
+      }
     } catch (error: any) {
       console.error('Error in fetchData:', error);
       toast({
@@ -110,7 +74,17 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
 
   const handleSave = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        toast({
+          title: "Authentication Error",
+          description: "Please try logging in again",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (!user) {
         toast({
           title: "Error",
@@ -142,7 +116,10 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         .eq('category_id', category.id)
         .eq('date', formattedDate);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Error deleting existing expense:', deleteError);
+        throw deleteError;
+      }
 
       // Then insert the new expense
       const { error: insertError } = await supabase
@@ -155,7 +132,10 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
           description: `Credit Card Bill for ${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error inserting new expense:', insertError);
+        throw insertError;
+      }
 
       toast({
         title: "Success",
