@@ -145,7 +145,22 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         description: "Credit card bill amount saved successfully",
       });
 
-      await fetchData();
+      // After successful save, fetch the updated data
+      const { data: updatedData, error: rpcError } = await supabase.rpc('get_credit_card_data', {
+        p_user_id: user.id,
+        p_year: selectedYear,
+        p_month: selectedMonth
+      });
+
+      if (rpcError) {
+        console.error('Error fetching updated data:', rpcError);
+        return;
+      }
+
+      if (updatedData && updatedData.length > 0) {
+        setTransferAmount(updatedData[0].transfer_amount || 0);
+        setIsTransferCompleted(updatedData[0].is_transfer_completed || false);
+      }
     } catch (error: any) {
       console.error('Error in handleSave:', error);
       toast({
