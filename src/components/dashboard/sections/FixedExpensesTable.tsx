@@ -31,10 +31,35 @@ export const FixedExpensesTable = () => {
       const startDate = getStartOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
       const endDate = getEndOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
 
+      // Get only budget plans that require status tracking
+      const { data, error } = await supabase
+        .from('budget_plans')
+        .select(`
+          *,
+          expenses_categories (
+            name
+          )
+        `)
+        .eq('requires_status', true)
+        .order('expenses_categories(name)', { ascending: true })
+        .order('description', { ascending: true });
+
+      if (error) {
+        toast({
+          title: "Error fetching budget plans",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setBudgetPlans(data || []);
+
+      // Get status for these plans
       const { data: statusData, error: statusError } = await supabase
         .from('fixed_expenses_status')
         .select('*')
-        .eq('user_id', user.id)
+        .in('budget_plan_id', data?.map(plan => plan.id) || [])
         .gte('date', formatDateForSupabase(startDate))
         .lt('date', formatDateForSupabase(endDate));
 
@@ -51,29 +76,6 @@ export const FixedExpensesTable = () => {
         ...acc,
         [status.budget_plan_id]: status.is_paid
       }), {} as Record<string, boolean>));
-
-      const { data, error } = await supabase
-        .from('budget_plans')
-        .select(`
-          *,
-          expenses_categories (
-            name
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('expenses_categories(name)', { ascending: true })
-        .order('description', { ascending: true });
-
-      if (error) {
-        toast({
-          title: "Error fetching budget plans",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setBudgetPlans(data || []);
     };
 
     fetchBudgetPlans();
