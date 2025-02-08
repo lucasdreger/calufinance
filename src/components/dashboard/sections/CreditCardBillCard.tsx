@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
   const [transferAmount, setTransferAmount] = useState<number>(0);
   const [isTransferCompleted, setIsTransferCompleted] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     fetchData();
@@ -237,9 +237,6 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const startDate = getStartOfMonth(selectedYear, selectedMonth);
-
-      // Get the credit card transfer budget plan
       const { data: budgetPlan } = await supabase
         .from('budget_plans')
         .select('id')
@@ -249,8 +246,15 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
 
       if (!budgetPlan) {
         console.error('No budget plan found for Credit Card Transfer');
+        toast({
+          title: "Error",
+          description: "Credit Card Transfer budget plan not found",
+          variant: "destructive",
+        });
         return;
       }
+
+      const startDate = getStartOfMonth(selectedYear, selectedMonth);
 
       // Update or insert status
       const { data: existingStatus } = await supabase
@@ -283,9 +287,18 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
 
       setIsTransferCompleted(checked);
 
-      // Invalidate the fixed expenses status query to update the count
-      const queryClient = useQueryClient();
+      // Invalidate both queries to ensure all components update
       queryClient.invalidateQueries({ queryKey: ['fixedExpensesStatus'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['creditCardData', selectedYear, selectedMonth] 
+      });
+
+      toast({
+        title: checked ? "Transfer marked as completed" : "Transfer marked as pending",
+        description: checked 
+          ? "The credit card transfer has been marked as completed" 
+          : "The credit card transfer has been marked as pending",
+      });
 
     } catch (error: any) {
       console.error('Error updating transfer status:', error);
