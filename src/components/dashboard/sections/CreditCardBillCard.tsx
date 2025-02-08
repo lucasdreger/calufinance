@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         .select('id')
         .eq('user_id', user.id)
         .eq('name', 'Credit Card')
-        .single();
+        .maybeSingle();
 
       if (category) {
         // Get existing credit card expense
@@ -111,6 +112,28 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
     }
   };
 
+  const fetchTransferStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase.rpc('get_credit_card_data', {
+        p_user_id: user.id,
+        p_year: selectedYear,
+        p_month: selectedMonth
+      });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setTransferAmount(data[0].transfer_amount || 0);
+        setIsTransferCompleted(data[0].is_transfer_completed || false);
+      }
+    } catch (error: any) {
+      console.error('Error fetching transfer status:', error);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -139,7 +162,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         .select('id')
         .eq('user_id', user.id)
         .eq('name', 'Credit Card')
-        .single();
+        .maybeSingle();
 
       if (categoryError) {
         console.error('Error getting category:', categoryError);
@@ -221,11 +244,11 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         .from('budget_plans')
         .select('id')
         .eq('description', 'Credit Card Transfer')
-        .single();
+        .maybeSingle();
 
       if (!budgetPlan) return;
 
-      // Update or insert status - note: removed user_id filters
+      // Update or insert status
       const { data: existingStatus } = await supabase
         .from('fixed_expenses_status')
         .select('id')
@@ -249,7 +272,8 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
             budget_plan_id: budgetPlan.id,
             date: formatDateForSupabase(startDate),
             is_paid: checked,
-            completed_at: checked ? now.toISOString() : null
+            completed_at: checked ? now.toISOString() : null,
+            user_id: user.id
           });
       }
 
