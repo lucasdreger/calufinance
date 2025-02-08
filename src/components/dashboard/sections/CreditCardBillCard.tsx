@@ -243,10 +243,14 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
       const { data: budgetPlan } = await supabase
         .from('budget_plans')
         .select('id')
+        .eq('user_id', user.id)
         .eq('description', 'Credit Card Transfer')
         .maybeSingle();
 
-      if (!budgetPlan) return;
+      if (!budgetPlan) {
+        console.error('No budget plan found for Credit Card Transfer');
+        return;
+      }
 
       // Update or insert status
       const { data: existingStatus } = await supabase
