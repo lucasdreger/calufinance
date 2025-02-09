@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,9 +39,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   }, [selectedYear, selectedMonth]);
 
   const fetchData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const startDate = getStartOfMonth(selectedYear, selectedMonth);
     const endDate = getEndOfMonth(selectedYear, selectedMonth);
 
@@ -52,7 +50,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
           name
         )
       `)
-      .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
       .lte('date', formatDateForSupabase(endDate))
       .order('date', { ascending: false });
@@ -77,7 +74,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     const { data: lucasIncomeData } = await supabase
       .from('monthly_income')
       .select('amount')
-      .eq('user_id', user.id)
       .eq('source', 'LUCAS')
       .eq('year', selectedYear)
       .eq('month', selectedMonth)
@@ -89,7 +85,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     const { data: creditCardCategory } = await supabase
       .from('expenses_categories')
       .select('id')
-      .eq('user_id', user.id)
       .eq('name', 'Credit Card')
       .single();
 
@@ -98,7 +93,6 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
         .from('expenses')
         .select('amount')
         .eq('category_id', creditCardCategory.id)
-        .eq('user_id', user.id)
         .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
         .maybeSingle();
 
@@ -107,13 +101,9 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   };
 
   const fetchCategories = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const { data, error } = await supabase
       .from('expenses_categories')
       .select('*')
-      .eq('user_id', user.id)
       .order('name');
     
     if (error) {
@@ -134,13 +124,9 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   };
 
   const fetchFixedExpenses = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const { data, error } = await supabase
       .from('fixed_expenses_status')
       .select('*')
-      .eq('user_id', user.id)
       .gte('date', new Date(selectedYear, selectedMonth, 1).toISOString())
       .lt('date', new Date(selectedYear, selectedMonth + 1, 1).toISOString());
 

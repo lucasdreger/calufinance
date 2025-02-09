@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,17 +27,13 @@ export const MonthlyDeviation = () => {
   const { toast } = useToast();
 
   const fetchData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const endDate = new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 23, 59, 59, 999));
     const startDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth() - 11, 1, 0, 0, 0, 0));
 
     // Get all budget plans (planned expenses)
     const { data: budgetPlans, error: budgetError } = await supabase
       .from('budget_plans')
-      .select('*')
-      .eq('user_id', user.id);
+      .select('*');
 
     if (budgetError) {
       toast({
@@ -51,7 +48,6 @@ export const MonthlyDeviation = () => {
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
       .select('*')
-      .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
       .lte('date', formatDateForSupabase(endDate));
 

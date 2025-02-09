@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,23 +19,9 @@ export const DefaultIncomeManagement = () => {
   const fetchDefaultIncome = async () => {
     setLoading(true);
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      const user = userData?.user;
-
-      if (userError || !user) {
-        toast({
-          title: "Error",
-          description: "Please login to continue",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase
         .from("income")
         .select("source, amount")
-        .eq("user_id", user.id)
         .eq("is_default", true);
 
       if (error) throw error;
@@ -67,23 +54,10 @@ export const DefaultIncomeManagement = () => {
 
   const handleSave = async () => {
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      const user = userData?.user;
-
-      if (userError || !user) {
-        toast({
-          title: "Error",
-          description: "Please login to continue",
-          variant: "destructive",
-        });
-        return;
-      }
-
       // First, delete existing default income entries
       const { error: deleteError } = await supabase
         .from("income")
         .delete()
-        .eq("user_id", user.id)
         .eq("is_default", true);
 
       if (deleteError) throw deleteError;
@@ -95,9 +69,9 @@ export const DefaultIncomeManagement = () => {
 
       // Insert new default entries
       const updates = [
-        { amount: income.lucas, source: IncomeSource.LUCAS, user_id: user.id, is_default: true, date: defaultDate },
-        { amount: income.camila, source: IncomeSource.CAMILA, user_id: user.id, is_default: true, date: defaultDate },
-        { amount: income.other, source: IncomeSource.OTHER, user_id: user.id, is_default: true, date: defaultDate },
+        { amount: income.lucas, source: IncomeSource.LUCAS, is_default: true, date: defaultDate },
+        { amount: income.camila, source: IncomeSource.CAMILA, is_default: true, date: defaultDate },
+        { amount: income.other, source: IncomeSource.OTHER, is_default: true, date: defaultDate },
       ];
 
       const { error: insertError } = await supabase.from("income").insert(updates);
