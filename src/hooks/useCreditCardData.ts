@@ -32,7 +32,6 @@ export const useCreditCardData = (selectedYear: number, selectedMonth: number) =
       const { data: category } = await supabase
         .from('expenses_categories')
         .select('id')
-        .eq('user_id', user.id)
         .eq('name', 'Credit Card')
         .maybeSingle();
 
@@ -41,7 +40,6 @@ export const useCreditCardData = (selectedYear: number, selectedMonth: number) =
         const { data: expense, error: expenseError } = await supabase
           .from('expenses')
           .select('amount')
-          .eq('user_id', user.id)
           .eq('category_id', category.id)
           .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
           .maybeSingle();

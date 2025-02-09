@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,8 +19,7 @@ export const MonthlySpending = () => {
 
     const { data, error } = await supabase
       .from('expenses_categories')
-      .select('*')
-      .eq('user_id', user.id);
+      .select('*');
     
     if (error) {
       toast({
@@ -39,8 +39,7 @@ export const MonthlySpending = () => {
 
     const { data, error } = await supabase
       .from('expenses')
-      .select('*')
-      .eq('user_id', user.id);
+      .select('*');
     
     if (error) {
       toast({

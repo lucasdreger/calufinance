@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,14 +20,12 @@ export const FinanceOverview = () => {
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
       .select('amount, date')
-      .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
       .lte('date', formatDateForSupabase(endDate));
 
     const { data: incomes, error: incomesError } = await supabase
       .from('income')
       .select('amount, date')
-      .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
       .lte('date', formatDateForSupabase(endDate));
 
