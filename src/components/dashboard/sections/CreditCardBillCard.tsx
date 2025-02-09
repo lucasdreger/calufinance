@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getStartOfMonth, formatDateForSupabase } from "@/utils/dateHelpers";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface CreditCardBillCardProps {
@@ -31,7 +31,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
     const statusChannel = supabase
       .channel("credit_card_status_changes")
       .on("postgres_changes", 
-        { event: "*", schema: "public", table: "fixed_expenses_status" },
+        { event: "*", schema: "public", table: "monthly_tasks" },
         () => {
           fetchTransferStatus();
         }
@@ -117,6 +117,19 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Check monthly_tasks table for transfer status
+      const { data: taskStatus } = await supabase
+        .from('monthly_tasks')
+        .select('is_completed')
+        .eq('user_id', user.id)
+        .eq('year', selectedYear)
+        .eq('month', selectedMonth)
+        .eq('task_id', 'credit-card-transfer')
+        .maybeSingle();
+
+      setIsTransferCompleted(taskStatus?.is_completed || false);
+
+      // Fetch transfer amount
       const { data, error } = await supabase.rpc('get_credit_card_data', {
         p_user_id: user.id,
         p_year: selectedYear,
@@ -127,7 +140,6 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
 
       if (data && data.length > 0) {
         setTransferAmount(data[0].transfer_amount || 0);
-        setIsTransferCompleted(data[0].is_transfer_completed || false);
       }
     } catch (error: any) {
       console.error('Error fetching transfer status:', error);
@@ -205,22 +217,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         description: "Credit card bill amount saved successfully",
       });
 
-      // After successful save, fetch only the transfer data
-      const { data: updatedData, error: rpcError } = await supabase.rpc('get_credit_card_data', {
-        p_user_id: user.id,
-        p_year: selectedYear,
-        p_month: selectedMonth
-      });
-
-      if (rpcError) {
-        console.error('Error fetching updated data:', rpcError);
-        return;
-      }
-
-      if (updatedData && updatedData.length > 0) {
-        setTransferAmount(updatedData[0].transfer_amount || 0);
-        setIsTransferCompleted(updatedData[0].is_transfer_completed || false);
-      }
+      await fetchTransferStatus();
 
     } catch (error: any) {
       console.error('Error in handleSave:', error);
@@ -237,57 +234,43 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: budgetPlan } = await supabase
-        .from('budget_plans')
+      const now = new Date();
+
+      // Update monthly_tasks table instead of fixed_expenses_status
+      const { data: existingTask } = await supabase
+        .from('monthly_tasks')
         .select('id')
         .eq('user_id', user.id)
-        .eq('description', 'Credit Card Transfer')
+        .eq('year', selectedYear)
+        .eq('month', selectedMonth)
+        .eq('task_id', 'credit-card-transfer')
         .maybeSingle();
 
-      if (!budgetPlan) {
-        console.error('No budget plan found for Credit Card Transfer');
-        toast({
-          title: "Error",
-          description: "Credit Card Transfer budget plan not found",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const startDate = getStartOfMonth(selectedYear, selectedMonth);
-
-      // Update or insert status
-      const { data: existingStatus } = await supabase
-        .from('fixed_expenses_status')
-        .select('id')
-        .eq('budget_plan_id', budgetPlan.id)
-        .eq('date', formatDateForSupabase(startDate))
-        .maybeSingle();
-
-      const now = new Date();
-      if (existingStatus) {
+      if (existingTask) {
         await supabase
-          .from('fixed_expenses_status')
+          .from('monthly_tasks')
           .update({
-            is_paid: checked,
-            completed_at: checked ? now.toISOString() : null
+            is_completed: checked,
+            updated_at: now.toISOString()
           })
-          .eq('id', existingStatus.id);
+          .eq('id', existingTask.id);
       } else {
         await supabase
-          .from('fixed_expenses_status')
+          .from('monthly_tasks')
           .insert({
-            budget_plan_id: budgetPlan.id,
-            date: formatDateForSupabase(startDate),
-            is_paid: checked,
-            completed_at: checked ? now.toISOString() : null,
-            user_id: user.id
+            user_id: user.id,
+            year: selectedYear,
+            month: selectedMonth,
+            task_id: 'credit-card-transfer',
+            is_completed: checked,
+            created_at: now.toISOString(),
+            updated_at: now.toISOString()
           });
       }
 
       setIsTransferCompleted(checked);
 
-      // Invalidate both queries to ensure all components update
+      // Invalidate queries to update UI
       queryClient.invalidateQueries({ queryKey: ['fixedExpensesStatus'] });
       queryClient.invalidateQueries({ 
         queryKey: ['creditCardData', selectedYear, selectedMonth] 
