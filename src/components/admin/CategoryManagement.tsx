@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -131,6 +132,31 @@ export const CategoryManagement = () => {
   };
 
   const handleDeleteCategory = async (id: string) => {
+    // First check if there are any expenses using this category
+    const { count, error: countError } = await supabase
+      .from('expenses')
+      .select('*', { count: 'exact', head: true })
+      .eq('category_id', id);
+
+    if (countError) {
+      toast({
+        title: "Error checking category usage",
+        description: countError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (count && count > 0) {
+      toast({
+        title: "Cannot Delete Category",
+        description: "This category is being used by existing expenses. Please delete or reassign those expenses first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If no expenses are using this category, proceed with deletion
     const { error } = await supabase
       .from('expenses_categories')
       .delete()
