@@ -406,6 +406,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_valid_family_member: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       upsert_monthly_income: {
         Args: {
           p_user_id: string
