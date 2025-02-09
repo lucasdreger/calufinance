@@ -1,15 +1,12 @@
 
-import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/utils/formatters";
 import { CurrencyInput } from "@/components/shared/CurrencyInput";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCreditCardData } from "@/hooks/useCreditCardData";
+import { TransferStatus } from "./credit-card/TransferStatus";
 
 interface CreditCardBillCardProps {
   selectedYear: number;
@@ -17,134 +14,15 @@ interface CreditCardBillCardProps {
 }
 
 export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBillCardProps) {
-  const [amount, setAmount] = useState<number>(0);
-  const [transferAmount, setTransferAmount] = useState<number>(0);
-  const [isTransferCompleted, setIsTransferCompleted] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedYear, selectedMonth]);
-
-  useEffect(() => {
-    const statusChannel = supabase
-      .channel("credit_card_status_changes")
-      .on("postgres_changes", 
-        { event: "*", schema: "public", table: "monthly_tasks" },
-        () => {
-          fetchTransferStatus();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(statusChannel);
-    };
-  }, [selectedYear, selectedMonth]);
-
-  const fetchData = async () => {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError) {
-        console.error('Authentication error:', authError);
-        toast({
-          title: "Authentication Error",
-          description: "Please try logging in again",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!user) {
-        console.error('No user found');
-        return;
-      }
-
-      // Get Credit Card category first
-      const { data: category } = await supabase
-        .from('expenses_categories')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('name', 'Credit Card')
-        .maybeSingle();
-
-      if (category) {
-        // Get existing credit card expense
-        const { data: expense, error: expenseError } = await supabase
-          .from('expenses')
-          .select('amount')
-          .eq('user_id', user.id)
-          .eq('category_id', category.id)
-          .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
-          .maybeSingle();
-
-        if (expenseError) {
-          console.error('Error fetching expense:', expenseError);
-          return;
-        }
-
-        if (expense) {
-          setAmount(expense.amount);
-        }
-      }
-
-      const { data, error } = await supabase.rpc('get_credit_card_data', {
-        p_user_id: user.id,
-        p_year: selectedYear,
-        p_month: selectedMonth
-      });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setTransferAmount(data[0].transfer_amount || 0);
-        setIsTransferCompleted(data[0].is_transfer_completed || false);
-      }
-    } catch (error: any) {
-      console.error('Error in fetchData:', error);
-      toast({
-        title: "Error fetching data",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchTransferStatus = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Check monthly_tasks table for transfer status
-      const { data: taskStatus } = await supabase
-        .from('monthly_tasks')
-        .select('is_completed')
-        .eq('user_id', user.id)
-        .eq('year', selectedYear)
-        .eq('month', selectedMonth)
-        .eq('task_id', 'credit-card-transfer')
-        .maybeSingle();
-
-      setIsTransferCompleted(taskStatus?.is_completed || false);
-
-      // Fetch transfer amount
-      const { data, error } = await supabase.rpc('get_credit_card_data', {
-        p_user_id: user.id,
-        p_year: selectedYear,
-        p_month: selectedMonth
-      });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setTransferAmount(data[0].transfer_amount || 0);
-      }
-    } catch (error: any) {
-      console.error('Error fetching transfer status:', error);
-    }
-  };
+  const {
+    amount,
+    setAmount,
+    transferAmount,
+    isTransferCompleted,
+    setIsTransferCompleted,
+    fetchData
+  } = useCreditCardData(selectedYear, selectedMonth);
 
   const handleSave = async () => {
     try {
@@ -217,77 +95,13 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         description: "Credit card bill amount saved successfully",
       });
 
-      await fetchTransferStatus();
+      await fetchData();
 
     } catch (error: any) {
       console.error('Error in handleSave:', error);
       toast({
         title: "Error saving data",
         description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleTransferStatusChange = async (checked: boolean) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const now = new Date();
-
-      // Update monthly_tasks table instead of fixed_expenses_status
-      const { data: existingTask } = await supabase
-        .from('monthly_tasks')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('year', selectedYear)
-        .eq('month', selectedMonth)
-        .eq('task_id', 'credit-card-transfer')
-        .maybeSingle();
-
-      if (existingTask) {
-        await supabase
-          .from('monthly_tasks')
-          .update({
-            is_completed: checked,
-            updated_at: now.toISOString()
-          })
-          .eq('id', existingTask.id);
-      } else {
-        await supabase
-          .from('monthly_tasks')
-          .insert({
-            user_id: user.id,
-            year: selectedYear,
-            month: selectedMonth,
-            task_id: 'credit-card-transfer',
-            is_completed: checked,
-            created_at: now.toISOString(),
-            updated_at: now.toISOString()
-          });
-      }
-
-      setIsTransferCompleted(checked);
-
-      // Invalidate queries to update UI
-      queryClient.invalidateQueries({ queryKey: ['fixedExpensesStatus'] });
-      queryClient.invalidateQueries({ 
-        queryKey: ['creditCardData', selectedYear, selectedMonth] 
-      });
-
-      toast({
-        title: checked ? "Transfer marked as completed" : "Transfer marked as pending",
-        description: checked 
-          ? "The credit card transfer has been marked as completed" 
-          : "The credit card transfer has been marked as pending",
-      });
-
-    } catch (error: any) {
-      console.error('Error updating transfer status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update transfer status",
         variant: "destructive",
       });
     }
@@ -317,31 +131,13 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
             </Button>
           </div>
           
-          {transferAmount > 0 && (
-            <div className="space-y-2">
-              {isTransferCompleted ? (
-                <Alert className="bg-green-50 border-green-200 text-green-800">
-                  <AlertDescription className="flex items-center justify-between">
-                    <span>Transfer of {formatCurrency(transferAmount)} already done</span>
-                    <Checkbox
-                      checked={isTransferCompleted}
-                      onCheckedChange={handleTransferStatusChange}
-                    />
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Alert variant="warning">
-                  <AlertDescription className="flex items-center justify-between">
-                    <span>Transfer needed: {formatCurrency(transferAmount)}</span>
-                    <Checkbox
-                      checked={isTransferCompleted}
-                      onCheckedChange={handleTransferStatusChange}
-                    />
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
+          <TransferStatus
+            transferAmount={transferAmount}
+            isTransferCompleted={isTransferCompleted}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            onStatusChange={setIsTransferCompleted}
+          />
         </div>
       </CardContent>
     </Card>
