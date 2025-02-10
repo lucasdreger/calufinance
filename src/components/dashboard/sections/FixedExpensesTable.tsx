@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,14 +25,11 @@ export const FixedExpensesTable = () => {
 
   useEffect(() => {
     const fetchBudgetPlans = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const currentDate = new Date();
       const startDate = getStartOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
       const endDate = getEndOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
 
-      // Get only budget plans that require status tracking
+      // Get budget plans that require status tracking
       const { data, error } = await supabase
         .from('budget_plans')
         .select(`
@@ -82,9 +80,6 @@ export const FixedExpensesTable = () => {
   }, [toast]);
 
   const handleStatusChange = async (planId: string, checked: boolean) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const currentDate = new Date();
     const startDate = getStartOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
 
@@ -92,7 +87,6 @@ export const FixedExpensesTable = () => {
       .from('fixed_expenses_status')
       .select('*')
       .eq('budget_plan_id', planId)
-      .eq('user_id', user.id)
       .gte('date', formatDateForSupabase(startDate))
       .lt('date', formatDateForSupabase(getEndOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1)))
       .maybeSingle();
@@ -122,7 +116,6 @@ export const FixedExpensesTable = () => {
         .from('fixed_expenses_status')
         .insert({
           budget_plan_id: planId,
-          user_id: user.id,
           date: formatDateForSupabase(startDate),
           is_paid: checked,
           completed_at: checked ? timestamp : null

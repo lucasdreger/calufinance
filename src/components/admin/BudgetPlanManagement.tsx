@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,20 +21,9 @@ export const BudgetPlanManagement = () => {
 
   const fetchCategories = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in to manage budget plans",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase
         .from('expenses_categories')
         .select('*')
-        .eq('user_id', user.id)
         .order('name');
       
       if (error) {
@@ -62,16 +52,6 @@ export const BudgetPlanManagement = () => {
 
   const fetchBudgetPlans = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in to view budget plans",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase
         .from('budget_plans')
         .select(`
@@ -80,7 +60,7 @@ export const BudgetPlanManagement = () => {
             name
           )
         `)
-        .eq('user_id', user.id);
+        .order('expenses_categories(name)', { ascending: true });
       
       if (error) {
         toast({
@@ -109,16 +89,6 @@ export const BudgetPlanManagement = () => {
 
   const handleAddPlan = async (newPlan: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in to add budget plans",
-          variant: "destructive",
-        });
-        return;
-      }
-
       if (!newPlan.description || !newPlan.category_id || !newPlan.estimated_amount) {
         toast({
           title: "Missing Fields",
@@ -139,8 +109,7 @@ export const BudgetPlanManagement = () => {
             is_fixed: newPlan.is_fixed,
             owner: newPlan.owner,
           })
-          .eq('id', editingPlan.id)
-          .eq('user_id', user.id);
+          .eq('id', editingPlan.id);
 
         if (error) {
           toast({
@@ -164,7 +133,6 @@ export const BudgetPlanManagement = () => {
             category_id: newPlan.category_id,
             estimated_amount: parseFloat(newPlan.estimated_amount),
             requires_status: newPlan.requires_status,
-            user_id: user.id,
             is_fixed: newPlan.is_fixed,
             owner: newPlan.owner,
           });
@@ -185,7 +153,7 @@ export const BudgetPlanManagement = () => {
       }
       
       fetchBudgetPlans();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in handleAddPlan:', error);
       toast({
         title: "Error",
@@ -197,21 +165,10 @@ export const BudgetPlanManagement = () => {
 
   const handleDeleteBudgetPlan = async (id: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in to delete budget plans",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { error } = await supabase
         .from('budget_plans')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) {
         toast({
@@ -227,7 +184,7 @@ export const BudgetPlanManagement = () => {
         title: "Budget Plan Deleted",
         description: "Budget plan has been removed.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in handleDeleteBudgetPlan:', error);
       toast({
         title: "Error",

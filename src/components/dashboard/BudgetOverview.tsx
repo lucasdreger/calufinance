@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/utils/formatters";
@@ -16,94 +17,72 @@ interface MonthlyData {
 }
 
 export const BudgetOverview = () => {
-  // Estado para armazenar dados mensais do gráfico
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-  // Estado para armazenar investimentos
   const [investments, setInvestments] = useState<any[]>([]);
-  // Estado para armazenar reservas
   const [reserves, setReserves] = useState<any[]>([]);
-  // Estados para controle de edição
   const [editingInvestment, setEditingInvestment] = useState<string | null>(null);
   const [editingReserve, setEditingReserve] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
   const { toast } = useToast();
 
-  // Função para buscar dados mensais para o gráfico
   const fetchMonthlyData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const currentYear = new Date().getFullYear();
+      
+      const months = Array.from({ length: 12 }, (_, i) => {
+        const date = new Date(currentYear, i, 1);
+        return {
+          month: date.toLocaleString('default', { month: 'short' }),
+          startDate: new Date(currentYear, i, 1).toISOString(),
+          endDate: new Date(currentYear, i + 1, 0).toISOString()
+        };
+      });
 
-    const currentYear = new Date().getFullYear();
-    
-    // Cria array com todos os meses do ano
-    const months = Array.from({ length: 12 }, (_, i) => {
-      const date = new Date(currentYear, i, 1);
-      return {
-        month: date.toLocaleString('default', { month: 'short' }),
-        startDate: new Date(currentYear, i, 1).toISOString(),
-        endDate: new Date(currentYear, i + 1, 0).toISOString()
-      };
-    });
+      const monthlyDataPromises = months.map(async ({ month, startDate, endDate }) => {
+        const { data: plannedData } = await supabase
+          .from('budget_plans')
+          .select('estimated_amount');
 
-    // Busca dados para cada mês
-    const monthlyDataPromises = months.map(async ({ month, startDate, endDate }) => {
-      // Busca gastos planejados
-      const { data: plannedData } = await supabase
-        .from('budget_plans')
-        .select('estimated_amount')
-        .eq('user_id', user.id);
+        const { data: actualData } = await supabase
+          .from('expenses')
+          .select('amount')
+          .gte('date', startDate)
+          .lte('date', endDate);
 
-      // Busca gastos reais
-      const { data: actualData } = await supabase
-        .from('expenses')
-        .select('amount')
-        .eq('user_id', user.id)
-        .gte('date', startDate)
-        .lte('date', endDate);
+        const planned = plannedData?.reduce((sum, item) => sum + Number(item.estimated_amount), 0) || 0;
+        const actual = actualData?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
 
-      const planned = plannedData?.reduce((sum, item) => sum + Number(item.estimated_amount), 0) || 0;
-      const actual = actualData?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+        return {
+          month,
+          planned,
+          actual
+        };
+      });
 
-      return {
-        month,
-        planned,
-        actual
-      };
-    });
-
-    const data = await Promise.all(monthlyDataPromises);
-    console.log('Monthly data fetched:', data); // Debug log
-    setMonthlyData(data);
+      const data = await Promise.all(monthlyDataPromises);
+      console.log('Monthly data fetched:', data);
+      setMonthlyData(data);
+    } catch (error) {
+      console.error('Error fetching monthly data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch monthly data",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Função para buscar dados gerais (investimentos e reservas)
   const fetchData = async () => {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        console.error("Auth error:", userError);
-        toast({
-          title: "Erro de Autenticação",
-          description: "Por favor, faça login novamente",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Busca investimentos
       const { data: investmentsData, error: investmentsError } = await supabase
         .from('investments')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('*');
 
       if (investmentsError) throw investmentsError;
 
-      // Busca reservas
       const { data: reservesData, error: reservesError } = await supabase
         .from('reserves')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('*');
 
       if (reservesError) throw reservesError;
 
@@ -115,19 +94,17 @@ export const BudgetOverview = () => {
     } catch (error: any) {
       console.error("Error in fetchData:", error);
       toast({
-        title: "Erro",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
     }
   };
 
-  // Efeito para carregar dados iniciais
   useEffect(() => {
     fetchData();
     fetchMonthlyData();
 
-    // Setup real-time listeners
     const investmentsChannel = supabase
       .channel('investments_changes')
       .on('postgres_changes', 
@@ -150,7 +127,6 @@ export const BudgetOverview = () => {
     };
   }, []);
 
-  // Funções de edição
   const handleEdit = (id: string, currentValue: number, type: 'investment' | 'reserve') => {
     setEditValue(currentValue.toString());
     if (type === 'investment') {
@@ -167,18 +143,8 @@ export const BudgetOverview = () => {
       const numericValue = parseFloat(editValue);
       if (isNaN(numericValue)) {
         toast({
-          title: "Valor inválido",
-          description: "Por favor, insira um número válido",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Erro de Autenticação",
-          description: "Por favor, faça login novamente",
+          title: "Invalid value",
+          description: "Please enter a valid number",
           variant: "destructive",
         });
         return;
@@ -191,8 +157,7 @@ export const BudgetOverview = () => {
           current_value: numericValue,
           last_updated: new Date().toISOString(),
         })
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) throw error;
 
@@ -201,15 +166,15 @@ export const BudgetOverview = () => {
       setEditValue("");
       
       toast({
-        title: "Sucesso",
-        description: "Valor atualizado com sucesso",
+        title: "Success",
+        description: "Value updated successfully",
       });
 
       await fetchData();
     } catch (error: any) {
       console.error("Error saving value:", error);
       toast({
-        title: "Erro ao salvar",
+        title: "Error saving",
         description: error.message,
         variant: "destructive",
       });
