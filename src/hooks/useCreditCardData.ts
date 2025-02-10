@@ -28,12 +28,11 @@ export const useCreditCardData = (selectedYear: number, selectedMonth: number) =
         return;
       }
 
-      // Get Credit Card category first
+      // Get Credit Card category first - without user filter since it's shared
       const { data: category, error: categoryError } = await supabase
         .from('expenses_categories')
         .select('id')
         .eq('name', 'Credit Card')
-        .eq('user_id', user.id)
         .maybeSingle();
 
       if (categoryError) {
