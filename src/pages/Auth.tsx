@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -134,7 +135,7 @@ const Auth = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   disabled={loading}
-                  placeholder=""
+                  placeholder="Username"
                 />
               </div>
               <div className="space-y-2">
@@ -145,7 +146,7 @@ const Auth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
-                  placeholder=""
+                  placeholder="Password"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
