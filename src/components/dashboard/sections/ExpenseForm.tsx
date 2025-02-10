@@ -66,3 +66,57 @@ export const ExpenseForm = ({ categories, onExpenseAdded }: ExpenseFormProps) =>
 
     setNewExpense({
       description: '',
+      category: '',
+      amount: '',
+    });
+
+    onExpenseAdded();
+
+    toast({
+      title: "Success",
+      description: "Expense added successfully",
+    });
+  };
+
+  return (
+    <form onSubmit={handleAddExpense} className="space-y-4">
+      <div className="space-y-2">
+        <Input
+          type="text"
+          placeholder="Description"
+          value={newExpense.description}
+          onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Select value={newExpense.category} onValueChange={(value) => setNewExpense(prev => ({ ...prev, category: value }))}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Input
+          type="text"
+          placeholder="Amount"
+          value={newExpense.amount}
+          onChange={handleAmountChange}
+          onBlur={handleAmountBlur}
+        />
+      </div>
+
+      <Button type="submit" className="w-full">
+        Add Expense
+      </Button>
+    </form>
+  );
+};
