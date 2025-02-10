@@ -104,15 +104,24 @@ export const FixedExpensesTable = () => {
     const timestamp = formatDateForSupabase(now);
 
     if (existingStatus) {
-      await supabase
+      const { error: updateError } = await supabase
         .from('fixed_expenses_status')
         .update({
           is_paid: checked,
           completed_at: checked ? timestamp : null
         })
         .eq('id', existingStatus.id);
+
+      if (updateError) {
+        toast({
+          title: "Error updating status",
+          description: updateError.message,
+          variant: "destructive",
+        });
+        return;
+      }
     } else {
-      await supabase
+      const { error: insertError } = await supabase
         .from('fixed_expenses_status')
         .insert({
           budget_plan_id: planId,
@@ -120,6 +129,15 @@ export const FixedExpensesTable = () => {
           is_paid: checked,
           completed_at: checked ? timestamp : null
         });
+
+      if (insertError) {
+        toast({
+          title: "Error creating status",
+          description: insertError.message,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setStatusMap(prev => ({

@@ -60,7 +60,6 @@ export const BudgetOverview = () => {
       });
 
       const data = await Promise.all(monthlyDataPromises);
-      console.log('Monthly data fetched:', data);
       setMonthlyData(data);
     } catch (error) {
       console.error('Error fetching monthly data:', error);
@@ -76,18 +75,17 @@ export const BudgetOverview = () => {
     try {
       const { data: investmentsData, error: investmentsError } = await supabase
         .from('investments')
-        .select('*');
+        .select('*')
+        .order('type');
 
       if (investmentsError) throw investmentsError;
 
       const { data: reservesData, error: reservesError } = await supabase
         .from('reserves')
-        .select('*');
+        .select('*')
+        .order('type');
 
       if (reservesError) throw reservesError;
-
-      console.log('Investments data:', investmentsData);
-      console.log('Reserves data:', reservesData);
 
       setInvestments(investmentsData || []);
       setReserves(reservesData || []);

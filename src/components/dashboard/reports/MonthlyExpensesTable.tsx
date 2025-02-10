@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -39,13 +40,10 @@ export const MonthlyExpensesTable = () => {
 
   const fetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('expenses_categories')
         .select('*')
-        .eq('user_id', user.id);
+        .order('name');
 
       if (categoriesError) throw categoriesError;
 
@@ -56,7 +54,6 @@ export const MonthlyExpensesTable = () => {
       const { data: expensesData, error: expensesError } = await supabase
         .from('expenses')
         .select('*')
-        .eq('user_id', user.id)
         .gte('date', formatDateForSupabase(startDate))
         .lte('date', formatDateForSupabase(endDate));
 
