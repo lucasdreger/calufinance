@@ -29,11 +29,17 @@ export const useCreditCardData = (selectedYear: number, selectedMonth: number) =
       }
 
       // Get Credit Card category first
-      const { data: category } = await supabase
+      const { data: category, error: categoryError } = await supabase
         .from('expenses_categories')
         .select('id')
         .eq('name', 'Credit Card')
+        .eq('user_id', user.id)
         .maybeSingle();
+
+      if (categoryError) {
+        console.error('Error fetching category:', categoryError);
+        return;
+      }
 
       if (category) {
         // Get existing credit card expense
