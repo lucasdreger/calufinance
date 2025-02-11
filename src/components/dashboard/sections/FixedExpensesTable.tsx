@@ -103,6 +103,18 @@ export const FixedExpensesTable = () => {
     const now = new Date();
     const timestamp = formatDateForSupabase(now);
 
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
+
+    if (!userId) {
+      toast({
+        title: "Authentication Error",
+        description: "Please login to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (existingStatus) {
       const { error: updateError } = await supabase
         .from('fixed_expenses_status')
@@ -127,7 +139,8 @@ export const FixedExpensesTable = () => {
           budget_plan_id: planId,
           date: formatDateForSupabase(startDate),
           is_paid: checked,
-          completed_at: checked ? timestamp : null
+          completed_at: checked ? timestamp : null,
+          user_id: userId
         });
 
       if (insertError) {
