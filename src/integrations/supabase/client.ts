@@ -8,6 +8,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    storage: localStorage
+    detectSessionInUrl: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'supabase.auth.token',
+    flowType: 'pkce'
   }
 });
+
+// Add global type for debugging
+declare global {
+  interface Window {
+    supabase: typeof supabase;
+  }
+}
+
+// Expose Supabase client globally for debugging
+if (typeof window !== 'undefined') {
+  window.supabase = supabase;
+}
