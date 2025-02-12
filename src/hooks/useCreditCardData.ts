@@ -28,35 +28,21 @@ export const useCreditCardData = (selectedYear: number, selectedMonth: number) =
         return;
       }
 
-      // Get Credit Card category first - without user filter since it's shared
-      const { data: category, error: categoryError } = await supabase
-        .from('expenses_categories')
-        .select('id')
-        .eq('name', 'Credit Card')
+      // Get the credit card bill amount from shared table
+      const { data: billData, error: billError } = await supabase
+        .from('shared_credit_card_bills')
+        .select('amount')
+        .eq('year', selectedYear)
+        .eq('month', selectedMonth)
         .maybeSingle();
 
-      if (categoryError) {
-        console.error('Error fetching category:', categoryError);
+      if (billError) {
+        console.error('Error fetching bill:', billError);
         return;
       }
 
-      if (category) {
-        // Get existing credit card expense
-        const { data: expense, error: expenseError } = await supabase
-          .from('expenses')
-          .select('amount')
-          .eq('category_id', category.id)
-          .eq('date', `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`)
-          .maybeSingle();
-
-        if (expenseError) {
-          console.error('Error fetching expense:', expenseError);
-          return;
-        }
-
-        if (expense) {
-          setAmount(expense.amount);
-        }
+      if (billData) {
+        setAmount(billData.amount);
       }
 
       const { data, error } = await supabase.rpc('get_credit_card_data', {

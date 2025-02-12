@@ -79,10 +79,10 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
         return;
       }
 
+      // Fetch default income values
       const { data: defaultIncome, error } = await supabase
         .from("income")
         .select("source, amount")
-        .eq("user_id", user.id)
         .eq("is_default", true);
 
       if (error) throw error;
@@ -97,11 +97,11 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
 
       if (deleteError) throw deleteError;
 
-      // Ensure defaultIncome is an array and map values
+      // Convert default income to monthly income format
       const updates = (defaultIncome || []).map((item) => ({
         year: selectedYear,
         month: selectedMonth,
-        source: item.source as IncomeSource,
+        source: item.source,
         amount: parseFloat(item.amount) || 0,
         user_id: user.id,
       }));
@@ -114,8 +114,19 @@ export const MonthlyIncomeData = ({ selectedYear, selectedMonth }: MonthlyIncome
         if (insertError) throw insertError;
       }
 
-      await fetchMonthlyIncome();
-      toast({ title: "Success", description: "Default values loaded successfully" });
+      // Update local state with default values
+      const updatedIncome: IncomeState = {
+        lucas: defaultIncome?.find((item) => item.source === IncomeSource.LUCAS)?.amount ?? 0,
+        camila: defaultIncome?.find((item) => item.source === IncomeSource.CAMILA)?.amount ?? 0,
+        other: defaultIncome?.find((item) => item.source === IncomeSource.OTHER)?.amount ?? 0,
+      };
+
+      setIncome(updatedIncome);
+      
+      toast({ 
+        title: "Success", 
+        description: "Default values loaded successfully" 
+      });
     } catch (error: any) {
       console.error("Error loading defaults:", error);
       toast({

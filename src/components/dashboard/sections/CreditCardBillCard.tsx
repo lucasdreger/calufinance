@@ -28,7 +28,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (authError) {
+      if (authError || !user) {
         toast({
           title: "Authentication Error",
           description: "Please try logging in again",
@@ -37,77 +37,21 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      if (!user) {
-        toast({
-          title: "Error",
-          description: "User not authenticated",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Get or create Credit Card category
-      const { data: category, error: categoryError } = await supabase
-        .from('expenses_categories')
-        .select('id')
-        .eq('name', 'Credit Card')
-        .maybeSingle();
-
-      if (categoryError) {
-        console.error('Error getting category:', categoryError);
-        throw categoryError;
-      }
-
-      let categoryId;
-      if (!category) {
-        // Create the category if it doesn't exist
-        const { data: newCategory, error: createError } = await supabase
-          .from('expenses_categories')
-          .insert({
-            name: 'Credit Card',
-            user_id: user.id
-          })
-          .select('id')
-          .single();
-
-        if (createError) {
-          console.error('Error creating category:', createError);
-          throw createError;
-        }
-        categoryId = newCategory.id;
-      } else {
-        categoryId = category.id;
-      }
-
-      const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
-      
-      // First, delete any existing expense for this month
-      const { error: deleteError } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('category_id', categoryId)
-        .eq('date', formattedDate);
-
-      if (deleteError) {
-        console.error('Error deleting existing expense:', deleteError);
-        throw deleteError;
-      }
-
-      // Then insert the new expense
-      const { error: insertError } = await supabase
-        .from('expenses')
-        .insert({
-          user_id: user.id,
-          category_id: categoryId,
+      // Update or insert the shared credit card bill
+      const { error: upsertError } = await supabase
+        .from('shared_credit_card_bills')
+        .upsert({
+          year: selectedYear,
+          month: selectedMonth,
           amount: amount,
-          date: formattedDate,
-          description: `Credit Card Bill for ${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'year,month'
         });
 
-      if (insertError) {
-        console.error('Error inserting new expense:', insertError);
-        throw insertError;
+      if (upsertError) {
+        console.error('Error saving credit card bill:', upsertError);
+        throw upsertError;
       }
 
       toast({

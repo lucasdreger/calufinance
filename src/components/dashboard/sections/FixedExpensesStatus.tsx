@@ -9,15 +9,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getStartOfMonth, getEndOfMonth, formatDateForSupabase } from "@/utils/dateHelpers";
+import { getStartOfMonth, getEndOfMonth } from "@/utils/dateHelpers";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 
 interface FixedExpensesStatusProps {
   selectedYear: number;
   selectedMonth: number;
-}
-
-interface StatusMap {
-  [key: string]: boolean;
 }
 
 export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpensesStatusProps) => {
@@ -29,58 +26,31 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const startDate = getStartOfMonth(selectedYear, selectedMonth);
-    const endDate = getEndOfMonth(selectedYear, selectedMonth);
+    // Get status for monthly tasks
+    const { data: tasksData, error: tasksError } = await supabase
+      .from('monthly_tasks')
+      .select('is_completed')
+      .eq('user_id', user.id)
+      .eq('year', selectedYear)
+      .eq('month', selectedMonth);
 
-    // Get all budget plans that require status tracking, including Credit Card Transfer
-    const { data: fixedExpenses, error: expensesError } = await supabase
-      .from('budget_plans')
-      .select('*')
-      .eq('requires_status', true);
+    if (tasksError) {
+      console.error('Error fetching tasks:', tasksError);
+      return;
+    }
 
-    if (expensesError) return;
+    const total = tasksData?.length || 0;
+    const completed = tasksData?.filter(task => task.is_completed)?.length || 0;
 
-    // Get status for those plans
-    const { data: statusData, error: statusError } = await supabase
-      .from('fixed_expenses_status')
-      .select('budget_plan_id, is_paid')
-      .in('budget_plan_id', fixedExpenses?.map(exp => exp.id) || [])
-      .gte('date', formatDateForSupabase(startDate))
-      .lt('date', formatDateForSupabase(endDate));
-
-    if (statusError) return;
-
-    setTotalTasks(fixedExpenses?.length || 0);
-    setCompletedTasks(statusData?.filter(status => status.is_paid)?.length || 0);
-    setAllTasksCompleted(
-      fixedExpenses?.length > 0 && 
-      statusData?.filter(status => status.is_paid)?.length === fixedExpenses?.length
-    );
+    setTotalTasks(total);
+    setCompletedTasks(completed);
+    setAllTasksCompleted(total > 0 && completed === total);
   };
+
+  useRealtimeSubscription(['monthly_tasks'], fetchStatus);
 
   useEffect(() => {
     fetchStatus();
-
-    const statusChannel = supabase
-      .channel("fixed_expenses_status_changes")
-      .on("postgres_changes", 
-        { event: "*", schema: "public", table: "fixed_expenses_status" },
-        () => fetchStatus()
-      )
-      .subscribe();
-
-    const plansChannel = supabase
-      .channel("budget_plans_changes")
-      .on("postgres_changes", 
-        { event: "*", schema: "public", table: "budget_plans" },
-        () => fetchStatus()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(statusChannel);
-      supabase.removeChannel(plansChannel);
-    };
   }, [selectedYear, selectedMonth]);
 
   return (
