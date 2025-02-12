@@ -46,17 +46,37 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         return;
       }
 
-      // Get Credit Card category
+      // Get or create Credit Card category
       const { data: category, error: categoryError } = await supabase
         .from('expenses_categories')
         .select('id')
-        .eq('user_id', user.id)
         .eq('name', 'Credit Card')
         .maybeSingle();
 
       if (categoryError) {
         console.error('Error getting category:', categoryError);
         throw categoryError;
+      }
+
+      let categoryId;
+      if (!category) {
+        // Create the category if it doesn't exist
+        const { data: newCategory, error: createError } = await supabase
+          .from('expenses_categories')
+          .insert({
+            name: 'Credit Card',
+            user_id: user.id
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          console.error('Error creating category:', createError);
+          throw createError;
+        }
+        categoryId = newCategory.id;
+      } else {
+        categoryId = category.id;
       }
 
       const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
@@ -66,7 +86,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         .from('expenses')
         .delete()
         .eq('user_id', user.id)
-        .eq('category_id', category.id)
+        .eq('category_id', categoryId)
         .eq('date', formattedDate);
 
       if (deleteError) {
@@ -79,7 +99,7 @@ export function CreditCardBillCard({ selectedYear, selectedMonth }: CreditCardBi
         .from('expenses')
         .insert({
           user_id: user.id,
-          category_id: category.id,
+          category_id: categoryId,
           amount: amount,
           date: formattedDate,
           description: `Credit Card Bill for ${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`
