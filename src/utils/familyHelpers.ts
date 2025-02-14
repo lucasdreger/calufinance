@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const createFamily = async (familyName: string) => {
@@ -54,7 +55,7 @@ export const getUserFamily = async (userId: string) => {
     .from('family_members')
     .select('family_id')
     .eq('user_id', userId)
-    .maybeSingle();
+    .maybeSingle(); // Changed from single() to maybeSingle()
 
   if (error) throw error;
   return familyMember?.family_id;

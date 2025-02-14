@@ -118,6 +118,56 @@ export type Database = {
         }
         Relationships: []
       }
+      families: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      family_members: {
+        Row: {
+          created_at: string | null
+          family_id: string | null
+          id: string
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          family_id?: string | null
+          id?: string
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          family_id?: string | null
+          id?: string
+          role?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fixed_expenses_status: {
         Row: {
           budget_plan_id: string
@@ -249,6 +299,7 @@ export type Database = {
       monthly_tasks: {
         Row: {
           created_at: string | null
+          family_id: string | null
           id: string
           is_completed: boolean | null
           month: number
@@ -259,6 +310,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          family_id?: string | null
           id?: string
           is_completed?: boolean | null
           month: number
@@ -269,6 +321,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          family_id?: string | null
           id?: string
           is_completed?: boolean | null
           month?: number
@@ -277,7 +330,15 @@ export type Database = {
           user_id?: string | null
           year?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_tasks_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -360,55 +421,36 @@ export type Database = {
         }
         Relationships: []
       }
-      families: {
+      task_templates: {
         Row: {
+          created_at: string | null
+          description: string | null
+          family_id: string | null
           id: string
           name: string
-          created_at: string
         }
         Insert: {
+          created_at?: string | null
+          description?: string | null
+          family_id?: string | null
           id?: string
           name: string
-          created_at?: string
         }
         Update: {
+          created_at?: string | null
+          description?: string | null
+          family_id?: string | null
           id?: string
           name?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
-      family_members: {
-        Row: {
-          family_id: string
-          user_id: string
-          created_at: string
-        }
-        Insert: {
-          family_id: string
-          user_id: string
-          created_at?: string
-        }
-        Update: {
-          family_id?: string
-          user_id?: string
-          created_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "family_members_family_id_fkey"
+            foreignKeyName: "task_templates_family_id_fkey"
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "family_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
         ]
       }
     }
