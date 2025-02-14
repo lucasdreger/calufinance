@@ -48,3 +48,14 @@ export const addFamilyMember = async (familyId: string, email: string) => {
 
   if (memberError) throw memberError;
 };
+
+export const getUserFamily = async (userId: string) => {
+  const { data: familyMember, error } = await supabase
+    .from('family_members')
+    .select('family_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return familyMember?.family_id;
+};
