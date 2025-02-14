@@ -29,15 +29,22 @@ const MonthlyDetails: React.FC = () => {
     updateTaskState(taskId); // ensure state is updated immediately after the action
   };
 
-  // Compute number of completed tasks (assuming each expense has a 'completed' boolean)
-  const completedCount = fixedExpenses.filter(expense => expense.completed).length;
+  // Assume `tasks` is an array of all tasks for the month. Replace type checks as needed.
+  const fixedExpenseTasks = tasks.filter(task => task.type === 'fixedExpense');
+  const creditCardBillTasks = tasks.filter(task => task.type === 'creditCard');
+  const adminRequiredTasks = tasks.filter(task => task.section === 'administration' && task.status === 'required');
+
+  // Merge tasks from different sections
+  const allTasks = [...fixedExpenseTasks, ...creditCardBillTasks, ...adminRequiredTasks];
+  // Calculate how many tasks have been completed (assuming a boolean `completed` property)
+  const completedTasks = allTasks.filter(task => task.completed).length;
 
   return (
     <div>
       <button onClick={loadDefaults}>Load Defaults</button>
       {/* Display test completion status */}
-      <div style={{ color: (fixedExpenses.length > 0 && completedCount === fixedExpenses.length) ? 'green' : 'inherit' }}>
-        {completedCount} out of {fixedExpenses.length} tests completed
+      <div className="task-summary">
+        <span>{`${completedTasks} out of ${allTasks.length} tasks completed`}</span>
       </div>
       {/* Render fixed expenses */}
       {fixedExpenses.map(expense => (
