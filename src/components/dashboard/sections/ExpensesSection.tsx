@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -142,11 +141,26 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     setFixedExpenses(data || []);
   };
 
-  const handleLoadDefaults = () => {
-    toast({
-      title: "Defaults Loaded",
-      description: "Your default monthly expenses have been loaded.",
-    });
+  const handleLoadDefaults = async () => {
+    try {
+      // Fetch shared fixed expense budget plans for the month
+      const { data: bpData, error } = await supabase
+        .from('budget_plans')
+        .select('*')
+        .eq('requires_status', true);
+      if (error) throw error;
+      setFixedExpenses(bpData || []);
+      toast({
+        title: "Defaults Loaded",
+        description: "Your default monthly expenses have been loaded.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (

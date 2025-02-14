@@ -1,14 +1,27 @@
 import React, { useState } from 'react';
 import { useBudgetContext } from '../context/BudgetContext';
+import { supabase } from "@/integrations/supabase/client";
 
 const MonthlyDetails: React.FC = () => {
   const { budgetPlans } = useBudgetContext();
   const [fixedExpenses, setFixedExpenses] = useState([]);
 
-  const loadDefaults = () => {
-    // Retrieve default fixed expenses then merge with shared Budget Plans
-    const defaults = getDefaultFixedExpenses(); // ...existing function...
-    setFixedExpenses([...defaults, ...budgetPlans]); // instantly update the list
+  const loadDefaults = async () => {
+    try {
+      // Retrieve default fixed expenses (from the existing function)
+      const defaults = getDefaultFixedExpenses(); // ...existing function...
+      // Query shared Administrator budget plans that require status
+      const { data: bpData, error: bpError } = await supabase
+        .from('budget_plans')
+        .select('*')
+        .eq('requires_status', true);
+      if (bpError) throw bpError;
+      // Merge defaults with fetched budget plans
+      setFixedExpenses([...defaults, ...(bpData || [])]);
+    } catch (error: any) {
+      console.error("Error loading defaults:", error);
+      // Optionally display an error toast here if you add a toast hook.
+    }
   };
 
   const handleCheckboxToggle = (taskId) => {

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
@@ -59,14 +58,9 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const total = tasksData?.length || 0;
     const completed = tasksData?.filter(task => task.is_completed)?.length || 0;
 
-    // Count all checkboxes on the page
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>;
-    const totalCheckboxes = checkboxes.length;
-    const completedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked).length;
-
-    setTotalTasks(totalCheckboxes);
-    setCompletedTasks(completedCheckboxes);
-    setAllTasksCompleted(totalCheckboxes > 0 && completedCheckboxes === totalCheckboxes);
+    setTotalTasks(total);
+    setCompletedTasks(completed);
+    setAllTasksCompleted(total > 0 && completed === total);
   };
 
   useRealtimeSubscription(['monthly_tasks'], fetchStatus);
