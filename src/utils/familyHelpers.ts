@@ -14,15 +14,13 @@ export const createFamily = async (familyName: string) => {
 
   if (familyError) throw familyError;
 
-  // Add current user as family member with ON CONFLICT handling
+  // Add current user as family member
   const { error: memberError } = await supabase
     .from('family_members')
     .insert({
       family_id: family.id,
       user_id: user.id
-    })
-    .onConflict('user_id')
-    .ignore();
+    });
 
   if (memberError) throw memberError;
 
@@ -43,9 +41,7 @@ export const addFamilyMember = async (familyId: string, email: string) => {
     .insert({
       family_id: familyId,
       user_id: userToAdd.id
-    })
-    .onConflict('user_id')
-    .ignore();
+    });
 
   if (memberError) throw memberError;
 };
@@ -55,7 +51,7 @@ export const getUserFamily = async (userId: string) => {
     .from('family_members')
     .select('family_id')
     .eq('user_id', userId)
-    .maybeSingle(); // Changed from single() to maybeSingle()
+    .maybeSingle();
 
   if (error) throw error;
   return familyMember?.family_id;
