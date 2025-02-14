@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
@@ -10,12 +11,25 @@ import {
 } from "@/components/ui/tooltip";
 import { getStartOfMonth, getEndOfMonth } from "@/utils/dateHelpers";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+=======
+const fetchStatus = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
 
-interface FixedExpensesStatusProps {
-  selectedYear: number;
-  selectedMonth: number;
-}
+  // Get user's family
+  const { data: familyMember, error: familyError } = await supabase
+    .from('family_members')
+    .select('family_id')
+    .eq('user_id', user.id)
+    .maybeSingle(); // Use maybeSingle() instead of single()
+>>>>>>> 4d714e7 (Fix: Update fixed expenses status fetching and add family member management functions)
 
+  if (familyError || !familyMember?.family_id) {
+    console.error('Error fetching family:', familyError);
+    return;
+  }
+
+<<<<<<< HEAD
 export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpensesStatusProps) => {
   const [allTasksCompleted, setAllTasksCompleted] = useState<boolean>(false);
   const [totalTasks, setTotalTasks] = useState<number>(0);
@@ -77,39 +91,31 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
   useEffect(() => {
     fetchStatus();
   }, [selectedYear, selectedMonth]);
+=======
+  // Get all fixed expenses tasks for this month
+  const { data: fixedExpensesTasks, error: tasksError } = await supabase
+    .from('budget_plans')
+    .select(`
+      id,
+      fixed_expenses_status (
+        is_paid
+      )
+    `)
+    .eq('requires_status', true)
+    .eq('family_id', familyMember.family_id);
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <h3 className="text-lg font-medium">Fixed Expenses Status</h3>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-4 w-4 text-gray-500" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Track the status of your fixed expenses for this month. Make sure to mark them as completed once paid.</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+  if (tasksError) {
+    console.error('Error fetching tasks:', tasksError);
+    return;
+  }
 
-      {!allTasksCompleted ? (
-        <Alert variant="warning" className="bg-yellow-50 border-yellow-200">
-          <AlertCircle className="h-4 w-4 text-yellow-600" />
-          <AlertDescription className="text-yellow-800">
-            {completedTasks} out of {totalTasks} required transfers have been completed for this month. 
-            Please mark them as completed once you've made the transfers.
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <Alert className="bg-green-50 border-green-200">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            All required transfers for this month have been completed!
-          </AlertDescription>
-        </Alert>
-      )}
-    </div>
-  );
+  const total = fixedExpensesTasks?.length || 0;
+  const completed = fixedExpensesTasks?.filter(task => 
+    task.fixed_expenses_status?.some(status => status.is_paid)
+  )?.length || 0;
+>>>>>>> 4d714e7 (Fix: Update fixed expenses status fetching and add family member management functions)
+
+  setTotalTasks(total);
+  setCompletedTasks(completed);
+  setAllTasksCompleted(total > 0 && completed === total);
 };
