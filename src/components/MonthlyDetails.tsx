@@ -29,9 +29,16 @@ const MonthlyDetails: React.FC = () => {
     updateTaskState(taskId); // ensure state is updated immediately after the action
   };
 
+  // Compute number of completed tasks (assuming each expense has a 'completed' boolean)
+  const completedCount = fixedExpenses.filter(expense => expense.completed).length;
+
   return (
     <div>
       <button onClick={loadDefaults}>Load Defaults</button>
+      {/* Display test completion status */}
+      <div style={{ color: (fixedExpenses.length > 0 && completedCount === fixedExpenses.length) ? 'green' : 'inherit' }}>
+        {completedCount} out of {fixedExpenses.length} tests completed
+      </div>
       {/* Render fixed expenses */}
       {fixedExpenses.map(expense => (
         <div key={expense.id}>
