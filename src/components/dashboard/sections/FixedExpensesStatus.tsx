@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
@@ -26,11 +25,20 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get status for monthly tasks
+    // Get user's family
+    const { data: familyMember } = await supabase
+      .from('family_members')
+      .select('family_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!familyMember?.family_id) return;
+
+    // Get status for monthly tasks for the family
     const { data: tasksData, error: tasksError } = await supabase
       .from('monthly_tasks')
-      .select('is_completed')
-      .eq('user_id', user.id)
+      .select('*')
+      .eq('family_id', familyMember.family_id)
       .eq('year', selectedYear)
       .eq('month', selectedMonth);
 
@@ -45,6 +53,15 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     setTotalTasks(total);
     setCompletedTasks(completed);
     setAllTasksCompleted(total > 0 && completed === total);
+
+    // Count all checkboxes on the page
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const totalCheckboxes = checkboxes.length;
+    const completedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked).length;
+
+    setTotalTasks(totalCheckboxes);
+    setCompletedTasks(completedCheckboxes);
+    setAllTasksCompleted(totalCheckboxes > 0 && completedCheckboxes === totalCheckboxes);
   };
 
   useRealtimeSubscription(['monthly_tasks'], fetchStatus);
