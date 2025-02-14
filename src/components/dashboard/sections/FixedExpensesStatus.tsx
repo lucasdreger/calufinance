@@ -25,14 +25,22 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get user's family
-    const { data: familyMember } = await supabase
+    // Get user's family with maybeSingle() instead of single()
+    const { data: familyMember, error: familyError } = await supabase
       .from('family_members')
       .select('family_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (!familyMember?.family_id) return;
+    if (familyError) {
+      console.error('Error fetching family:', familyError);
+      return;
+    }
+
+    if (!familyMember?.family_id) {
+      console.error('No family found for user');
+      return;
+    }
 
     // Get status for monthly tasks for the family
     const { data: tasksData, error: tasksError } = await supabase
