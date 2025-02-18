@@ -7,8 +7,8 @@ export const budgetPlans = pgTable('budget_plans', {
   description: text('description'),
   startDate: date('start_date').notNull(),
   endDate: date('end_date').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 export type BudgetPlan = typeof budgetPlans.$inferSelect;
