@@ -1,15 +1,26 @@
 import useSWR from 'swr';
 import fetcher from '../utils/fetcher';
+import { FixedExpensePlan } from '@/types';
 
-// ...existing code...
+export default function RecurringExpenses() {
+  const { data: fixedExpensePlans, error, isLoading } = useSWR<FixedExpensePlan[]>(
+    '/api/fixed-expense-plans',
+    fetcher
+  );
 
-const { data: fixedExpenses, error } = useSWR<FixedExpensePlan[]>(
-  '/api/fixed-expense-plans',
-  fetcher
-);
+  if (error) {
+    return <div>Failed to load expenses</div>;
+  }
 
-// ...existing code...
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-// Update any references from budgetPlans to fixedExpensePlans
+  if (!fixedExpensePlans?.length) {
+    return <div>No recurring expenses found</div>;
+  }
 
-// ...existing code...
+  // Update any references from budgetPlans to fixedExpensePlans
+
+  // ...existing code...
+}
