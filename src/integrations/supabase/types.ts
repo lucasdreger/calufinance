@@ -160,7 +160,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "budget_plans_category_id_fkey"
+            foreignKeyName: "fixed_expense_plans_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "expenses_categories"

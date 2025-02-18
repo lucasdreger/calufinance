@@ -56,7 +56,7 @@ export const FixedExpensesTable = () => {
       const { data: statusData, error: statusError } = await supabase
         .from('fixed_expenses_status')
         .select('*')
-        .in('budget_plan_id', data?.map(plan => plan.id) || [])
+        .in('fixed_expense_plan_id', data?.map(plan => plan.id) || [])
         .gte('date', formatDateForSupabase(startDate))
         .lt('date', formatDateForSupabase(endDate));
 
@@ -71,7 +71,7 @@ export const FixedExpensesTable = () => {
 
       setStatusMap(statusData?.reduce((acc, status) => ({
         ...acc,
-        [status.budget_plan_id]: status.is_paid
+        [status.fixed_expense_plan_id]: status.is_paid
       }), {} as Record<string, boolean>));
     };
 
@@ -85,7 +85,7 @@ export const FixedExpensesTable = () => {
     const { data: existingStatus, error: checkError } = await supabase
       .from('fixed_expenses_status')
       .select('*')
-      .eq('budget_plan_id', planId)
+      .eq('fixed_expense_plan_id', planId)
       .gte('date', formatDateForSupabase(startDate))
       .lt('date', formatDateForSupabase(getEndOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1)))
       .maybeSingle();
@@ -135,7 +135,7 @@ export const FixedExpensesTable = () => {
       const { error: insertError } = await supabase
         .from('fixed_expenses_status')
         .insert({
-          budget_plan_id: planId,
+          fixed_expense_plan_id: planId,
           date: formatDateForSupabase(startDate),
           is_paid: checked,
           completed_at: checked ? timestamp : null,
