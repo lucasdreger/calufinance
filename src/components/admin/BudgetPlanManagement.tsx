@@ -209,7 +209,7 @@ export const BudgetPlanManagement = () => {
       <div>
         <h3 className="text-lg font-medium mb-4">Fixed Expense Plans</h3>
         <BudgetPlanTable 
-          budgetPlans={fixedExpensePlans}
+          fixed_expense_plan={fixedExpensePlans}
           onDelete={handleDeleteFixedExpensePlan}
           onEdit={handleEditFixedExpensePlan}
         />

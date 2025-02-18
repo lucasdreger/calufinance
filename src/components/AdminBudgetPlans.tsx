@@ -1,7 +1,7 @@
 import React from 'react';
 import { useBudgetContext } from '../context/BudgetContext';
 
-const AdminBudgetPlans: React.FC = () => {
+const Adminfixed_expense_plan: React.FC = () => {
   const { addBudgetPlan } = useBudgetContext();
   
   const handleCreatePlan = (plan) => {
@@ -17,4 +17,4 @@ const AdminBudgetPlans: React.FC = () => {
   );
 };
 
-export default AdminBudgetPlans;
+export default Adminfixed_expense_plan;

@@ -20,7 +20,7 @@ export default function RecurringExpenses() {
     return <div>No recurring expenses found</div>;
   }
 
-  // Update any references from budgetPlans to fixedExpensePlans
+  // Update any references from fixed_expense_plan to fixedExpensePlans
 
   // ...existing code...
 }

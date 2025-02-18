@@ -3,7 +3,7 @@ import { useBudgetContext } from '../context/BudgetContext';
 import { supabase } from "@/integrations/supabase/client";
 
 const MonthlyDetails: React.FC = () => {
-  const { budgetPlans } = useBudgetContext();
+  const { fixed_expense_plan } = useBudgetContext();
   const [fixedExpenses, setFixedExpenses] = useState([]);
 
   const loadDefaults = async () => {

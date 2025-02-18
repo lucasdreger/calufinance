@@ -23,7 +23,7 @@ interface FixedExpensePlan {
 }
 
 interface BudgetPlanTableProps {
-  budgetPlans: FixedExpensePlan[];
+  fixed_expense_plan: FixedExpensePlan[];
   onDelete: (id: string) => void;
   onEdit: (plan: FixedExpensePlan) => void;
 }
@@ -31,7 +31,7 @@ interface BudgetPlanTableProps {
 type SortField = 'description' | 'category' | 'amount' | 'status' | 'owner';
 type SortDirection = 'asc' | 'desc';
 
-export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTableProps) => {
+export const BudgetPlanTable = ({ fixed_expense_plan, onDelete, onEdit }: BudgetPlanTableProps) => {
   const [sortField, setSortField] = useState<SortField>('category');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -44,7 +44,7 @@ export const BudgetPlanTable = ({ budgetPlans, onDelete, onEdit }: BudgetPlanTab
     }
   };
 
-  const sortedPlans = [...budgetPlans].sort((a, b) => {
+  const sortedPlans = [...fixed_expense_plan].sort((a, b) => {
     const direction = sortDirection === 'asc' ? 1 : -1;
     
     switch (sortField) {

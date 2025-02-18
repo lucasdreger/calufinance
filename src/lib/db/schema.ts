@@ -1,6 +1,6 @@
 // ...existing code...
 
-export const budgetPlans = pgTable('fixed_expense_plans', {
+export const fixed_expense_plan = pgTable('fixed_expense_plans', {
   id: serial('id').primaryKey(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
@@ -11,7 +11,7 @@ export const budgetPlans = pgTable('fixed_expense_plans', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
-export type BudgetPlan = typeof budgetPlans.$inferSelect;
-export type NewBudgetPlan = typeof budgetPlans.$inferInsert;
+export type BudgetPlan = typeof fixed_expense_plan.$inferSelect;
+export type NewBudgetPlan = typeof fixed_expense_plan.$inferInsert;
 
 // ...existing code...
