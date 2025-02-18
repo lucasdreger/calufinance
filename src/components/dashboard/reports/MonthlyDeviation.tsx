@@ -30,15 +30,15 @@ export const MonthlyDeviation = () => {
     const endDate = new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 23, 59, 59, 999));
     const startDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth() - 11, 1, 0, 0, 0, 0));
 
-    // Get all budget plans (planned expenses)
-    const { data: budgetPlans, error: budgetError } = await supabase
-      .from('budget_plans')
+    // Get all fixed expense plans (planned expenses)
+    const { data: fixedExpensePlans, error: fixedExpenseError } = await supabase
+      .from('fixed_expense_plans')
       .select('*');
 
-    if (budgetError) {
+    if (fixedExpenseError) {
       toast({
-        title: "Error fetching budget plans",
-        description: budgetError.message,
+        title: "Error fetching fixed expense plans",
+        description: fixedExpenseError.message,
         variant: "destructive",
       });
       return;
@@ -70,7 +70,7 @@ export const MonthlyDeviation = () => {
     }
 
     // Sum planned expenses
-    budgetPlans?.forEach((plan) => {
+    fixedExpensePlans?.forEach((plan) => {
       Object.keys(monthlyTotals).forEach((monthKey) => {
         monthlyTotals[monthKey].planned += Number(plan.estimated_amount);
       });
@@ -109,10 +109,10 @@ export const MonthlyDeviation = () => {
   useEffect(() => {
     fetchData();
 
-    const budgetChannel = supabase
-      .channel('budget_changes')
+    const fixedExpenseChannel = supabase
+      .channel('fixed_expense_changes')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'budget_plans' },
+        { event: '*', schema: 'public', table: 'fixed_expense_plans' },
         () => fetchData()
       )
       .subscribe();
@@ -126,7 +126,7 @@ export const MonthlyDeviation = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(budgetChannel);
+      supabase.removeChannel(fixedExpenseChannel);
       supabase.removeChannel(expensesChannel);
     };
   }, []);

@@ -9,50 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      budget_plans: {
-        Row: {
-          category_id: string
-          created_at: string
-          description: string
-          estimated_amount: number
-          id: string
-          is_fixed: boolean
-          owner: string
-          requires_status: boolean | null
-          user_id: string
-        }
-        Insert: {
-          category_id: string
-          created_at?: string
-          description: string
-          estimated_amount: number
-          id?: string
-          is_fixed?: boolean
-          owner: string
-          requires_status?: boolean | null
-          user_id: string
-        }
-        Update: {
-          category_id?: string
-          created_at?: string
-          description?: string
-          estimated_amount?: number
-          id?: string
-          is_fixed?: boolean
-          owner?: string
-          requires_status?: boolean | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "budget_plans_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "expenses_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       expenses: {
         Row: {
           amount: number
@@ -168,40 +124,84 @@ export type Database = {
           },
         ]
       }
+      fixed_expense_plans: {
+        Row: {
+          category_id: string
+          created_at: string
+          description: string
+          estimated_amount: number
+          id: string
+          is_fixed: boolean
+          owner: string
+          requires_status: boolean | null
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          description: string
+          estimated_amount: number
+          id?: string
+          is_fixed?: boolean
+          owner: string
+          requires_status?: boolean | null
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          description?: string
+          estimated_amount?: number
+          id?: string
+          is_fixed?: boolean
+          owner?: string
+          requires_status?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_plans_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expenses_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fixed_expenses_status: {
         Row: {
-          budget_plan_id: string
           completed_at: string | null
           created_at: string
           date: string
+          fixed_expense_plan_id: string
           id: string
           is_paid: boolean
           user_id: string
         }
         Insert: {
-          budget_plan_id: string
           completed_at?: string | null
           created_at?: string
           date: string
+          fixed_expense_plan_id: string
           id?: string
           is_paid?: boolean
           user_id: string
         }
         Update: {
-          budget_plan_id?: string
           completed_at?: string | null
           created_at?: string
           date?: string
+          fixed_expense_plan_id?: string
           id?: string
           is_paid?: boolean
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fixed_expenses_status_budget_plan_id_fkey"
-            columns: ["budget_plan_id"]
+            foreignKeyName: "fixed_expenses_status_fixed_expense_plan_id_fkey"
+            columns: ["fixed_expense_plan_id"]
             isOneToOne: false
-            referencedRelation: "budget_plans"
+            referencedRelation: "fixed_expense_plans"
             referencedColumns: ["id"]
           },
         ]

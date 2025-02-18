@@ -4,17 +4,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BudgetPlanForm } from "./BudgetPlanForm";
 import { BudgetPlanTable } from "./BudgetPlanTable";
-import { Info } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 export const BudgetPlanManagement = () => {
   const [categories, setCategories] = useState<any[]>([]);
-  const [budgetPlans, setBudgetPlans] = useState<any[]>([]);
+  const [fixedExpensePlans, setFixedExpensePlans] = useState<any[]>([]);
   const [editingPlan, setEditingPlan] = useState<any>(null);
   const { toast } = useToast();
   const formRef = useRef<HTMLDivElement>(null);
@@ -50,10 +43,10 @@ export const BudgetPlanManagement = () => {
     }
   };
 
-  const fetchBudgetPlans = async () => {
+  const fetchFixedExpensePlans = async () => {
     try {
       const { data, error } = await supabase
-        .from('budget_plans')
+        .from('fixed_expense_plans')
         .select(`
           *,
           expenses_categories (
@@ -64,19 +57,19 @@ export const BudgetPlanManagement = () => {
       
       if (error) {
         toast({
-          title: "Error fetching budget plans",
+          title: "Error fetching fixed expense plans",
           description: error.message,
           variant: "destructive",
         });
         return;
       }
       
-      setBudgetPlans(data || []);
+      setFixedExpensePlans(data || []);
     } catch (error) {
-      console.error('Error in fetchBudgetPlans:', error);
+      console.error('Error in fetchFixedExpensePlans:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch budget plans. Please try again.",
+        description: "Failed to fetch fixed expense plans. Please try again.",
         variant: "destructive",
       });
     }
@@ -84,7 +77,7 @@ export const BudgetPlanManagement = () => {
 
   useEffect(() => {
     fetchCategories();
-    fetchBudgetPlans();
+    fetchFixedExpensePlans();
   }, []);
 
   const handleAddPlan = async (newPlan: any) => {
@@ -100,7 +93,7 @@ export const BudgetPlanManagement = () => {
 
       if (editingPlan) {
         const { error } = await supabase
-          .from('budget_plans')
+          .from('fixed_expense_plans')
           .update({
             description: newPlan.description,
             category_id: newPlan.category_id,
@@ -113,7 +106,7 @@ export const BudgetPlanManagement = () => {
 
         if (error) {
           toast({
-            title: "Error updating budget plan",
+            title: "Error updating fixed expense plan",
             description: error.message,
             variant: "destructive",
           });
@@ -122,12 +115,12 @@ export const BudgetPlanManagement = () => {
 
         setEditingPlan(null);
         toast({
-          title: "Budget Plan Updated",
-          description: "Your budget plan has been updated.",
+          title: "Fixed Expense Plan Updated",
+          description: "Your fixed expense plan has been updated.",
         });
       } else {
         const { error } = await supabase
-          .from('budget_plans')
+          .from('fixed_expense_plans')
           .insert({
             description: newPlan.description,
             category_id: newPlan.category_id,
@@ -139,7 +132,7 @@ export const BudgetPlanManagement = () => {
 
         if (error) {
           toast({
-            title: "Error saving budget plan",
+            title: "Error saving fixed expense plan",
             description: error.message,
             variant: "destructive",
           });
@@ -147,54 +140,54 @@ export const BudgetPlanManagement = () => {
         }
 
         toast({
-          title: "Budget Plan Added",
-          description: "Your budget plan has been saved.",
+          title: "Fixed Expense Plan Added",
+          description: "Your fixed expense plan has been saved.",
         });
       }
       
-      fetchBudgetPlans();
+      fetchFixedExpensePlans();
     } catch (error: any) {
       console.error('Error in handleAddPlan:', error);
       toast({
         title: "Error",
-        description: "Failed to save budget plan. Please try again.",
+        description: "Failed to save fixed expense plan. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const handleDeleteBudgetPlan = async (id: string) => {
+  const handleDeleteFixedExpensePlan = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('budget_plans')
+        .from('fixed_expense_plans')
         .delete()
         .eq('id', id);
 
       if (error) {
         toast({
-          title: "Error deleting budget plan",
+          title: "Error deleting fixed expense plan",
           description: error.message,
           variant: "destructive",
         });
         return;
       }
 
-      fetchBudgetPlans();
+      fetchFixedExpensePlans();
       toast({
-        title: "Budget Plan Deleted",
-        description: "Budget plan has been removed.",
+        title: "Fixed Expense Plan Deleted",
+        description: "Fixed expense plan has been removed.",
       });
     } catch (error: any) {
-      console.error('Error in handleDeleteBudgetPlan:', error);
+      console.error('Error in handleDeleteFixedExpensePlan:', error);
       toast({
         title: "Error",
-        description: "Failed to delete budget plan. Please try again.",
+        description: "Failed to delete fixed expense plan. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const handleEditBudgetPlan = (plan: any) => {
+  const handleEditFixedExpensePlan = (plan: any) => {
     setEditingPlan(plan);
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -203,7 +196,7 @@ export const BudgetPlanManagement = () => {
     <div className="space-y-6">
       <div ref={formRef}>
         <h3 className="text-lg font-medium mb-4">
-          {editingPlan ? 'Edit Budget Plan' : 'Add Budget Plan'}
+          {editingPlan ? 'Edit Fixed Expense Plan' : 'Add Fixed Expense Plan'}
         </h3>
         <BudgetPlanForm 
           categories={categories}
@@ -214,11 +207,11 @@ export const BudgetPlanManagement = () => {
         />
       </div>
       <div>
-        <h3 className="text-lg font-medium mb-4">Budget Plans</h3>
+        <h3 className="text-lg font-medium mb-4">Fixed Expense Plans</h3>
         <BudgetPlanTable 
-          budgetPlans={budgetPlans}
-          onDelete={handleDeleteBudgetPlan}
-          onEdit={handleEditBudgetPlan}
+          budgetPlans={fixedExpensePlans}
+          onDelete={handleDeleteFixedExpensePlan}
+          onEdit={handleEditFixedExpensePlan}
         />
       </div>
     </div>
