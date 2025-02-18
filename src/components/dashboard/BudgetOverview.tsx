@@ -40,7 +40,7 @@ export const BudgetOverview = () => {
 
       const monthlyDataPromises = months.map(async ({ month, startDate, endDate }) => {
         const { data: plannedData } = await supabase
-          .from('budget_plans')
+          .from('fixed_expense_plans')
           .select('estimated_amount');
 
         const { data: actualData } = await supabase

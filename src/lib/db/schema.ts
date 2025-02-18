@@ -1,6 +1,6 @@
 // ...existing code...
 
-export const budgetPlans = pgTable('budget_plans', {
+export const budgetPlans = pgTable('fixed_expense_plans', {
   id: serial('id').primaryKey(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),

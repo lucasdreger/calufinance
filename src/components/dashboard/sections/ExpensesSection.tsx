@@ -23,7 +23,7 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
   const [fixedExpenses, setFixedExpenses] = useState<any[]>([]);
 
   useRealtimeSubscription(
-    ['expenses', 'expenses_categories', 'monthly_income', 'budget_plans'],
+    ['expenses', 'expenses_categories', 'monthly_income', 'fixed_expense_plans'],
     () => {
       fetchData();
       fetchCategories();
@@ -145,7 +145,7 @@ export const ExpensesSection = ({ selectedYear, selectedMonth }: ExpensesSection
     try {
       // Fetch shared fixed expense budget plans for the month
       const { data: bpData, error } = await supabase
-        .from('budget_plans')
+        .from('fixed_expense_plans')
         .select('*')
         .eq('requires_status', true);
       if (error) throw error;

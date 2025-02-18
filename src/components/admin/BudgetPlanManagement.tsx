@@ -53,7 +53,7 @@ export const BudgetPlanManagement = () => {
             name
           )
         `)
-        .order('expenses_categories(name)', { ascending: true });
+        .order(fixed_expense_planstegories(name)', { ascending: true });
       
       if (error) {
         toast({
@@ -100,7 +100,7 @@ export const BudgetPlanManagement = () => {
             estimated_amount: parseFloat(newPlan.estimated_amount),
             requires_status: newPlan.requires_status,
             is_fixed: newPlan.is_fixed,
-            owner: newPlan.owner,
+            ownerfixed_expense_plansner,
           })
           .eq('id', editingPlan.id);
 
@@ -127,7 +127,7 @@ export const BudgetPlanManagement = () => {
             estimated_amount: parseFloat(newPlan.estimated_amount),
             requires_status: newPlan.requires_status,
             is_fixed: newPlan.is_fixed,
-            owner: newPlan.owner,
+            ownerfixed_expense_plansner,
           });
 
         if (error) {
@@ -166,7 +166,7 @@ export const BudgetPlanManagement = () => {
       if (error) {
         toast({
           title: "Error deleting fixed expense plan",
-          description: error.message,
+          descrfixed_expense_plansr.message,
           variant: "destructive",
         });
         return;

@@ -12,7 +12,7 @@ const MonthlyDetails: React.FC = () => {
       const defaults = getDefaultFixedExpenses(); // ...existing function...
       // Query shared Administrator budget plans that require status
       const { data: bpData, error: bpError } = await supabase
-        .from('budget_plans')
+        .from('fixed_expense_plans')
         .select('*')
         .eq('requires_status', true);
       if (bpError) throw bpError;

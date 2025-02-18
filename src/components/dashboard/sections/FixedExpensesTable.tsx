@@ -30,7 +30,7 @@ export const FixedExpensesTable = () => {
 
       // Get budget plans that require status tracking
       const { data, error } = await supabase
-        .from('budget_plans')
+        .from('fixed_expense_plans')
         .select(`
           *,
           expenses_categories (
