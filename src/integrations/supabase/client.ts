@@ -12,8 +12,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     storageKey: 'supabase.auth.token',
     flowType: 'pkce'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js-debug'
+    }
   }
 });
+
+// Add debug logging for all Supabase queries
+if (process.env.NODE_ENV === 'development') {
+  const originalFrom = supabase.from.bind(supabase);
+  supabase.from = function (table: string) {
+    console.log('Supabase query to table:', table);
+    return originalFrom(table);
+  };
+}
 
 // Add global type for debugging
 declare global {
