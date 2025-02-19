@@ -46,7 +46,7 @@ export const BudgetPlanManagement = () => {
   const fetchFixedExpensePlans = async () => {
     try {
       const { data, error } = await supabase
-        .from('fixed_expense_plans')  // Fixed the table name here
+        .from('fixed_expense_plans')  // Corrected table name
         .select(`
           *,
           expenses_categories (
@@ -93,7 +93,7 @@ export const BudgetPlanManagement = () => {
 
       if (editingPlan) {
         const { error } = await supabase
-          .from('fixed_expense_plans')  // Fixed the table name here
+          .from('fixed_expense_plans')  // Corrected table name
           .update({
             description: newPlan.description,
             category_id: newPlan.category_id,
@@ -120,7 +120,7 @@ export const BudgetPlanManagement = () => {
         });
       } else {
         const { error } = await supabase
-          .from('fixed_expense_plans')  // Fixed the table name here
+          .from('fixed_expense_plans')  // Corrected table name
           .insert({
             description: newPlan.description,
             category_id: newPlan.category_id,
@@ -159,7 +159,7 @@ export const BudgetPlanManagement = () => {
   const handleDeleteFixedExpensePlan = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('fixed_expense_plans')  // Fixed the table name here
+        .from('fixed_expense_plans')  // Corrected table name
         .delete()
         .eq('id', id);
 
