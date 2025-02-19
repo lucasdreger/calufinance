@@ -53,7 +53,7 @@ export const BudgetPlanManagement = () => {
             name
           )
         `)
-        .order(fixed_expense_planstegories(name)', { ascending: true });
+        .order('expenses_categories(name)', { ascending: true });
       
       if (error) {
         toast({
@@ -100,7 +100,7 @@ export const BudgetPlanManagement = () => {
             estimated_amount: parseFloat(newPlan.estimated_amount),
             requires_status: newPlan.requires_status,
             is_fixed: newPlan.is_fixed,
-            ownerfixed_expense_plansner,
+            owner: newPlan.owner,
           })
           .eq('id', editingPlan.id);
 
@@ -127,7 +127,7 @@ export const BudgetPlanManagement = () => {
             estimated_amount: parseFloat(newPlan.estimated_amount),
             requires_status: newPlan.requires_status,
             is_fixed: newPlan.is_fixed,
-            ownerfixed_expense_plansner,
+            owner: newPlan.owner,
           });
 
         if (error) {
@@ -166,7 +166,7 @@ export const BudgetPlanManagement = () => {
       if (error) {
         toast({
           title: "Error deleting fixed expense plan",
-          descrfixed_expense_plansr.message,
+          description: error.message,
           variant: "destructive",
         });
         return;
@@ -209,7 +209,7 @@ export const BudgetPlanManagement = () => {
       <div>
         <h3 className="text-lg font-medium mb-4">Fixed Expense Plans</h3>
         <BudgetPlanTable 
-          fixed_expense_plan={fixedExpensePlans}
+          budgetPlans={fixedExpensePlans}
           onDelete={handleDeleteFixedExpensePlan}
           onEdit={handleEditFixedExpensePlan}
         />
