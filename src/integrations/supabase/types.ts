@@ -9,7 +9,7 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      fixed_expense_plans
+      expenses: {
         Row: {
           amount: number
           category_id: string | null
@@ -45,7 +45,7 @@ export type Database = {
             foreignKeyName: "expenses_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
-            referencedRelatiofixed_expense_plans_categories"
+            referencedRelation: "expenses_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -160,7 +160,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fixed_expense_plans_category_id_fkey"
+            foreignKeyName: "budget_plans_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "expenses_categories"
@@ -201,7 +201,7 @@ export type Database = {
             foreignKeyName: "fixed_expenses_status_fixed_expense_plan_id_fkey"
             columns: ["fixed_expense_plan_id"]
             isOneToOne: false
-            referencedRelation: "fixed_expense_planse_plans"
+            referencedRelation: "fixed_expense_plans"
             referencedColumns: ["id"]
           },
         ]
