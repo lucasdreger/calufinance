@@ -18,12 +18,12 @@ interface BudgetPlan {
 }
 
 export const FixedExpensesTable = () => {
-  const [fixed_expense_plan, setfixed_expense_plan] = useState<BudgetPlan[]>([]);
+  const [fixed_expense_plans, setFixedExpensePlans] = useState<BudgetPlan[]>([]);
   const [statusMap, setStatusMap] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchfixed_expense_plan = async () => {
+    const fetchFixedExpensePlans = async () => {
       const currentDate = new Date();
       const startDate = getStartOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
       const endDate = getEndOfMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
@@ -50,7 +50,7 @@ export const FixedExpensesTable = () => {
         return;
       }
 
-      setfixed_expense_plan(data || []);
+      setFixedExpensePlans(data || []);
 
       // Get status for these plans
       const { data: statusData, error: statusError } = await supabase
@@ -75,7 +75,7 @@ export const FixedExpensesTable = () => {
       }), {} as Record<string, boolean>));
     };
 
-    fetchfixed_expense_plan();
+    fetchFixedExpensePlans();
   }, [toast]);
 
   const handleStatusChange = async (planId: string, checked: boolean) => {
@@ -164,7 +164,7 @@ export const FixedExpensesTable = () => {
   };
 
   // Group plans by category
-  const groupedPlans = fixed_expense_plan.reduce((acc, plan) => {
+  const groupedPlans = fixed_expense_plans.reduce((acc, plan) => {
     const category = plan.expenses_categories.name;
     if (!acc[category]) {
       acc[category] = [];
