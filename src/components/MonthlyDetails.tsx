@@ -1,60 +1,65 @@
-import React, { useState } from 'react';
-import { useBudgetContext } from '../context/BudgetContext';
+
+import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 
-const MonthlyDetails: React.FC = () => {
-  const { fixed_expense_plan } = useBudgetContext();
-  const [fixedExpenses, setFixedExpenses] = useState([]);
+interface Task {
+  id: string;
+  name: string;
+  completed: boolean;
+}
 
-  const loadDefaults = async () => {
-    try {
-      // Retrieve default fixed expenses (from the existing function)
-      const defaults = getDefaultFixedExpenses(); // ...existing function...
-      // Query shared Administrator budget plans that require status
-      const { data: bpData, error: bpError } = await supabase
-        .from('fixed_expense_plans')
-        .select('*')
-        .eq('requires_status', true);
-      if (bpError) throw bpError;
-      // Merge defaults with fetched budget plans
-      setFixedExpenses([...defaults, ...(bpData || [])]);
-    } catch (error: any) {
-      console.error("Error loading defaults:", error);
-      // Optionally display an error toast here if you add a toast hook.
+export const MonthlyDetails = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [fixedExpenses, setFixedExpenses] = useState<any[]>([]);
+
+  const fetchTasks = async () => {
+    const { data, error } = await supabase
+      .from('monthly_tasks')
+      .select('*');
+    
+    if (!error && data) {
+      setTasks(data);
     }
   };
 
-  const handleCheckboxToggle = (taskId) => {
-    // ...existing toggle logic...
-    updateTaskState(taskId); // ensure state is updated immediately after the action
+  const handleCheckboxChange = async (taskId: string, completed: boolean) => {
+    const { error } = await supabase
+      .from('monthly_tasks')
+      .update({ completed })
+      .eq('id', taskId);
+
+    if (!error) {
+      setTasks(tasks.map(task => 
+        task.id === taskId ? { ...task, completed } : task
+      ));
+    }
   };
 
-  // Assume `tasks` is an array of all tasks for the month. Replace type checks as needed.
-  const fixedExpenseTasks = tasks.filter(task => task.type === 'fixedExpense');
-  const creditCardBillTasks = tasks.filter(task => task.type === 'creditCard');
-  const adminRequiredTasks = tasks.filter(task => task.section === 'administration' && task.status === 'required');
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
-  // Merge tasks from different sections
-  const allTasks = [...fixedExpenseTasks, ...creditCardBillTasks, ...adminRequiredTasks];
-  // Calculate how many tasks have been completed (assuming a boolean `completed` property)
-  const completedTasks = allTasks.filter(task => task.completed).length;
+  const completedTasks = tasks.filter(task => task.completed).length;
+  const totalTasks = tasks.length;
 
   return (
-    <div>
-      <button onClick={loadDefaults}>Load Defaults</button>
-      {/* Display test completion status */}
-      <div className="task-summary">
-        <span>{`${completedTasks} out of ${allTasks.length} tasks completed`}</span>
+    <div className="space-y-4">
+      <div className="text-sm text-gray-500">
+        {completedTasks} out of {totalTasks} tasks completed
       </div>
-      {/* Render fixed expenses */}
-      {fixedExpenses.map(expense => (
-        <div key={expense.id}>
-          {/* ...existing expense rendering... */}
-        </div>
-      ))}
-      {/* ...existing code... */}
+      <div className="space-y-2">
+        {tasks.map((task) => (
+          <div key={task.id} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={task.completed}
+              onChange={(e) => handleCheckboxChange(task.id, e.target.checked)}
+              className="form-checkbox h-4 w-4"
+            />
+            <span>{task.name}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
-
-export default MonthlyDetails;
