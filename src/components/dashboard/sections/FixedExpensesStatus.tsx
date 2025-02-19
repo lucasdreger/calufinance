@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
@@ -42,32 +43,55 @@ export const FixedExpensesStatus = ({ selectedYear, selectedMonth }: FixedExpens
       return;
     }
 
-    // Get status for monthly tasks for the family
-    const { data: tasksData, error: tasksError } = await supabase
-      .from('monthly_tasks')
-      .select('*')
-      .eq('family_id', familyMember.family_id)
-      .eq('year', selectedYear)
-      .eq('month', selectedMonth);
+    // Get required budget plans that need status tracking
+    const { data: requiredPlans, error: plansError } = await supabase
+      .from('fixed_expense_plans')  // Corrected table name
+      .select('id')
+      .eq('requires_status', true);
 
-    if (tasksError) {
-      console.error('Error fetching tasks:', tasksError);
+    if (plansError) {
+      console.error('Error fetching plans:', plansError);
       return;
     }
 
-    const total = tasksData?.length || 0;
-    const completed = tasksData?.filter(task => task.is_completed)?.length || 0;
+    const planIds = requiredPlans?.map(plan => plan.id) || [];
+    
+    if (planIds.length === 0) {
+      setTotalTasks(0);
+      setCompletedTasks(0);
+      setAllTasksCompleted(false);
+      return;
+    }
+
+    // Get status for these plans
+    const { data: statusData, error: statusError } = await supabase
+      .from('fixed_expenses_status')
+      .select('*')
+      .in('fixed_expense_plan_id', planIds)
+      .eq('date', `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`);
+
+    if (statusError) {
+      console.error('Error fetching status:', statusError);
+      return;
+    }
+
+    const total = planIds.length;
+    const completed = statusData?.filter(status => status.is_paid)?.length || 0;
 
     setTotalTasks(total);
     setCompletedTasks(completed);
     setAllTasksCompleted(total > 0 && completed === total);
   };
 
-  useRealtimeSubscription(['monthly_tasks'], fetchStatus);
+  useRealtimeSubscription(['fixed_expense_plans', 'fixed_expenses_status'], fetchStatus);
 
   useEffect(() => {
     fetchStatus();
   }, [selectedYear, selectedMonth]);
+
+  if (totalTasks === 0) {
+    return null;
+  }
 
   return (
     <Alert variant={allTasksCompleted ? "default" : "destructive"}>
