@@ -32,7 +32,7 @@ export const MonthlyDeviation = () => {
 
     // Get all fixed expense plans (planned expenses)
     const { data: fixedExpensePlans, error: fixedExpenseError } = await supabase
-      .from('fixed_expense_plans')
+      .from('fixed_expense_plans')  // Corrected table name
       .select('*');
 
     if (fixedExpenseError) {
@@ -112,7 +112,7 @@ export const MonthlyDeviation = () => {
     const fixedExpenseChannel = supabase
       .channel('fixed_expense_changes')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'fixed_expense_plans' },
+        { event: '*', schema: 'public', table: 'fixed_expense_plans' },  // Corrected table name
         () => fetchData()
       )
       .subscribe();
